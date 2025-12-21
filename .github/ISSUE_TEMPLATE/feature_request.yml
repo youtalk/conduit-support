@@ -1,0 +1,73 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please describe what you'd like to see added to ios_node.
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: Clear description of the proposed feature
+      placeholder: "Add support for Apple Watch as a sensor source..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: How would this feature be used? What problem does it solve?
+      placeholder: "For wearable robotics research, having IMU data from Apple Watch would..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Target Platform
+      description: Which platform(s) should this feature support?
+      multiple: true
+      options:
+        - iOS (iPhone)
+        - iOS (iPad)
+        - visionOS (Apple Vision Pro)
+        - tvOS (Apple TV)
+        - macOS (Mac Catalyst)
+        - All platforms
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Critical (blocking my work)
+        - High (significantly improves workflow)
+        - Medium (nice to have)
+        - Low (minor improvement)
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: "Currently I'm using..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information, mockups, or examples
+    validations:
+      required: false

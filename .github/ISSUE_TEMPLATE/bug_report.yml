@@ -1,0 +1,158 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in ios_node
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please fill out the information below to help us investigate.
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App Version
+      description: Which version of ios_node are you using?
+      placeholder: "1.0 (build 1)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which platform are you using?
+      options:
+        - iOS (iPhone)
+        - iOS (iPad)
+        - visionOS (Apple Vision Pro)
+        - tvOS (Apple TV)
+        - macOS (Mac Catalyst)
+        - iOS Simulator
+    validations:
+      required: true
+
+  - type: input
+    id: device-model
+    attributes:
+      label: Device Model
+      description: What device are you using?
+      placeholder: "iPhone 15 Pro, iPad Pro M2, Vision Pro, etc."
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS Version
+      description: What OS version are you running?
+      placeholder: "iOS 17.2, visionOS 1.0, etc."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sensor-type
+    attributes:
+      label: Affected Sensor
+      description: Which sensor is experiencing issues?
+      multiple: true
+      options:
+        - IMU
+        - GPS
+        - Magnetic Field
+        - Proximity
+        - Camera
+        - LiDAR
+        - Battery
+        - Thermal
+        - Barometer
+        - Illuminance
+        - Game Controller
+        - All sensors
+        - Not sensor-specific
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ros-version
+    attributes:
+      label: ROS 2 Version
+      description: Which ROS 2 version are you using?
+      options:
+        - ROS 2 Humble
+        - ROS 2 Jazzy
+        - Other
+        - Not applicable
+    validations:
+      required: false
+
+  - type: dropdown
+    id: wire-mode
+    attributes:
+      label: Wire Mode Setting
+      description: Which wire mode is configured in the app?
+      options:
+        - Jazzy
+        - Humble
+        - Auto-detect
+    validations:
+      required: false
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: Clear description of the bug
+      placeholder: "When I enable the IMU sensor and tap Play..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Open app
+        2. Enable IMU sensor
+        3. Tap Play button
+        4. See error message
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: "IMU data should stream to ROS 2 topic /ios/imu"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: "App shows 'Connection Failed' error"
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-message
+    attributes:
+      label: Error Message
+      description: Any error messages displayed?
+      placeholder: "Paste error message or screenshot here"
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information
+      placeholder: "Network setup, router configuration, etc."
+    validations:
+      required: false
