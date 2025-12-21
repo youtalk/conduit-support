@@ -1,0 +1,101 @@
+name: Connection Issue
+description: Report network or router connection problems
+title: "[Connection]: "
+labels: ["connection", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Experiencing connection issues? Please provide detailed information to help us diagnose the problem.
+
+  - type: input
+    id: router-address
+    attributes:
+      label: Router Address
+      description: What Zenoh router address are you using?
+      placeholder: "192.168.1.100:7447"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network-type
+    attributes:
+      label: Network Type
+      description: How are your devices connected?
+      options:
+        - WiFi (same network)
+        - Ethernet
+        - WiFi (different subnets)
+        - Cellular (not recommended)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ros-version
+    attributes:
+      label: ROS 2 Version
+      description: Which ROS 2 version is running on your system?
+      options:
+        - ROS 2 Humble
+        - ROS 2 Jazzy
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: router-status
+    attributes:
+      label: Zenoh Router Status
+      description: Is rmw_zenohd running on your ROS 2 system?
+      options:
+        - Yes, confirmed running
+        - Not sure
+        - No, not running
+        - Don't have ROS 2 system
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-message
+    attributes:
+      label: Error Message
+      description: What error message does the app show?
+      placeholder: "Connection Failed: Could not connect to Zenoh router..."
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: network-setup
+    attributes:
+      label: Network Setup
+      description: Describe your network configuration
+      placeholder: |
+        - Router IP: 192.168.1.1
+        - iOS device IP: 192.168.1.50
+        - ROS 2 system IP: 192.168.1.100
+        - Firewall: enabled/disabled
+    validations:
+      required: false
+
+  - type: textarea
+    id: troubleshooting-tried
+    attributes:
+      label: Troubleshooting Steps Tried
+      description: What have you already tried?
+      placeholder: |
+        - Verified router is running (ros2 run rmw_zenoh_cpp rmw_zenohd)
+        - Confirmed devices on same network
+        - Checked firewall settings
+    validations:
+      required: false
+
+  - type: textarea
+    id: router-logs
+    attributes:
+      label: Router Logs (if available)
+      description: Any relevant output from rmw_zenohd?
+      render: shell
+    validations:
+      required: false

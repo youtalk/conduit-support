@@ -1,0 +1,72 @@
+name: Support Question
+description: Ask a question about setup, configuration, or usage
+title: "[Question]: "
+labels: ["question", "support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help with ios_node? Ask your question here!
+
+        **Tip**: For quick answers, check our [FAQ](../docs/FAQ.md) and [Troubleshooting Guide](../docs/TROUBLESHOOTING.md) first.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What type of question is this?
+      options:
+        - Setup & Configuration
+        - Sensor Configuration
+        - ROS 2 Integration
+        - Network & Connection
+        - Platform-Specific
+        - Premium Features
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which platform are you using?
+      options:
+        - iOS (iPhone)
+        - iOS (iPad)
+        - visionOS (Apple Vision Pro)
+        - tvOS (Apple TV)
+        - macOS (Mac Catalyst)
+        - iOS Simulator
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What do you need help with?
+      placeholder: "How do I configure the Zenoh router address when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-setup
+    attributes:
+      label: Current Setup
+      description: Describe your current configuration
+      placeholder: |
+        - ROS 2 Version: Jazzy
+        - Router Address: 192.168.1.100
+        - Enabled Sensors: IMU, GPS
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-tried
+    attributes:
+      label: What Have You Tried?
+      description: What steps have you already attempted?
+      placeholder: "I tried changing the router address but..."
+    validations:
+      required: false
