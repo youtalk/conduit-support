@@ -1,0 +1,7 @@
+# Docker test results and logs
+test_results.md
+*.log
+
+# Temporary files
+*.tmp
+*.backup

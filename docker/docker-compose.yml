@@ -1,0 +1,65 @@
+# Docker Compose for ROS 2 + rmw_zenoh_cpp testing
+#
+# Usage:
+#   Start Jazzy:  docker compose up ros-jazzy -d
+#   Start Humble: docker compose up ros-humble -d
+#   Stop all:     docker compose down
+#
+# Note: Only run ONE service at a time since they use the same port (7447)
+
+services:
+  ros-jazzy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ROS_DISTRO: jazzy
+    container_name: ros_jazzy_zenoh
+    hostname: ros-jazzy
+    network_mode: bridge
+    ports:
+      - "7447:7447/tcp"
+    environment:
+      - RMW_IMPLEMENTATION=rmw_zenoh_cpp
+      - ROS_DOMAIN_ID=0
+      - ROS_DISTRO=jazzy
+    stdin_open: true
+    tty: true
+    command: /usr/local/bin/start-router.sh
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "rmw_zenohd"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  ros-humble:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ROS_DISTRO: humble
+    container_name: ros_humble_zenoh
+    hostname: ros-humble
+    network_mode: bridge
+    ports:
+      - "7447:7447/tcp"
+    environment:
+      - RMW_IMPLEMENTATION=rmw_zenoh_cpp
+      - ROS_DOMAIN_ID=0
+      - ROS_DISTRO=humble
+    stdin_open: true
+    tty: true
+    command: /usr/local/bin/start-router.sh
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "rmw_zenohd"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
