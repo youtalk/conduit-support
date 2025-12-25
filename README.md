@@ -30,6 +30,54 @@ Quick reference guides:
 - **[Platform Notes](docs/PLATFORM_NOTES.md)** - Platform-specific information
 - **[Known Issues](docs/KNOWN_ISSUES.md)** - Current limitations and workarounds
 
+## 🐳 Zenoh Router (For Testing)
+
+Run a ROS 2 + rmw_zenoh_cpp router to test ios_node connectivity.
+
+### Quick Start (Pre-built Image)
+
+```bash
+# ROS 2 Jazzy
+docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/ios_node_support:jazzy
+
+# ROS 2 Humble
+docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/ios_node_support:humble
+```
+
+### Using Docker Compose
+
+```bash
+git clone https://github.com/youtalk/ios_node_support.git
+cd ios_node_support/docker
+
+# Start Jazzy router
+docker compose up ros-jazzy -d
+
+# Start Humble router
+docker compose up ros-humble -d
+
+# Stop
+docker compose down
+```
+
+### Verify Connection
+
+```bash
+# Check topics
+docker exec ros_jazzy_zenoh bash -c \
+  "source /opt/ros/jazzy/setup.bash && ros2 topic list"
+
+# Echo IMU data
+docker exec ros_jazzy_zenoh bash -c \
+  "source /opt/ros/jazzy/setup.bash && ros2 topic echo /ios/imu"
+```
+
+### Configure ios_node App
+
+1. Find your Mac's IP address: `ifconfig | grep inet`
+2. In ios_node Settings, set Router Address to: `tcp/<YOUR_IP>:7447`
+3. Tap Play to connect
+
 ## 🔗 Links
 
 - **App Website**: [youtalk.jp/ios-node](https://www.youtalk.jp/ios-node)

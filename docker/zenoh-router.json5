@@ -1,0 +1,18 @@
+{
+  /// Zenoh router configuration for Docker container
+  /// Listens on all interfaces (0.0.0.0) to accept connections from host
+
+  mode: "router",
+
+  listen: {
+    endpoints: [
+      "tcp/0.0.0.0:7447"
+    ]
+  },
+
+  scouting: {
+    multicast: {
+      enabled: false
+    }
+  }
+}
