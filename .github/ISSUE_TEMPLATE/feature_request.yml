@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for suggesting a feature! Please describe what you'd like to see added to ios_node.
+        Thank you for suggesting a feature! Please describe what you'd like to see added to app_node.
 
   - type: textarea
     id: feature-description
