@@ -2,7 +2,7 @@
 
 ## Setup & Configuration
 
-### How do I connect ios_node to my ROS 2 system?
+### How do I connect app_node to my ROS 2 system?
 
 1. Start the Zenoh router on your ROS 2 system:
    ```bash
@@ -17,7 +17,7 @@
    ifconfig      # macOS
    ```
 
-3. In ios_node app:
+3. In app_node app:
    - Tap Settings (gear icon)
    - Enter Router Address (e.g., `192.168.1.100`)
    - Enter Router Port (default: `7447`)
@@ -27,7 +27,7 @@
 
 ### Which ROS 2 versions are supported?
 
-ios_node supports:
+app_node supports:
 - **ROS 2 Humble** (Ubuntu 22.04)
 - **ROS 2 Jazzy** (Ubuntu 24.04)
 
@@ -62,7 +62,7 @@ Both versions require rmw_zenoh_cpp middleware. The app auto-detects which versi
 
 Use "Auto-detect" unless you're experiencing specific compatibility issues.
 
-### Can I use ios_node without a ROS 2 system?
+### Can I use app_node without a ROS 2 system?
 
 Yes, for testing:
 - The iOS Simulator generates mock sensor data
@@ -148,7 +148,7 @@ ros2 topic info /ios/imu --verbose
 
 ### Can I use multiple cameras simultaneously?
 
-Yes! ios_node supports multi-camera streaming:
+Yes! app_node supports multi-camera streaming:
 
 1. Tap the Camera sensor row
 2. Select multiple cameras (front, wide, ultra-wide, telephoto)
@@ -169,9 +169,9 @@ Yes! ios_node supports multi-camera streaming:
 
 Different sensors have different maximum rates (see Supported Sensors table).
 
-### Does ios_node work offline?
+### Does app_node work offline?
 
-No. ios_node requires network connectivity to:
+No. app_node requires network connectivity to:
 - Connect to Zenoh router on your local network
 - Publish sensor data to ROS 2 topics
 
@@ -180,7 +180,7 @@ However, **no internet is required** - only local network between your iOS devic
 ### How do I reset app settings?
 
 1. Delete and reinstall the app, OR
-2. iOS Settings → ios_node → Reset (if available)
+2. iOS Settings → app_node → Reset (if available)
 
 This will clear:
 - Saved router address

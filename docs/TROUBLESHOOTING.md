@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for ios_node.
+Common issues and solutions for app_node.
 
 ## Connection Issues
 
@@ -86,7 +86,7 @@ Common issues and solutions for ios_node.
 
 ### Topic doesn't appear in `ros2 topic list`
 
-**Problem**: ios_node is publishing but topic is invisible.
+**Problem**: app_node is publishing but topic is invisible.
 
 **Solutions:**
 
@@ -139,7 +139,7 @@ Common issues and solutions for ios_node.
 
 1. **Grant permission**:
    - iOS Settings → Privacy & Security → Camera
-   - Find "ios_node" and enable
+   - Find "app_node" and enable
 
 2. **Restart app** after granting permission
 
@@ -164,7 +164,7 @@ Common issues and solutions for ios_node.
    - iOS Settings → Privacy & Security → Location Services → ON
 
 2. **Grant app permission**:
-   - iOS Settings → Privacy & Security → Location Services → ios_node
+   - iOS Settings → Privacy & Security → Location Services → app_node
    - Select "While Using the App"
 
 3. **Restart app**
@@ -279,6 +279,6 @@ Common issues and solutions for ios_node.
 If your issue isn't listed here:
 
 1. **Check** [Known Issues](KNOWN_ISSUES.md)
-2. **Search** [existing issues](https://github.com/youtalk/ios_node_support/issues)
-3. **Ask in** [Discussions](https://github.com/youtalk/ios_node_support/discussions)
-4. **Create** [new issue](https://github.com/youtalk/ios_node_support/issues/new/choose) with details
+2. **Search** [existing issues](https://github.com/youtalk/app_node_support/issues)
+3. **Ask in** [Discussions](https://github.com/youtalk/app_node_support/discussions)
+4. **Create** [new issue](https://github.com/youtalk/app_node_support/issues/new/choose) with details

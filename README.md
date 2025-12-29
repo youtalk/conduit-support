@@ -1,11 +1,11 @@
-# ios_node Support
+# app_node Support
 
-Welcome to ios_node support! Get help, report bugs, and request features.
+Welcome to app_node support! Get help, report bugs, and request features.
 
 ## 🆘 How to Get Support
 
 ### 🐛 Bug Reports & Feature Requests
-**[Create an Issue](https://github.com/youtalk/ios_node_support/issues/new/choose)**
+**[Create an Issue](https://github.com/youtalk/app_node_support/issues/new/choose)**
 
 Use our issue templates for:
 - **Bug Report**: Report app crashes, sensor issues, or unexpected behavior
@@ -14,12 +14,12 @@ Use our issue templates for:
 - **Support Question**: General questions about setup or usage
 
 ### 💬 Community Discussions
-**[Start a Discussion](https://github.com/youtalk/ios_node_support/discussions)**
+**[Start a Discussion](https://github.com/youtalk/app_node_support/discussions)**
 
 Join our community for:
 - **Q&A**: Ask questions and get answers
 - **Setup Help**: Get assistance with configuration
-- **Show and Tell**: Share your robotics projects using ios_node
+- **Show and Tell**: Share your robotics projects using app_node
 - **General**: General discussions about ROS 2 and robotics
 
 ## 📚 Documentation
@@ -32,23 +32,23 @@ Quick reference guides:
 
 ## 🐳 Zenoh Router (For Testing)
 
-Run a ROS 2 + rmw_zenoh_cpp router to test ios_node connectivity.
+Run a ROS 2 + rmw_zenoh_cpp router to test app_node connectivity.
 
 ### Quick Start (Pre-built Image)
 
 ```bash
 # ROS 2 Jazzy
-docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/ios_node_support:jazzy
+docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/app_node_support:jazzy
 
 # ROS 2 Humble
-docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/ios_node_support:humble
+docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/app_node_support:humble
 ```
 
 ### Using Docker Compose
 
 ```bash
-git clone https://github.com/youtalk/ios_node_support.git
-cd ios_node_support/docker
+git clone https://github.com/youtalk/app_node_support.git
+cd app_node_support/docker
 
 # Start Jazzy router
 docker compose up ros-jazzy -d
@@ -72,16 +72,16 @@ docker exec ros_jazzy_zenoh bash -c \
   "source /opt/ros/jazzy/setup.bash && ros2 topic echo /ios/imu"
 ```
 
-### Configure ios_node App
+### Configure app_node App
 
 1. Find your Mac's IP address: `ifconfig | grep inet`
-2. In ios_node Settings, set Router Address to: `tcp/<YOUR_IP>:7447`
+2. In app_node Settings, set Router Address to: `tcp/<YOUR_IP>:7447`
 3. Tap Play to connect
 
 ## 🔗 Links
 
 - **App Website**: [youtalk.jp/ios-node](https://www.youtalk.jp/ios-node)
-- **Main Repository**: [github.com/youtalk/ios_node](https://github.com/youtalk/ios_node)
+- **Main Repository**: [github.com/youtalk/app_node](https://github.com/youtalk/app_node)
 - **Privacy Policy**: [youtalk.jp/ios-node/#-privacy-policy](https://www.youtalk.jp/ios-node/#-privacy-policy)
 
 ## 👨‍💻 Developer Contact
@@ -92,4 +92,4 @@ docker exec ros_jazzy_zenoh bash -c \
 
 ---
 
-**Note**: This repository is dedicated to support. For source code, see [ios_node](https://github.com/youtalk/ios_node).
+**Note**: This repository is dedicated to support. For source code, see [app_node](https://github.com/youtalk/app_node).
