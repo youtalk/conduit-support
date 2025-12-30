@@ -1,6 +1,6 @@
 # Known Issues & Limitations
 
-Current limitations and known issues in app_node.
+Current limitations and known issues in Conduit.
 
 ## Privacy & Policy Constraints
 
