@@ -202,7 +202,7 @@ Current limitations and known issues in app_node.
 
 ## Reporting New Issues
 
-Found a bug not listed here? **[Create an issue](https://github.com/youtalk/app_node_support/issues/new/choose)** with:
+Found a bug not listed here? **[Create an issue](https://github.com/youtalk/conduit-support/issues/new/choose)** with:
 - Platform and OS version
 - Sensor type affected
 - Steps to reproduce
@@ -210,7 +210,7 @@ Found a bug not listed here? **[Create an issue](https://github.com/youtalk/app_
 
 ## Feature Requests
 
-Want a new feature? **[Request it here](https://github.com/youtalk/app_node_support/issues/new?template=feature_request.yml)**
+Want a new feature? **[Request it here](https://github.com/youtalk/conduit-support/issues/new?template=feature_request.yml)**
 
 We prioritize based on:
 - User impact

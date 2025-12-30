@@ -17,7 +17,7 @@
    ifconfig      # macOS
    ```
 
-3. In app_node app:
+3. In Conduit app:
    - Tap Settings (gear icon)
    - Enter Router Address (e.g., `192.168.1.100`)
    - Enter Router Port (default: `7447`)

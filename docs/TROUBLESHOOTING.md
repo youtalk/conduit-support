@@ -139,7 +139,7 @@ Common issues and solutions for app_node.
 
 1. **Grant permission**:
    - iOS Settings → Privacy & Security → Camera
-   - Find "app_node" and enable
+   - Find "conduit_node" and enable
 
 2. **Restart app** after granting permission
 
@@ -279,6 +279,6 @@ Common issues and solutions for app_node.
 If your issue isn't listed here:
 
 1. **Check** [Known Issues](KNOWN_ISSUES.md)
-2. **Search** [existing issues](https://github.com/youtalk/app_node_support/issues)
-3. **Ask in** [Discussions](https://github.com/youtalk/app_node_support/discussions)
-4. **Create** [new issue](https://github.com/youtalk/app_node_support/issues/new/choose) with details
+2. **Search** [existing issues](https://github.com/youtalk/conduit-support/issues)
+3. **Ask in** [Discussions](https://github.com/youtalk/conduit-support/discussions)
+4. **Create** [new issue](https://github.com/youtalk/conduit-support/issues/new/choose) with details

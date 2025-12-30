@@ -5,7 +5,7 @@ Welcome to app_node support! Get help, report bugs, and request features.
 ## 🆘 How to Get Support
 
 ### 🐛 Bug Reports & Feature Requests
-**[Create an Issue](https://github.com/youtalk/app_node_support/issues/new/choose)**
+**[Create an Issue](https://github.com/youtalk/conduit-support/issues/new/choose)**
 
 Use our issue templates for:
 - **Bug Report**: Report app crashes, sensor issues, or unexpected behavior
@@ -14,7 +14,7 @@ Use our issue templates for:
 - **Support Question**: General questions about setup or usage
 
 ### 💬 Community Discussions
-**[Start a Discussion](https://github.com/youtalk/app_node_support/discussions)**
+**[Start a Discussion](https://github.com/youtalk/conduit-support/discussions)**
 
 Join our community for:
 - **Q&A**: Ask questions and get answers
@@ -38,16 +38,16 @@ Run a ROS 2 + rmw_zenoh_cpp router to test app_node connectivity.
 
 ```bash
 # ROS 2 Jazzy
-docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/app_node_support:jazzy
+docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
 
 # ROS 2 Humble
-docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/app_node_support:humble
+docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/conduit-support:humble
 ```
 
 ### Using Docker Compose
 
 ```bash
-git clone https://github.com/youtalk/app_node_support.git
+git clone https://github.com/youtalk/conduit-support.git
 cd app_node_support/docker
 
 # Start Jazzy router
@@ -72,7 +72,7 @@ docker exec ros_jazzy_zenoh bash -c \
   "source /opt/ros/jazzy/setup.bash && ros2 topic echo /ios/imu"
 ```
 
-### Configure app_node App
+### Configure Conduit App
 
 1. Find your Mac's IP address: `ifconfig | grep inet`
 2. In app_node Settings, set Router Address to: `tcp/<YOUR_IP>:7447`
@@ -81,7 +81,7 @@ docker exec ros_jazzy_zenoh bash -c \
 ## 🔗 Links
 
 - **App Website**: [youtalk.jp/ios-node](https://www.youtalk.jp/ios-node)
-- **Main Repository**: [github.com/youtalk/app_node](https://github.com/youtalk/app_node)
+- **Main Repository**: [github.com/youtalk/conduit](https://github.com/youtalk/conduit)
 - **Privacy Policy**: [youtalk.jp/ios-node/#-privacy-policy](https://www.youtalk.jp/ios-node/#-privacy-policy)
 
 ## 👨‍💻 Developer Contact
@@ -92,4 +92,4 @@ docker exec ros_jazzy_zenoh bash -c \
 
 ---
 
-**Note**: This repository is dedicated to support. For source code, see [app_node](https://github.com/youtalk/app_node).
+**Note**: This repository is dedicated to support. For source code, see [app_node](https://github.com/youtalk/conduit).
