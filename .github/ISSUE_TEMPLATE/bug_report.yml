@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug or unexpected behavior in app_node
+description: Report a bug or unexpected behavior in Conduit
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -12,7 +12,7 @@ body:
     id: app-version
     attributes:
       label: App Version
-      description: Which version of app_node are you using?
+      description: Which version of Conduit are you using?
       placeholder: "1.0 (build 1)"
     validations:
       required: true
