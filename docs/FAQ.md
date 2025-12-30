@@ -197,4 +197,4 @@ This will clear:
 
 Firebase Analytics collects anonymous app usage statistics only (opt-out available in iOS Settings).
 
-See our [Privacy Policy](https://www.youtalk.jp/conduit/#-privacy-policy) for details.
+See our [Privacy Policy](https://www.youtalk.jp/conduit/#privacy-policy) for details.

@@ -82,7 +82,7 @@ docker exec ros_jazzy_zenoh bash -c \
 
 - **App Website**: [youtalk.jp/conduit](https://www.youtalk.jp/conduit)
 - **Main Repository**: [github.com/youtalk/conduit](https://github.com/youtalk/conduit)
-- **Privacy Policy**: [youtalk.jp/conduit/#-privacy-policy](https://www.youtalk.jp/conduit/#-privacy-policy)
+- **Privacy Policy**: [youtalk.jp/conduit/#privacy-policy](https://www.youtalk.jp/conduit/#privacy-policy)
 
 ## 👨‍💻 Developer Contact
 
