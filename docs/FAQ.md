@@ -2,7 +2,7 @@
 
 ## Setup & Configuration
 
-### How do I connect app_node to my ROS 2 system?
+### How do I connect Conduit to my ROS 2 system?
 
 1. Start the Zenoh router on your ROS 2 system:
    ```bash
@@ -27,7 +27,7 @@
 
 ### Which ROS 2 versions are supported?
 
-app_node supports:
+Conduit supports:
 - **ROS 2 Humble** (Ubuntu 22.04)
 - **ROS 2 Jazzy** (Ubuntu 24.04)
 
@@ -62,7 +62,7 @@ Both versions require rmw_zenoh_cpp middleware. The app auto-detects which versi
 
 Use "Auto-detect" unless you're experiencing specific compatibility issues.
 
-### Can I use app_node without a ROS 2 system?
+### Can I use Conduit without a ROS 2 system?
 
 Yes, for testing:
 - The iOS Simulator generates mock sensor data
@@ -148,7 +148,7 @@ ros2 topic info /ios/imu --verbose
 
 ### Can I use multiple cameras simultaneously?
 
-Yes! app_node supports multi-camera streaming:
+Yes! Conduit supports multi-camera streaming:
 
 1. Tap the Camera sensor row
 2. Select multiple cameras (front, wide, ultra-wide, telephoto)
@@ -169,9 +169,9 @@ Yes! app_node supports multi-camera streaming:
 
 Different sensors have different maximum rates (see Supported Sensors table).
 
-### Does app_node work offline?
+### Does Conduit work offline?
 
-No. app_node requires network connectivity to:
+No. Conduit requires network connectivity to:
 - Connect to Zenoh router on your local network
 - Publish sensor data to ROS 2 topics
 
@@ -180,7 +180,7 @@ However, **no internet is required** - only local network between your iOS devic
 ### How do I reset app settings?
 
 1. Delete and reinstall the app, OR
-2. iOS Settings → app_node → Reset (if available)
+2. iOS Settings → Conduit → Reset (if available)
 
 This will clear:
 - Saved router address
@@ -197,4 +197,4 @@ This will clear:
 
 Firebase Analytics collects anonymous app usage statistics only (opt-out available in iOS Settings).
 
-See our [Privacy Policy](https://www.youtalk.jp/ios-node/#-privacy-policy) for details.
+See our [Privacy Policy](https://www.youtalk.jp/conduit/#-privacy-policy) for details.

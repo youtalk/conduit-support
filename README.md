@@ -1,6 +1,6 @@
-# app_node Support
+# Conduit Support
 
-Welcome to app_node support! Get help, report bugs, and request features.
+Welcome to Conduit support! Get help, report bugs, and request features.
 
 ## 🆘 How to Get Support
 
@@ -19,7 +19,7 @@ Use our issue templates for:
 Join our community for:
 - **Q&A**: Ask questions and get answers
 - **Setup Help**: Get assistance with configuration
-- **Show and Tell**: Share your robotics projects using app_node
+- **Show and Tell**: Share your robotics projects using Conduit
 - **General**: General discussions about ROS 2 and robotics
 
 ## 📚 Documentation
@@ -32,7 +32,7 @@ Quick reference guides:
 
 ## 🐳 Zenoh Router (For Testing)
 
-Run a ROS 2 + rmw_zenoh_cpp router to test app_node connectivity.
+Run a ROS 2 + rmw_zenoh_cpp router to test Conduit connectivity.
 
 ### Quick Start (Pre-built Image)
 
@@ -48,7 +48,7 @@ docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/conduit-suppo
 
 ```bash
 git clone https://github.com/youtalk/conduit-support.git
-cd app_node_support/docker
+cd conduit-support/docker
 
 # Start Jazzy router
 docker compose up ros-jazzy -d
@@ -75,14 +75,14 @@ docker exec ros_jazzy_zenoh bash -c \
 ### Configure Conduit App
 
 1. Find your Mac's IP address: `ifconfig | grep inet`
-2. In app_node Settings, set Router Address to: `tcp/<YOUR_IP>:7447`
+2. In Conduit Settings, set Router Address to: `tcp/<YOUR_IP>:7447`
 3. Tap Play to connect
 
 ## 🔗 Links
 
-- **App Website**: [youtalk.jp/ios-node](https://www.youtalk.jp/ios-node)
+- **App Website**: [youtalk.jp/conduit](https://www.youtalk.jp/conduit)
 - **Main Repository**: [github.com/youtalk/conduit](https://github.com/youtalk/conduit)
-- **Privacy Policy**: [youtalk.jp/ios-node/#-privacy-policy](https://www.youtalk.jp/ios-node/#-privacy-policy)
+- **Privacy Policy**: [youtalk.jp/conduit/#-privacy-policy](https://www.youtalk.jp/conduit/#-privacy-policy)
 
 ## 👨‍💻 Developer Contact
 
@@ -92,4 +92,4 @@ docker exec ros_jazzy_zenoh bash -c \
 
 ---
 
-**Note**: This repository is dedicated to support. For source code, see [app_node](https://github.com/youtalk/conduit).
+**Note**: This repository is dedicated to support. For source code, see [Conduit](https://github.com/youtalk/conduit).

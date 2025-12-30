@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for app_node.
+Common issues and solutions for Conduit.
 
 ## Connection Issues
 
@@ -86,7 +86,7 @@ Common issues and solutions for app_node.
 
 ### Topic doesn't appear in `ros2 topic list`
 
-**Problem**: app_node is publishing but topic is invisible.
+**Problem**: Conduit is publishing but topic is invisible.
 
 **Solutions:**
 
@@ -139,7 +139,7 @@ Common issues and solutions for app_node.
 
 1. **Grant permission**:
    - iOS Settings → Privacy & Security → Camera
-   - Find "conduit_node" and enable
+   - Find "Conduit" and enable
 
 2. **Restart app** after granting permission
 
@@ -164,7 +164,7 @@ Common issues and solutions for app_node.
    - iOS Settings → Privacy & Security → Location Services → ON
 
 2. **Grant app permission**:
-   - iOS Settings → Privacy & Security → Location Services → app_node
+   - iOS Settings → Privacy & Security → Location Services → Conduit
    - Select "While Using the App"
 
 3. **Restart app**
