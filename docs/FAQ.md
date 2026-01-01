@@ -28,10 +28,12 @@
 ### Which ROS 2 versions are supported?
 
 Conduit supports:
-- **ROS 2 Humble** (Ubuntu 22.04)
-- **ROS 2 Jazzy** (Ubuntu 24.04)
+- **ROS 2 Humble** (Ubuntu 22.04) - No type hash
+- **ROS 2 Jazzy** (Ubuntu 24.04) - RIHS01 type hash
+- **ROS 2 Kilted** (Ubuntu 24.04) - RIHS01 type hash
+- **ROS 2 Rolling** - RIHS01 type hash
 
-Both versions require rmw_zenoh_cpp middleware. The app auto-detects which version you're using.
+All versions require rmw_zenoh_cpp middleware. The app auto-detects which version you're using. Iron and later distributions use RIHS01 type hash for message type verification.
 
 ### Why can't I see my topics in `ros2 topic list`?
 
@@ -70,7 +72,7 @@ Yes, for testing:
 - However, you won't be able to receive data without a Zenoh router
 
 For production use, you need:
-- ROS 2 Humble or Jazzy
+- ROS 2 Humble, Jazzy, Kilted, or Rolling
 - rmw_zenoh_cpp middleware
 - Zenoh router running
 
