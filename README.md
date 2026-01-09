@@ -19,20 +19,26 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 
 <table>
 <tr>
-<td align="center">
+<td align="center" width="33%">
 <a href="https://www.youtube.com/watch?v=d28sQYQlpYY">
-<img src="https://img.youtube.com/vi/d28sQYQlpYY/0.jpg" width="280" alt="Demo 1">
-</a>
+<img src="https://img.youtube.com/vi/d28sQYQlpYY/0.jpg" width="280" alt="Teleoperation Demo"><br>
+<b>Teleoperation</b>
+</a><br>
+<sub>Control robots using Game Controller sensor via ROS 2 joy messages</sub>
 </td>
-<td align="center">
+<td align="center" width="33%">
 <a href="https://www.youtube.com/watch?v=ObnJOpGvpzI">
-<img src="https://img.youtube.com/vi/ObnJOpGvpzI/0.jpg" width="280" alt="Demo 2">
-</a>
+<img src="https://img.youtube.com/vi/ObnJOpGvpzI/0.jpg" width="280" alt="Camera & LiDAR Demo"><br>
+<b>Camera & LiDAR</b>
+</a><br>
+<sub>Stream iPhone camera images and LiDAR point clouds to ROS 2</sub>
 </td>
-<td align="center">
+<td align="center" width="33%">
 <a href="https://www.youtube.com/watch?v=2myDfnNBuuk">
-<img src="https://img.youtube.com/vi/2myDfnNBuuk/0.jpg" width="280" alt="Demo 3">
-</a>
+<img src="https://img.youtube.com/vi/2myDfnNBuuk/0.jpg" width="280" alt="Onboarding Demo"><br>
+<b>Getting Started</b>
+</a><br>
+<sub>Step-by-step guide to connect Conduit with your ROS 2 system</sub>
 </td>
 </tr>
 </table>
@@ -63,18 +69,54 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 
 ## Screenshots
 
-<!-- Add screenshots to images/ directory and uncomment below:
+### Sensor Tabs
+
 <table>
 <tr>
-<td><img src="images/screenshot_main.png" width="200" alt="Main UI"></td>
-<td><img src="images/screenshot_settings.png" width="200" alt="Settings"></td>
-<td><img src="images/screenshot_publishing.png" width="200" alt="Publishing"></td>
-<td><img src="images/screenshot_ros2.png" width="400" alt="ROS 2 Terminal"></td>
+<td align="center">
+<img src="images/motion-enabled.png" width="200" alt="Motion Sensors"><br>
+<b>Motion</b><br>
+<sub>IMU, GPS, Magnetometer, Proximity</sub>
+</td>
+<td align="center">
+<img src="images/perception-enabled.png" width="200" alt="Perception Sensors"><br>
+<b>Perception</b><br>
+<sub>Camera (Front/Wide/Ultra Wide/Telephoto), LiDAR</sub>
+</td>
+<td align="center">
+<img src="images/status-enabled.png" width="200" alt="Status Sensors"><br>
+<b>Status</b><br>
+<sub>Battery, Thermal, Barometer, Illuminance, Game Controller</sub>
+</td>
+<td align="center">
+<img src="images/settings.png" width="200" alt="Settings"><br>
+<b>Settings</b><br>
+<sub>Router config, Node name, ROS 2 Distribution</sub>
+</td>
 </tr>
 </table>
--->
 
-*Coming soon*
+### Getting Started
+
+<table>
+<tr>
+<td align="center">
+<img src="images/onboarding1.png" width="200" alt="Step 1: Start Router"><br>
+<b>1. Start Zenoh Router</b><br>
+<sub>Run rmw_zenohd on your ROS 2 system</sub>
+</td>
+<td align="center">
+<img src="images/onboarding2.png" width="200" alt="Step 2: Connect"><br>
+<b>2. Connect to Router</b><br>
+<sub>Enter IP address and port</sub>
+</td>
+<td align="center">
+<img src="images/onboarding3.png" width="200" alt="Step 3: Publish"><br>
+<b>3. Start Publishing</b><br>
+<sub>Select sensors and stream to ROS 2</sub>
+</td>
+</tr>
+</table>
 
 ---
 
