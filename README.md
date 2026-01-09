@@ -200,7 +200,3 @@ docker exec ros_jazzy_zenoh bash -c \
 - [App Website](https://www.youtalk.jp/conduit)
 - [Source Code](https://github.com/youtalk/conduit)
 - [Privacy Policy](https://www.youtalk.jp/conduit/#privacy-policy)
-
----
-
-**Developer**: [Yutaka Kondo](https://www.linkedin.com/in/youtalk) — Autoware maintainer and robotics engineer at TIER IV
