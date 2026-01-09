@@ -73,25 +73,25 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 
 <table>
 <tr>
-<td align="center">
-<img src="images/motion-enabled.png" width="200" alt="Motion Sensors"><br>
+<td align="center" width="25%">
+<img src="images/motion-enabled.png" width="180" alt="Motion Sensors"><br>
 <b>Motion</b><br>
 <sub>IMU, GPS, Magnetometer, Proximity</sub>
 </td>
-<td align="center">
-<img src="images/perception-enabled.png" width="200" alt="Perception Sensors"><br>
+<td align="center" width="25%">
+<img src="images/perception-enabled.png" width="180" alt="Perception Sensors"><br>
 <b>Perception</b><br>
-<sub>Camera (Front/Wide/Ultra Wide/Telephoto), LiDAR</sub>
+<sub>Camera, LiDAR</sub>
 </td>
-<td align="center">
-<img src="images/status-enabled.png" width="200" alt="Status Sensors"><br>
+<td align="center" width="25%">
+<img src="images/status-enabled.png" width="180" alt="Status Sensors"><br>
 <b>Status</b><br>
-<sub>Battery, Thermal, Barometer, Illuminance, Game Controller</sub>
+<sub>Battery, Thermal, Barometer, etc.</sub>
 </td>
-<td align="center">
-<img src="images/settings.png" width="200" alt="Settings"><br>
+<td align="center" width="25%">
+<img src="images/settings.png" width="180" alt="Settings"><br>
 <b>Settings</b><br>
-<sub>Router config, Node name, ROS 2 Distribution</sub>
+<sub>Router, Node, ROS 2 Distribution</sub>
 </td>
 </tr>
 </table>
@@ -100,21 +100,22 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 
 <table>
 <tr>
-<td align="center">
-<img src="images/onboarding1.png" width="200" alt="Step 1: Start Router"><br>
+<td align="center" width="25%">
+<img src="images/onboarding1.png" width="180" alt="Step 1: Start Router"><br>
 <b>1. Start Zenoh Router</b><br>
 <sub>Run rmw_zenohd on your ROS 2 system</sub>
 </td>
-<td align="center">
-<img src="images/onboarding2.png" width="200" alt="Step 2: Connect"><br>
+<td align="center" width="25%">
+<img src="images/onboarding2.png" width="180" alt="Step 2: Connect"><br>
 <b>2. Connect to Router</b><br>
 <sub>Enter IP address and port</sub>
 </td>
-<td align="center">
-<img src="images/onboarding3.png" width="200" alt="Step 3: Publish"><br>
+<td align="center" width="25%">
+<img src="images/onboarding3.png" width="180" alt="Step 3: Publish"><br>
 <b>3. Start Publishing</b><br>
 <sub>Select sensors and stream to ROS 2</sub>
 </td>
+<td width="25%"></td>
 </tr>
 </table>
 
