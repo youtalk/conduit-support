@@ -127,7 +127,7 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 2. **Start Zenoh Router** on your ROS 2 system
 3. **Configure** Router Address in Settings (e.g., `tcp/192.168.1.100:7447`)
 4. **Enable** sensors you want to stream
-5. **Tap Play** and verify with `ros2 topic echo /ios/imu`
+5. **Tap Play** and verify with `ros2 topic echo /conduit/imu`
 
 ---
 
@@ -168,7 +168,7 @@ docker exec ros_jazzy_zenoh bash -c \
 
 # Echo IMU data
 docker exec ros_jazzy_zenoh bash -c \
-  "source /opt/ros/jazzy/setup.bash && ros2 topic echo /ios/imu"
+  "source /opt/ros/jazzy/setup.bash && ros2 topic echo /conduit/imu"
 ```
 
 ### Configure Conduit App
