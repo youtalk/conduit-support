@@ -8,6 +8,7 @@
    ```bash
    source /opt/ros/jazzy/setup.bash
    export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+   export ROS_DOMAIN_ID=0  # Set domain ID (0-255, default: 0)
    ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
 
@@ -15,15 +16,19 @@
    ```bash
    ip addr show  # Linux
    ifconfig      # macOS
+   ipconfig      # Windows
    ```
 
 3. In Conduit app:
    - Tap Settings (gear icon)
    - Enter Router Address (e.g., `192.168.1.100`)
    - Enter Router Port (default: `7447`)
+   - Enter Domain ID (must match ROS_DOMAIN_ID on host)
    - Tap Save
 
 4. Enable sensors and tap Play
+
+**Important:** Domain ID must match between the app and ROS 2 system. Valid range: 0-255.
 
 ### Which ROS 2 versions are supported?
 
@@ -39,22 +44,32 @@ All versions require rmw_zenoh_cpp middleware. The app auto-detects which versio
 
 **Check these common issues:**
 
-1. **Zenoh router not running**:
+1. **Domain IDs don't match** (most common):
    ```bash
-   # Start router
+   # Check domain ID on ROS 2 system
+   echo $ROS_DOMAIN_ID
+   ```
+   - Domain ID in app Settings must match ROS_DOMAIN_ID on host
+   - Default is 0 if not set
+   - Valid range: 0-255
+
+2. **Zenoh router not running**:
+   ```bash
+   # Start router with matching domain ID
+   export ROS_DOMAIN_ID=0
    ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
 
-2. **Wrong RMW implementation**:
+3. **Wrong RMW implementation**:
    ```bash
    # Verify RMW setting
    echo $RMW_IMPLEMENTATION
    # Should output: rmw_zenoh_cpp
    ```
 
-3. **Network connectivity**: Ensure iPhone and ROS 2 system are on the same network
+4. **Network connectivity**: Ensure iPhone and ROS 2 system are on the same network
 
-4. **Firewall blocking port 7447**: Check firewall settings on ROS 2 system
+5. **Firewall blocking port 7447**: Check firewall settings on ROS 2 system
 
 ### What's the difference between Humble and Jazzy wire modes?
 

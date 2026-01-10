@@ -124,8 +124,14 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 ## Quick Start
 
 1. **Download** from [App Store](https://apps.apple.com/jp/app/conduit-powered-by-ros/id6757171237?l=en-US)
-2. **Start Zenoh Router** on your ROS 2 system
-3. **Configure** Router Address in Settings (e.g., `tcp/192.168.1.100:7447`)
+2. **Start Zenoh Router** on your ROS 2 system with domain ID:
+   ```bash
+   export ROS_DOMAIN_ID=0  # Set domain ID (0-255, default: 0)
+   ros2 run rmw_zenoh_cpp rmw_zenohd
+   ```
+3. **Configure** connection in Settings:
+   - Router Address (e.g., `tcp/192.168.1.100:7447`)
+   - Domain ID (must match ROS_DOMAIN_ID on host)
 4. **Enable** sensors you want to stream
 5. **Tap Play** and verify with `ros2 topic echo /conduit/imu`
 
@@ -136,11 +142,14 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 ### Quick Start (Pre-built Image)
 
 ```bash
-# ROS 2 Jazzy
+# ROS 2 Jazzy (default domain ID: 0)
 docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
 
-# ROS 2 Humble
+# ROS 2 Humble (default domain ID: 0)
 docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/conduit-support:humble
+
+# With custom domain ID
+docker run -d -p 7447:7447 -e ROS_DOMAIN_ID=5 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
 ```
 
 ### Using Docker Compose
@@ -149,15 +158,21 @@ docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/conduit-suppo
 git clone https://github.com/youtalk/conduit-support.git
 cd conduit-support/docker
 
-# Start Jazzy router
+# Start with default domain ID (0)
 docker compose up ros-jazzy -d
 
-# Start Humble router
-docker compose up ros-humble -d
+# Start with custom domain ID
+ROS_DOMAIN_ID=5 docker compose up ros-jazzy -d
+
+# Or use .env file (recommended)
+echo "ROS_DOMAIN_ID=5" > .env
+docker compose up ros-jazzy -d
 
 # Stop
 docker compose down
 ```
+
+**Note:** Domain ID must match between container and iOS app (valid range: 0-255).
 
 ### Verify Connection
 
@@ -173,9 +188,14 @@ docker exec ros_jazzy_zenoh bash -c \
 
 ### Configure Conduit App
 
-1. Find your Mac's IP address: `ifconfig | grep inet`
-2. In Conduit Settings, set Router Address to: `tcp/<YOUR_IP>:7447`
-3. Tap Play to connect
+1. Find the host machine's IP address: `ifconfig | grep inet` (macOS/Linux) or `ipconfig` (Windows)
+2. Get container's domain ID: `docker exec ros_jazzy_zenoh bash -c "echo \$ROS_DOMAIN_ID"`
+3. In Conduit Settings, configure:
+   - Router Address: `tcp/<HOST_IP>:7447`
+   - Domain ID: Match the container's domain ID (default: 0)
+4. Tap Play to connect
+
+**Troubleshooting:** If topics don't appear, verify both sides use the same domain ID.
 
 ---
 

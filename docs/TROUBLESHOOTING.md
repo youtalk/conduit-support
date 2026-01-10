@@ -90,26 +90,39 @@ Common issues and solutions for Conduit.
 
 **Solutions:**
 
-1. **Verify RMW_IMPLEMENTATION**:
+1. **Verify domain IDs match** (most common issue):
+   ```bash
+   # Check ROS 2 system domain ID
+   echo $ROS_DOMAIN_ID
+
+   # Check Docker container domain ID
+   docker exec ros_jazzy_zenoh bash -c "echo \$ROS_DOMAIN_ID"
+   ```
+   - Domain ID in app Settings must match ROS_DOMAIN_ID on host
+   - Valid range: 0-255
+   - Default is 0 if not set
+
+2. **Verify RMW_IMPLEMENTATION**:
    ```bash
    echo $RMW_IMPLEMENTATION
    # Must be: rmw_zenoh_cpp
    ```
 
-2. **Check wire mode**:
+3. **Check wire mode**:
    - App Settings → Wire Mode should match your ROS 2 version
    - Try "Auto-detect" first
 
-3. **Restart Zenoh router**:
+4. **Restart Zenoh router**:
    ```bash
    # Kill existing router
    pkill rmw_zenohd
 
-   # Restart
+   # Restart with correct domain ID
+   export ROS_DOMAIN_ID=0  # Match app's domain ID
    ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
 
-4. **Check app connection state**: Should show "Publishing"
+5. **Check app connection state**: Should show "Publishing"
 
 ### Topic appears but `ros2 topic echo` shows no data
 
