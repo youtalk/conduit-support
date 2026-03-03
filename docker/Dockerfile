@@ -35,7 +35,10 @@ RUN apt-get update && apt-get install -y \
 
 # Build audio_common_msgs from source (not available via apt)
 WORKDIR /ros2_ws/src
-COPY deps/audio_common/audio_common_msgs /ros2_ws/src/audio_common_msgs
+RUN git clone --branch ros2 --depth 1 \
+    https://github.com/ros-drivers/audio_common.git /tmp/audio_common && \
+    cp -r /tmp/audio_common/audio_common_msgs /ros2_ws/src/ && \
+    rm -rf /tmp/audio_common
 WORKDIR /ros2_ws
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
     colcon build --packages-select audio_common_msgs
@@ -52,7 +55,8 @@ ENV RMW_IMPLEMENTATION=rmw_zenoh_cpp
 EXPOSE 7447/tcp
 
 # Copy Zenoh router configuration
-COPY docker/zenoh-router.json5 /etc/zenoh/zenoh-router.json5
+RUN mkdir -p /etc/zenoh
+COPY zenoh-router.json5 /etc/zenoh/zenoh-router.json5
 
 # Create startup script (uses ROS_DISTRO env var at runtime)
 RUN echo '#!/bin/bash\n\
