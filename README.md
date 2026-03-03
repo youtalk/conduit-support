@@ -184,6 +184,13 @@ docker exec ros_jazzy_zenoh bash -c \
 # Echo IMU data
 docker exec ros_jazzy_zenoh bash -c \
   "source /opt/ros/jazzy/setup.bash && ros2 topic echo /conduit/imu"
+
+# Echo Microphone data (audio_common_msgs pre-installed in Docker image)
+docker exec ros_jazzy_zenoh bash -c \
+  "source /opt/ros/jazzy/setup.bash && \
+   source /ros2_ws/install/setup.bash && \
+   export RMW_IMPLEMENTATION=rmw_zenoh_cpp && \
+   ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData"
 ```
 
 ### Configure Conduit App

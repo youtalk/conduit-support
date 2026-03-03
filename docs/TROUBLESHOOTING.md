@@ -169,6 +169,16 @@ Common issues and solutions for Conduit.
 
 3. **Premium unlock required**: LiDAR is a premium feature
 
+### "Microphone Permission Denied"
+
+**Solutions:**
+
+1. **Grant permission**:
+   - iOS Settings → Privacy & Security → Microphone
+   - Find "Conduit" and enable
+
+2. **Restart app** after granting permission
+
 ### "GPS Location Services Disabled"
 
 **Solutions:**
@@ -223,6 +233,36 @@ Common issues and solutions for Conduit.
 **Expected behavior**: Simulator generates synthetic sensor data.
 
 **Note**: Useful for development/testing, but not real sensor readings.
+
+### `ros2 topic echo /conduit/audio` fails with "unknown type"
+
+**Problem**: `audio_common_msgs` package is not installed on the ROS 2 system.
+
+**Solutions:**
+
+1. **Use the pre-built Docker image** (includes audio_common_msgs):
+   ```bash
+   docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
+   docker exec ros_jazzy_zenoh bash -c \
+     "source /opt/ros/jazzy/setup.bash && \
+      source /ros2_ws/install/setup.bash && \
+      export RMW_IMPLEMENTATION=rmw_zenoh_cpp && \
+      ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData"
+   ```
+
+2. **Install on native ROS 2**:
+   ```bash
+   sudo apt install ros-jazzy-audio-common   # Jazzy
+   sudo apt install ros-humble-audio-common  # Humble
+   ```
+
+3. **Build from source** if apt package is unavailable:
+   ```bash
+   cd ~/ros2_ws/src
+   git clone --branch ros2 --depth 1 https://github.com/ros-drivers/audio_common.git
+   cd ~/ros2_ws && colcon build --packages-select audio_common_msgs
+   source install/setup.bash
+   ```
 
 ## Performance Issues
 

@@ -95,7 +95,7 @@ For production use, you need:
 
 | Platform | Available Sensors |
 |----------|-------------------|
-| **iOS/iPadOS** | All 11 sensors (IMU, GPS, Camera, LiDAR*, Magnetometer, Barometer, Battery, Thermal, Proximity†, Illuminance, Game Controller) |
+| **iOS/iPadOS** | All 12 sensors (IMU, GPS, Camera, LiDAR*, Magnetometer, Barometer, Battery, Thermal, Proximity†, Illuminance, Microphone, Game Controller) |
 | **visionOS** | Camera, IMU, Game Controller |
 | **tvOS** | Game Controller only |
 | **macOS** | Camera, Battery, Game Controller |
@@ -116,7 +116,7 @@ For production use, you need:
 ### What are the premium features?
 
 **Free features:**
-- IMU, GPS, Magnetometer, Barometer, Battery, Thermal, Proximity, Illuminance
+- IMU, GPS, Magnetometer, Barometer, Battery, Thermal, Proximity, Illuminance, **Microphone**
 - Front camera
 - Background processing mode (basic)
 
@@ -185,6 +185,112 @@ Yes! Conduit supports multi-camera streaming:
 4. Tap Save
 
 Different sensors have different maximum rates (see Supported Sensors table).
+
+---
+
+## Microphone
+
+### What ROS 2 message type does the Microphone sensor use?
+
+The Microphone sensor publishes `audio_common_msgs/msg/AudioData` messages.
+
+**Audio parameters:**
+- **Sample rate**: 16,000 Hz
+- **Channels**: 1 (mono)
+- **Format**: S16LE (signed 16-bit little-endian PCM)
+- **Samples per message**: 1024
+- **Publish rate**: ~15.6 messages/sec
+
+**Default topic**: `/conduit/audio` (configurable via namespace in Settings)
+
+### How do I receive Microphone data on ROS 2?
+
+You need the `audio_common_msgs` package installed on your ROS 2 system.
+
+**Using Docker (easiest):**
+```bash
+# The pre-built Docker image already includes audio_common_msgs
+docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
+
+# Echo audio messages
+docker exec ros_jazzy_zenoh bash -c \
+  "source /opt/ros/jazzy/setup.bash && \
+   source /ros2_ws/install/setup.bash && \
+   export RMW_IMPLEMENTATION=rmw_zenoh_cpp && \
+   ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData"
+```
+
+**Using a native ROS 2 installation:**
+```bash
+# Install audio_common (includes audio_common_msgs)
+sudo apt install ros-jazzy-audio-common   # Jazzy
+sudo apt install ros-humble-audio-common  # Humble
+
+# Or build from source
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone --branch ros2 --depth 1 https://github.com/ros-drivers/audio_common.git
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --packages-select audio_common_msgs
+source install/setup.bash
+```
+
+**Verify the topic:**
+```bash
+# Check topic exists
+ros2 topic list | grep audio
+
+# Echo messages
+ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData
+
+# Check publish rate (~15-16 Hz)
+ros2 topic hz /conduit/audio
+
+# Inspect message type
+ros2 topic info /conduit/audio --verbose
+```
+
+### How do I play back the audio data in Python?
+
+```python
+import rclpy
+from rclpy.node import Node
+from audio_common_msgs.msg import AudioData
+import numpy as np
+import sounddevice as sd
+
+class AudioPlayer(Node):
+    def __init__(self):
+        super().__init__('audio_player')
+        self.subscription = self.create_subscription(
+            AudioData,
+            '/conduit/audio',
+            self.audio_callback,
+            10)
+        self.sample_rate = 16000
+
+    def audio_callback(self, msg):
+        # Convert bytes to int16 numpy array
+        samples = np.frombuffer(bytes(msg.data), dtype=np.int16)
+        # Normalize to float32 [-1.0, 1.0]
+        audio = samples.astype(np.float32) / 32768.0
+        # Play audio (non-blocking)
+        sd.play(audio, self.sample_rate)
+
+def main():
+    rclpy.init()
+    player = AudioPlayer()
+    rclpy.spin(player)
+
+if __name__ == '__main__':
+    main()
+```
+
+### Does the Microphone sensor work in the background?
+
+No. iOS restricts microphone access to foreground apps only. The microphone stops when the app is backgrounded.
+
+Keep the app in the foreground when using the Microphone sensor.
 
 ### Does Conduit work offline?
 
