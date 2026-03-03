@@ -10,8 +10,8 @@
 services:
   ros-jazzy:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
       args:
         ROS_DISTRO: jazzy
     container_name: ros_jazzy_zenoh
@@ -36,8 +36,8 @@ services:
 
   ros-humble:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
       args:
         ROS_DISTRO: humble
     container_name: ros_humble_zenoh
