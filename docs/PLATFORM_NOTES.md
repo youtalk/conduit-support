@@ -4,7 +4,7 @@ Information about sensor availability and limitations on different Apple platfor
 
 ## iOS / iPadOS
 
-**Supported Sensors**: All 11 sensors
+**Supported Sensors**: All 12 sensors
 
 | Sensor | iPhone | iPad | Notes |
 |--------|--------|------|-------|
@@ -14,6 +14,7 @@ Information about sensor availability and limitations on different Apple platfor
 | Proximity | ✅ | ❌ | iPhone only |
 | Camera | ✅ | ✅ | Multiple cameras on Pro models |
 | LiDAR | ✅* | ✅* | Pro models 2020+ |
+| Microphone | ✅ | ✅ | 16 kHz, mono, S16LE |
 | Battery | ✅ | ✅ | All devices |
 | Thermal | ✅ | ✅ | All devices |
 | Barometer | ✅ | ✅ | iPhone 6+, all iPads |
@@ -27,7 +28,7 @@ Information about sensor availability and limitations on different Apple platfor
 **Background Mode**:
 - ✅ IMU, Magnetometer, Barometer, Battery, Thermal
 - ✅ GPS (foreground only - "When In Use" permission)
-- ❌ Camera, LiDAR (iOS restriction)
+- ❌ Camera, LiDAR, Microphone (iOS restriction)
 - ⚠️ Background processing mode available for continuous streaming
 
 ---
@@ -44,6 +45,7 @@ Information about sensor availability and limitations on different Apple platfor
 | Proximity | ❌ | Not applicable |
 | Camera | ✅ | Multiple cameras available |
 | LiDAR | ✅ | Depth sensing via cameras |
+| Microphone | ❌ | Not available on visionOS |
 | Battery | ✅ | Battery status |
 | Thermal | ✅ | Thermal state |
 | Barometer | ❌ | Not available |
@@ -69,6 +71,7 @@ Information about sensor availability and limitations on different Apple platfor
 | Sensor | Available | Notes |
 |--------|-----------|-------|
 | Game Controller | ✅ | Siri Remote + MFi controllers |
+| Microphone | ❌ | Not available on tvOS |
 | All others | ❌ | Apple TV is stationary without sensors |
 
 **Use Cases for tvOS**:
@@ -95,6 +98,7 @@ Information about sensor availability and limitations on different Apple platfor
 | Proximity | ❌ | Not applicable |
 | Camera | ✅ | FaceTime HD Camera |
 | LiDAR | ❌ | No LiDAR on Macs |
+| Microphone | ❌ | Not available on macOS |
 | Battery | ✅ | MacBook only |
 | Thermal | ✅ | CPU temperature |
 | Barometer | ❌ | Not available |
@@ -144,6 +148,7 @@ Information about sensor availability and limitations on different Apple platfor
 | Location | ✅ GPS | ❌ | ❌ | ⚠️ WiFi only |
 | Cameras | ✅ Multi | ✅ Multi | ❌ | ✅ Single |
 | LiDAR | ✅* | ✅ | ❌ | ❌ |
+| Microphone | ✅ | ❌ | ❌ | ❌ |
 | Environmental | ✅ Full | ⚠️ Limited | ❌ | ⚠️ Limited |
 | Game Controller | ✅ | ✅ | ✅ | ✅ |
 | Background Mode | ✅ | ⚠️ | N/A | N/A |
