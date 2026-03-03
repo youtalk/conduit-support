@@ -5,13 +5,17 @@
 #   Start Humble: docker compose up ros-humble -d
 #   Stop all:     docker compose down
 #
+# Environment Variables:
+#   ROS_DOMAIN_ID: ROS 2 domain ID (0-255, default: 0)
+#   Example: ROS_DOMAIN_ID=5 docker compose up ros-jazzy -d
+#
 # Note: Only run ONE service at a time since they use the same port (7447)
 
 services:
   ros-jazzy:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
       args:
         ROS_DISTRO: jazzy
     container_name: ros_jazzy_zenoh
@@ -21,7 +25,7 @@ services:
       - "7447:7447/tcp"
     environment:
       - RMW_IMPLEMENTATION=rmw_zenoh_cpp
-      - ROS_DOMAIN_ID=0
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - ROS_DISTRO=jazzy
     stdin_open: true
     tty: true
@@ -36,8 +40,8 @@ services:
 
   ros-humble:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
       args:
         ROS_DISTRO: humble
     container_name: ros_humble_zenoh
@@ -47,7 +51,7 @@ services:
       - "7447:7447/tcp"
     environment:
       - RMW_IMPLEMENTATION=rmw_zenoh_cpp
-      - ROS_DOMAIN_ID=0
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - ROS_DISTRO=humble
     stdin_open: true
     tty: true
