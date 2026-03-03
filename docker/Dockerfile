@@ -1,5 +1,5 @@
 # Dockerfile for ROS 2 with rmw_zenoh_cpp
-# Purpose: Test iOS ROS 2 IMU publisher with iOS Simulator
+# Purpose: Test iOS ROS 2 sensor publisher with iOS Simulator
 #
 # Build args:
 #   ROS_DISTRO: humble or jazzy (default: jazzy)
@@ -30,13 +30,19 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     vim \
     ros-${ROS_DISTRO}-rmw-zenoh-cpp \
+    ros-${ROS_DISTRO}-point-cloud-interfaces \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Build audio_common_msgs from source (not available via apt)
+WORKDIR /ros2_ws/src
+COPY deps/audio_common/audio_common_msgs /ros2_ws/src/audio_common_msgs
 WORKDIR /ros2_ws
+RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
+    colcon build --packages-select audio_common_msgs
 
 # Setup environment
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc && \
+    echo "source /ros2_ws/install/setup.bash" >> /root/.bashrc && \
     echo "export RMW_IMPLEMENTATION=rmw_zenoh_cpp" >> /root/.bashrc
 
 # Set RMW_IMPLEMENTATION
@@ -46,12 +52,13 @@ ENV RMW_IMPLEMENTATION=rmw_zenoh_cpp
 EXPOSE 7447/tcp
 
 # Copy Zenoh router configuration
-COPY zenoh-router.json5 /etc/zenoh/zenoh-router.json5
+COPY docker/zenoh-router.json5 /etc/zenoh/zenoh-router.json5
 
 # Create startup script (uses ROS_DISTRO env var at runtime)
 RUN echo '#!/bin/bash\n\
 set -e\n\
 source /opt/ros/${ROS_DISTRO}/setup.bash\n\
+source /ros2_ws/install/setup.bash\n\
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp\n\
 export ZENOH_ROUTER_CONFIG_URI=/etc/zenoh/zenoh-router.json5\n\
 echo ""\n\
@@ -60,6 +67,7 @@ echo "ROS 2 ${ROS_DISTRO^} + rmw_zenoh_cpp Container"\n\
 echo "========================================"\n\
 echo "ROS_DISTRO: ${ROS_DISTRO}"\n\
 echo "RMW_IMPLEMENTATION: $RMW_IMPLEMENTATION"\n\
+echo "ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}"\n\
 echo "Container IP: $(hostname -I | awk '"'"'{print $1}'"'"')"\n\
 echo "Zenoh router port: 7447 (listening on 0.0.0.0)"\n\
 echo "Zenoh config: $ZENOH_ROUTER_CONFIG_URI"\n\
@@ -70,9 +78,10 @@ exec ros2 run rmw_zenoh_cpp rmw_zenohd\n\
 ' > /usr/local/bin/start-router.sh && \
     chmod +x /usr/local/bin/start-router.sh
 
-# Create topic echo script
+# Create topic echo script for IMU
 RUN echo '#!/bin/bash\n\
 source /opt/ros/${ROS_DISTRO}/setup.bash\n\
+source /ros2_ws/install/setup.bash\n\
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp\n\
 echo ""\n\
 echo "Echoing /ios/imu topic..."\n\
@@ -82,19 +91,34 @@ ros2 topic echo /ios/imu\n\
 ' > /usr/local/bin/echo-imu.sh && \
     chmod +x /usr/local/bin/echo-imu.sh
 
+# Create topic echo script for audio
+RUN echo '#!/bin/bash\n\
+source /opt/ros/${ROS_DISTRO}/setup.bash\n\
+source /ros2_ws/install/setup.bash\n\
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp\n\
+TOPIC=${1:-/conduit/audio}\n\
+echo ""\n\
+echo "Echoing ${TOPIC} topic (audio_common_msgs/msg/AudioData)..."\n\
+echo "Press Ctrl+C to stop"\n\
+echo ""\n\
+ros2 topic echo ${TOPIC} audio_common_msgs/msg/AudioData\n\
+' > /usr/local/bin/echo-audio.sh && \
+    chmod +x /usr/local/bin/echo-audio.sh
+
 # Create topic info script
 RUN echo '#!/bin/bash\n\
 source /opt/ros/${ROS_DISTRO}/setup.bash\n\
+source /ros2_ws/install/setup.bash\n\
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp\n\
 echo ""\n\
 echo "=== Available Topics ==="\n\
 ros2 topic list\n\
 echo ""\n\
-echo "=== /ios/imu Topic Info ==="\n\
-ros2 topic info /ios/imu -v || echo "Topic not yet available"\n\
-echo ""\n\
-echo "=== /ios/imu Topic Rate ==="\n\
-timeout 5 ros2 topic hz /ios/imu || echo "No messages received yet"\n\
+for topic in $(ros2 topic list 2>/dev/null | grep -v "^/parameter_events$\\|^/rosout$\\|^/tf_static$"); do\n\
+  echo "=== ${topic} ==="\n\
+  ros2 topic info ${topic} -v 2>/dev/null || echo "  Info not available"\n\
+  echo ""\n\
+done\n\
 ' > /usr/local/bin/check-topics.sh && \
     chmod +x /usr/local/bin/check-topics.sh
 
