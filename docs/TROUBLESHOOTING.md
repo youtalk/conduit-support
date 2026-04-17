@@ -2,6 +2,8 @@
 
 Common issues and solutions for Conduit.
 
+> **Which transport are you using?** Check Settings → Transport in the Conduit app. Zenoh and DDS have different failure modes. Zenoh issues are under "## Connection Issues" and "## Topic Issues" below; DDS-specific issues are in "## DDS Transport Issues" at the bottom of this page.
+
 ## Connection Issues
 
 ### "Connection Failed: Timeout"
@@ -99,7 +101,7 @@ Common issues and solutions for Conduit.
    docker exec ros_jazzy_zenoh bash -c "echo \$ROS_DOMAIN_ID"
    ```
    - Domain ID in app Settings must match ROS_DOMAIN_ID on host
-   - Valid range: 0-255
+   - Valid range: 0-232 (RTPS specification limit)
    - Default is 0 if not set
 
 2. **Verify RMW_IMPLEMENTATION**:
@@ -326,6 +328,68 @@ Common issues and solutions for Conduit.
 2. **Timezone**: ROS 2 uses UTC, iOS uses local time
 
 3. **Timestamp source**: Verify using correct time source (system vs sensor)
+
+## DDS Transport Issues
+
+### No topics appear when using DDS
+
+**Problem:** App shows "Publishing" but `ros2 topic list` on the ROS 2 host returns nothing.
+
+**Solutions:**
+
+1. **Verify RMW implementation:**
+   ```bash
+   echo $RMW_IMPLEMENTATION
+   # Must be: rmw_cyclonedds_cpp
+   ```
+
+2. **Check domain IDs match** (0-232 valid range for DDS/RTPS):
+   ```bash
+   echo $ROS_DOMAIN_ID
+   ```
+   Must match the Domain ID field in Conduit Settings.
+
+3. **Verify network interface binding on iOS:**
+   - Conduit Settings → Transport → DDS → Network Interface must be `en0` (WiFi).
+   - Leaving this as "auto" frequently fails because iOS may select a cellular or VPN interface.
+
+4. **Multicast blocked by WiFi AP:**
+   - Many consumer access points enable "AP isolation" or drop multicast.
+   - Workaround: switch Discovery Mode to **Unicast** and add the ROS 2 host IP to the Unicast Peers list in Settings.
+
+5. **Firewall on ROS 2 host:**
+   - DDS uses UDP ports starting at `7400 + 250 * domain_id` (for domain 0: 7400, 7401, 7410, 7411).
+   - Allow UDP on those ports, or disable the firewall for the test LAN.
+
+### Topics appear but `ros2 topic echo` shows no data (DDS)
+
+**Problem:** Discovery works but data does not flow.
+
+**Solutions:**
+
+1. **QoS mismatch:** Conduit uses BestEffort reliability for high-rate sensors (IMU, camera). If your subscriber requests Reliable, it will not match. Use `--qos-profile sensor_data` or `--qos-reliability best_effort` on the subscriber:
+   ```bash
+   ros2 topic echo /conduit/imu --qos-reliability best_effort
+   ```
+
+2. **CameraInfo reliability:** CameraInfo uses BestEffort with TransientLocal (`latchedBestEffort`). Standard `image_transport` subscribers expect Reliable — override the subscriber QoS.
+
+3. **Large messages (Camera, LiDAR):** Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+
+### Disconnect takes several seconds (DDS)
+
+**Problem:** Pressing Stop in the app causes a 2-5 second delay before "Publishing" clears.
+
+**Expected behavior:** DDS disconnect is serialized to avoid an iOS-specific participant-delete deadlock. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+
+### iOS cannot reach the ROS 2 host (DDS over LAN)
+
+**Problem:** `ping` from iOS to host works, but DDS discovery fails.
+
+**Solutions:**
+- Confirm both devices are on the same subnet; DDS default transport is UDP, which does not cross routers without configuration.
+- Corporate networks often block multicast and inter-client UDP. Use a dedicated test LAN or phone hotspot.
+- On macOS Docker Desktop, the Docker container **cannot** receive DDS from iOS because Docker Desktop does not provide true host networking. Run the subscriber on Linux, a Parallels VM, or natively on macOS instead.
 
 ## Getting More Help
 
