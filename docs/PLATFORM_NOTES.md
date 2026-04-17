@@ -25,6 +25,12 @@ Information about sensor availability and limitations on different Apple platfor
 - iPhone: 12 Pro, 13 Pro, 14 Pro, 15 Pro series
 - iPad: Pro 11" (2020+), Pro 12.9" (2020+)
 
+**LiDAR and front camera are mutually exclusive on iOS:**
+- LiDAR uses ARKit's `ARSession`, which takes exclusive control of the rear camera system to produce depth frames.
+- The front camera uses `AVCaptureSession`. iOS only permits one `AVCaptureSession` at a time, and `ARSession` already owns the rear pipeline, so LiDAR and front camera cannot run simultaneously.
+- Back cameras are supported together with LiDAR because their frames come from the same `ARSession`. Only the combination **LiDAR + front camera** is blocked.
+- When you toggle one on, Conduit automatically disables the other to avoid an OS-level session conflict that would otherwise stop capture for both.
+
 **Background Mode**:
 - ✅ IMU, Magnetometer, Barometer, Battery, Thermal
 - ✅ GPS (foreground only - "When In Use" permission)
