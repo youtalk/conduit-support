@@ -1,6 +1,15 @@
-# Docker Testing Environment for iOS ROS 2 IMU Publisher
+# Docker Test Environments for Conduit
 
-This directory contains Docker configuration for testing the iOS ROS 2 IMU publisher with ROS 2 Jazzy and Humble using rmw_zenoh_cpp.
+Two separate Docker environments are provided, one per transport:
+
+| Environment | Transport | Use case |
+|-------------|-----------|----------|
+| `docker-compose.yml` (Zenoh) | `rmw_zenoh_cpp` | Test Conduit with Zenoh router; works on macOS and Linux. |
+| `compose-dds.yml` (DDS) | `rmw_cyclonedds_cpp` | Test Conduit with DDS subscriber; **Linux hosts only** (Docker Desktop on macOS does not support host networking). |
+
+Choose the one that matches your Conduit app's Transport setting. See [../docs/TRANSPORTS.md](../docs/TRANSPORTS.md) if you haven't decided yet.
+
+---
 
 ## Overview
 
@@ -111,7 +120,7 @@ docker compose up ros-humble -d   # or ros-jazzy
 
 #### Configuring ROS_DOMAIN_ID
 
-The Docker container supports configurable ROS 2 domain ID (0-255). The domain ID must match between the container and iOS app.
+The Docker container supports configurable ROS 2 domain ID (0-232). The domain ID must match between the container and iOS app.
 
 **Method 1: Using .env file (recommended for persistent configuration)**
 ```bash
@@ -142,7 +151,7 @@ docker compose up ros-jazzy -d
 
 **Important:**
 - Domain ID must match between Docker container and iOS app
-- Valid range: 0-255
+- Valid range: 0-232
 - Default is 0 if not specified
 - Topics will only be visible when domain IDs match on both sides
 
@@ -231,7 +240,7 @@ orientation:
 
 ```bash
 # Terminal 3: Check rate
-docker exec -it ros_jazzy_zenoh bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic hz /ios/imu"
+docker exec -it ros_jazzy_zenoh bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic hz /conduit/imu"
 ```
 
 **Expected:** `average rate: 100.000`
@@ -299,10 +308,10 @@ Once inside the container:
 ```bash
 # Environment is already set up
 ros2 topic list
-ros2 topic echo /ios/imu
-ros2 topic hz /ios/imu
-ros2 topic info /ios/imu -v
-ros2 topic bw /ios/imu
+ros2 topic echo /conduit/imu
+ros2 topic hz /conduit/imu
+ros2 topic info /conduit/imu -v
+ros2 topic bw /conduit/imu
 ```
 
 ## Network Configuration
@@ -424,12 +433,12 @@ open -a Docker
    ros2 topic list
    ```
 
-**Important:** ROS 2 uses domain IDs for network isolation. Topics will only be visible when both publisher (iOS app) and subscriber (Docker container) use the same domain ID (0-255).
+**Important:** ROS 2 uses domain IDs for network isolation. Topics will only be visible when both publisher (iOS app) and subscriber (Docker container) use the same domain ID (0-232).
 
 ### Problem: No Messages on Topic
 
 **Symptoms:**
-- `ros2 topic echo /ios/imu` shows nothing
+- `ros2 topic echo /conduit/imu` shows nothing
 - App says "Publishing" but no data
 
 **Solutions:**
@@ -491,8 +500,8 @@ docker compose build --no-cache
 - [ ] iOS Simulator app built and running
 - [ ] App shows "Running in simulator - using mock data"
 - [ ] App shows "Publishing" status
-- [ ] `ros2 topic list` shows `/ios/imu`
-- [ ] `ros2 topic echo /ios/imu` receives messages
+- [ ] `ros2 topic list` shows `/conduit/imu`
+- [ ] `ros2 topic echo /conduit/imu` receives messages
 - [ ] Messages have correct format
 - [ ] Publishing rate is ~100 Hz
 - [ ] Sequence numbers are monotonic
@@ -580,6 +589,59 @@ After successful Docker testing:
 2. Test with native ROS 2 installation (non-Docker)
 3. Deploy to production environment
 4. Implement monitoring and alerts
+
+## DDS Environment
+
+### Prerequisites
+
+- **Linux host** — macOS Docker Desktop does not support true host networking and will not receive DDS traffic from iOS devices. Use a Linux box, a Parallels/UTM VM, or install CycloneDDS natively on macOS instead.
+- iOS device and Linux host on the same LAN subnet.
+
+### Build & Start
+
+```bash
+cd support/docker
+
+# Default domain (0)
+docker compose -f compose-dds.yml up ros-jazzy-dds -d
+
+# Custom domain
+ROS_DOMAIN_ID=5 docker compose -f compose-dds.yml up ros-jazzy-dds -d
+```
+
+The container runs with `network_mode: host` and stays idle (`sleep infinity`) — exec in to run subscribers:
+
+```bash
+docker exec -it ros_jazzy_dds bash
+# Inside the container:
+source /opt/ros/jazzy/setup.bash
+source /ros2_ws/install/setup.bash
+ros2 topic list
+ros2 topic echo /conduit/imu --qos-reliability best_effort
+ros2 topic hz /conduit/imu
+```
+
+### Unicast Discovery
+
+If multicast is blocked (corporate/consumer WiFi):
+
+1. Edit `cyclonedds.xml` and uncomment the `<Peers>` block; add the iOS device IP.
+2. Restart the container: `docker compose -f compose-dds.yml restart`.
+3. In Conduit Settings → Transport → DDS → Discovery Mode: **Unicast** and add the host IP to Unicast Peers.
+
+### Configure Conduit App (DDS)
+
+- Settings → Transport: **DDS**
+- Discovery Mode: **Hybrid** (recommended)
+- Unicast Peers: add the Linux host IP
+- Network Interface: **en0** (do not use auto)
+- Domain ID: match `ROS_DOMAIN_ID`
+
+### Troubleshooting DDS in Docker
+
+- **No topics visible:** Confirm `--network host` is in effect (`docker inspect ros_jazzy_dds | grep NetworkMode`) and the host firewall allows UDP on `7400 + 250 * domain_id` and adjacent ports.
+- **Topics visible but no data:** Use `--qos-reliability best_effort` on the subscriber.
+- **Works from host but not from iOS:** Check AP isolation on your WiFi; try Unicast mode.
 
 ## Reference
 

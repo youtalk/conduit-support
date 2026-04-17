@@ -1,0 +1,72 @@
+# Dockerfile for ROS 2 with rmw_cyclonedds_cpp (DDS transport)
+# Purpose: Test Conduit DDS transport by running a ROS 2 subscriber that
+# discovers and echoes topics from the iOS app over CycloneDDS.
+#
+# Build args:
+#   ROS_DISTRO: humble | jazzy | kilted | rolling (default: jazzy)
+#
+# Usage:
+#   docker build -f Dockerfile.dds --build-arg ROS_DISTRO=jazzy -t ros-jazzy-dds .
+#
+# NOTE: Run with --network host (Linux only). On macOS Docker Desktop,
+# host networking is not fully supported — use a native or VM ROS 2 install.
+
+ARG ROS_DISTRO=jazzy
+FROM ros:${ROS_DISTRO}
+
+ARG ROS_DISTRO
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ROS_DISTRO=${ROS_DISTRO}
+
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-${ROS_DISTRO}-demo-nodes-cpp \
+    ros-${ROS_DISTRO}-point-cloud-interfaces \
+    iproute2 \
+    iputils-ping \
+    net-tools \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional: audio_common_msgs from source (for /conduit/audio)
+WORKDIR /ros2_ws/src
+RUN git clone --branch ros2 --depth 1 \
+    https://github.com/ros-drivers/audio_common.git /tmp/audio_common && \
+    cp -r /tmp/audio_common/audio_common_msgs /ros2_ws/src/ && \
+    rm -rf /tmp/audio_common
+WORKDIR /ros2_ws
+RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
+    colcon build --packages-select audio_common_msgs
+
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc && \
+    echo "source /ros2_ws/install/setup.bash" >> /root/.bashrc && \
+    echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> /root/.bashrc
+
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+RUN echo '#!/bin/bash\n\
+set -e\n\
+source /opt/ros/${ROS_DISTRO}/setup.bash\n\
+source /ros2_ws/install/setup.bash\n\
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp\n\
+echo ""\n\
+echo "========================================"\n\
+echo "ROS 2 ${ROS_DISTRO^} + rmw_cyclonedds_cpp Container"\n\
+echo "========================================"\n\
+echo "ROS_DISTRO: ${ROS_DISTRO}"\n\
+echo "RMW_IMPLEMENTATION: $RMW_IMPLEMENTATION"\n\
+echo "ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}"\n\
+echo "CYCLONEDDS_URI: ${CYCLONEDDS_URI:-<unset>}"\n\
+echo ""\n\
+echo "Host network interfaces:"\n\
+ip -4 -o addr show 2>/dev/null | awk "{print \"  \" \$2, \$4}"\n\
+echo ""\n\
+echo "Container ready. Run: ros2 topic list"\n\
+echo ""\n\
+exec sleep infinity\n\
+' > /usr/local/bin/start-dds.sh && \
+    chmod +x /usr/local/bin/start-dds.sh
+
+WORKDIR /ros2_ws
+
+CMD ["/usr/local/bin/start-dds.sh"]
