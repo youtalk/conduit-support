@@ -6,7 +6,7 @@
 
 **Transform your Apple devices into ROS 2 sensor publishers**
 
-Stream real-time sensor data directly to your robotics system via Zenoh — no bridge required.
+Stream real-time sensor data directly to your robotics system via **Zenoh** or **DDS** — pick the transport that matches your ROS 2 setup.
 
 [![Download on App Store](https://img.shields.io/badge/Download-App%20Store-blue?style=for-the-badge&logo=apple)](https://apps.apple.com/jp/app/conduit-powered-by-ros/id6757171237?l=en-US)
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20|%20Jazzy%20|%20Kilted%20|%20Rolling-green?style=for-the-badge)](https://ros.org)
@@ -52,6 +52,15 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 | iOS/iPadOS 16+ | All 12 sensors |
 | visionOS 1+ | Camera, IMU, Game Controller |
 | macOS 13+ | Camera, Battery, Game Controller |
+
+### Transports
+
+| Transport | ROS 2 RMW | Bridge required | Best for |
+|-----------|-----------|-----------------|----------|
+| **Zenoh** | `rmw_zenoh_cpp` | Yes (Zenoh router) | Cross-subnet, WAN, corporate networks |
+| **DDS**   | `rmw_cyclonedds_cpp` | No (direct) | Same-LAN, standard ROS 2 |
+
+See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
 
 ### 12 Sensor Types
 
@@ -124,90 +133,79 @@ Stream real-time sensor data directly to your robotics system via Zenoh — no b
 ## Quick Start
 
 1. **Download** from [App Store](https://apps.apple.com/jp/app/conduit-powered-by-ros/id6757171237?l=en-US)
-2. **Start Zenoh Router** on your ROS 2 system with domain ID:
+2. **Choose your transport** — see [TRANSPORTS.md](docs/TRANSPORTS.md)
+
+### Quick Start — Zenoh
+
+1. Start the Zenoh router on your ROS 2 system:
    ```bash
-   export ROS_DOMAIN_ID=0  # Set domain ID (0-255, default: 0)
+   source /opt/ros/jazzy/setup.bash
+   export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+   export ROS_DOMAIN_ID=0  # Valid range: 0-232
    ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
-3. **Configure** connection in Settings:
-   - Router Address (e.g., `tcp/192.168.1.100:7447`)
-   - Domain ID (must match ROS_DOMAIN_ID on host)
-4. **Enable** sensors you want to stream
-5. **Tap Play** and verify with `ros2 topic echo /conduit/imu`
+2. In the Conduit app: Settings → Transport: **Zenoh**, enter the host IP and port `7447`, set Domain ID to match.
+3. Enable sensors and tap Play.
+4. Verify: `ros2 topic echo /conduit/imu`
+
+### Quick Start — DDS
+
+1. On your ROS 2 host:
+   ```bash
+   source /opt/ros/jazzy/setup.bash
+   export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+   export ROS_DOMAIN_ID=0  # Valid range: 0-232
+   ros2 topic list
+   ```
+2. In the Conduit app: Settings → Transport: **DDS**, Discovery Mode: **Hybrid**, add the host IP to Unicast Peers, Network Interface: `en0`, set Domain ID to match.
+3. Enable sensors and tap Play.
+4. Verify: `ros2 topic echo /conduit/imu --qos-reliability best_effort`
 
 ---
 
-## Zenoh Router (Docker)
+## Docker Test Environments
 
-### Quick Start (Pre-built Image)
+### Zenoh Router (Docker)
 
+Pre-built images on ghcr.io:
 ```bash
-# ROS 2 Jazzy (default domain ID: 0)
+# ROS 2 Jazzy
 docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
-
-# ROS 2 Humble (default domain ID: 0)
+# ROS 2 Humble
 docker run -d -p 7447:7447 --name ros_humble_zenoh ghcr.io/youtalk/conduit-support:humble
-
-# With custom domain ID
-docker run -d -p 7447:7447 -e ROS_DOMAIN_ID=5 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
 ```
 
-### Using Docker Compose
-
+Or with Docker Compose:
 ```bash
 git clone https://github.com/youtalk/conduit-support.git
 cd conduit-support/docker
-
-# Start with default domain ID (0)
+echo "ROS_DOMAIN_ID=0" > .env
 docker compose up ros-jazzy -d
-
-# Start with custom domain ID
-ROS_DOMAIN_ID=5 docker compose up ros-jazzy -d
-
-# Or use .env file (recommended)
-echo "ROS_DOMAIN_ID=5" > .env
-docker compose up ros-jazzy -d
-
-# Stop
-docker compose down
 ```
 
-**Note:** Domain ID must match between container and iOS app (valid range: 0-255).
+### DDS Subscriber (Docker, Linux only)
 
-### Verify Connection
+> **macOS note:** Docker Desktop on macOS does not provide true host networking, so the container cannot receive DDS traffic from an iOS device on the same LAN. On macOS, run your DDS subscriber natively or in a Parallels/UTM VM.
 
 ```bash
-# Check topics
-docker exec ros_jazzy_zenoh bash -c \
-  "source /opt/ros/jazzy/setup.bash && ros2 topic list"
+cd conduit-support/docker
+echo "ROS_DOMAIN_ID=0" > .env
+docker compose -f compose-dds.yml up -d
 
-# Echo IMU data
-docker exec ros_jazzy_zenoh bash -c \
-  "source /opt/ros/jazzy/setup.bash && ros2 topic echo /conduit/imu"
-
-# Echo Microphone data (audio_common_msgs pre-installed in Docker image)
-docker exec ros_jazzy_zenoh bash -c \
-  "source /opt/ros/jazzy/setup.bash && \
-   source /ros2_ws/install/setup.bash && \
-   export RMW_IMPLEMENTATION=rmw_zenoh_cpp && \
-   ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData"
+# Verify
+docker exec -it ros_jazzy_dds bash
+source /opt/ros/jazzy/setup.bash
+ros2 topic list
+ros2 topic echo /conduit/imu --qos-reliability best_effort
 ```
 
-### Configure Conduit App
-
-1. Find the host machine's IP address: `ifconfig | grep inet` (macOS/Linux) or `ipconfig` (Windows)
-2. Get container's domain ID: `docker exec ros_jazzy_zenoh bash -c "echo \$ROS_DOMAIN_ID"`
-3. In Conduit Settings, configure:
-   - Router Address: `tcp/<HOST_IP>:7447`
-   - Domain ID: Match the container's domain ID (default: 0)
-4. Tap Play to connect
-
-**Troubleshooting:** If topics don't appear, verify both sides use the same domain ID.
+See [docker/README.md](docker/README.md) for the complete Docker guide. The `compose-dds.yml` file is added in a follow-up Phase 4 PR.
 
 ---
 
 ## Documentation
 
+- [Transports](docs/TRANSPORTS.md) - Zenoh vs DDS comparison and when to use each
 - [FAQ](docs/FAQ.md) - Frequently asked questions
 - [Troubleshooting Guide](docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [Platform Notes](docs/PLATFORM_NOTES.md) - Platform-specific information
