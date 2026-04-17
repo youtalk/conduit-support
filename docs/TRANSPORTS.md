@@ -7,7 +7,7 @@ Conduit 2.0 supports two transports for publishing ROS 2 messages. This page hel
 | Your ROS 2 setup | Recommended transport |
 |------------------|-----------------------|
 | Uses `rmw_zenoh_cpp` | **Zenoh** |
-| Uses `rmw_cyclonedds_cpp` (default on Jazzy/Humble) | **DDS** |
+| Uses `rmw_cyclonedds_cpp` (default on Humble; opt-in on Jazzy/Kilted/Rolling) | **DDS** |
 | Needs to cross subnets / WAN | **Zenoh** (run a router with a public IP) |
 | Same-LAN, no bridge infrastructure | **DDS** |
 | Corporate network blocking multicast | **Zenoh** (TCP) |

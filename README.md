@@ -179,8 +179,19 @@ Or with Docker Compose:
 ```bash
 git clone https://github.com/youtalk/conduit-support.git
 cd conduit-support/docker
-echo "ROS_DOMAIN_ID=0" > .env
+
+# Default domain ID (0)
 docker compose up ros-jazzy -d
+
+# Custom domain ID via .env (recommended for persistence)
+echo "ROS_DOMAIN_ID=5" > .env
+docker compose up ros-jazzy -d
+
+# Or override per-invocation
+ROS_DOMAIN_ID=5 docker compose up ros-jazzy -d
+
+# Stop
+docker compose down
 ```
 
 ### DDS Subscriber (Docker, Linux only)
