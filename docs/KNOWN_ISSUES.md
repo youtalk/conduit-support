@@ -157,6 +157,50 @@ Current limitations and known issues in Conduit.
 
 ---
 
+## DDS Transport
+
+### Camera/LiDAR fragmentation loss on DDS over WiFi
+
+**Status:** Known limitation
+
+**Reason:** Large RTPS messages (>1400 bytes — camera, LiDAR, CameraInfo with large K matrices) are split into UDP fragments. Consumer WiFi often drops or reorders fragments, especially over multicast.
+
+**Mitigation:**
+- Use **Unicast** or **Hybrid** discovery mode (Settings → Transport → DDS → Discovery Mode).
+- Reduce camera resolution or LiDAR point density.
+- Use wired Ethernet on the ROS 2 host if possible.
+
+### CameraInfo requires BestEffort subscriber QoS
+
+**Status:** By design
+
+**Reason:** CameraInfo publishes with `BestEffort + TransientLocal` QoS (`latchedBestEffort`) to match DDS behavior on iOS. Standard `image_transport` subscribers default to `Reliable`, which does not match.
+
+**Workaround:** Override the subscriber QoS:
+```bash
+ros2 topic echo /conduit/camera/front/camera_info \
+  --qos-reliability best_effort \
+  --qos-durability transient_local
+```
+
+### Disconnect delay on DDS (up to ~5 seconds)
+
+**Status:** Workaround in place
+
+**Reason:** DDS participant deletion is serialized on iOS to avoid a platform-specific deadlock in CycloneDDS's teardown path.
+
+**Behavior:** Pressing Stop in the app can take 2-5 seconds to fully release the domain. This is intentional and safe.
+
+### DDS requires WiFi — no cellular fallback
+
+**Status:** By design
+
+**Reason:** DDS discovery binds to a specific network interface (`en0` on iOS). Cellular or VPN interfaces are not supported; multicast/unicast discovery requires the device and the ROS 2 host to be on the same LAN.
+
+**Workaround:** Use Zenoh transport with a public router address if cross-network/WAN operation is required.
+
+---
+
 ## Premium Features
 
 ### Premium Purchase Required for Some Sensors
