@@ -54,6 +54,30 @@ See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and netw
 
 **Important:** Domain ID must match between the app and ROS 2 system. Valid range: 0-232 (RTPS specification limit).
 
+### How do I connect via DDS?
+
+1. On your ROS 2 system:
+   ```bash
+   source /opt/ros/jazzy/setup.bash
+   export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+   export ROS_DOMAIN_ID=0  # Valid range: 0-232
+   ros2 topic list
+   ```
+
+2. In the Conduit app:
+   - Tap Settings → Transport: **DDS**
+   - Discovery Mode: **Hybrid** (recommended) or Unicast
+   - Add the ROS 2 host IP to Unicast Peers
+   - **Network Interface: `en0`** (required on iOS — do not leave as "auto")
+   - Domain ID: must match `ROS_DOMAIN_ID`
+   - Tap Save
+
+3. Enable sensors and tap Play
+
+**Important:**
+- Domain ID must match between the app and ROS 2 system. Valid range: **0-232** (DDS RTPS limit).
+- On iOS, DDS **requires** binding to `en0` (WiFi) — multicast / auto-select often fails.
+
 ### Which ROS 2 versions are supported?
 
 Conduit supports:
@@ -62,7 +86,9 @@ Conduit supports:
 - **ROS 2 Kilted** (Ubuntu 24.04) - RIHS01 type hash
 - **ROS 2 Rolling** - RIHS01 type hash
 
-All versions require rmw_zenoh_cpp middleware. The app auto-detects which version you're using. Iron and later distributions use RIHS01 type hash for message type verification.
+Supported RMW implementations:
+- **rmw_zenoh_cpp** — via Zenoh transport (the app auto-detects Humble vs Jazzy wire format)
+- **rmw_cyclonedds_cpp 0.10.5** — via DDS transport (default RMW on many ROS 2 distributions)
 
 ### Why can't I see my topics in `ros2 topic list`?
 
