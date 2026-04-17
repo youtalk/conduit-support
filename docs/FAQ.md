@@ -2,13 +2,37 @@
 
 ## Setup & Configuration
 
-### How do I connect Conduit to my ROS 2 system?
+### Which transport should I use: Zenoh or DDS?
+
+Conduit 2.0 supports two transports — choose based on your ROS 2 middleware:
+
+| | Zenoh | DDS (CycloneDDS) |
+|---|---|---|
+| **RMW** | rmw_zenoh_cpp | rmw_cyclonedds_cpp |
+| **Router required** | Yes (rmw_zenohd) | No |
+| **Network** | TCP/UDP to router | Multicast or unicast on LAN |
+| **Distros** | Humble, Jazzy, Kilted, Rolling | Jazzy, Kilted, Rolling |
+| **Setup** | Enter router IP in Settings | Set discovery mode in Settings |
+
+**Recommendation:** Use **Zenoh** if you already have rmw_zenoh_cpp set up. Use **DDS** if your stack uses rmw_cyclonedds_cpp and you want zero-broker operation.
+
+See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and network-requirements reference.
+
+### I used Conduit 1.x — what changed in 2.0?
+
+**Topic namespace:** Default is now `/conduit/*` (was `ios/*`). If you have ROS 2 subscribers hardcoded to the old `ios` namespace, either remap in your subscriber or change the app's namespace in Settings.
+
+**Transport choice:** 2.0 adds DDS (CycloneDDS) alongside Zenoh. Existing Zenoh users can keep their current router setup — Zenoh remains fully supported. DDS is opt-in via Settings → Transport.
+
+**Supported distros:** Kilted and Rolling join Humble and Jazzy.
+
+### How do I connect via Zenoh?
 
 1. Start the Zenoh router on your ROS 2 system:
    ```bash
    source /opt/ros/jazzy/setup.bash
    export RMW_IMPLEMENTATION=rmw_zenoh_cpp
-   export ROS_DOMAIN_ID=0  # Set domain ID (0-255, default: 0)
+   export ROS_DOMAIN_ID=0  # Set domain ID (0-232, default: 0)
    ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
 
@@ -28,7 +52,7 @@
 
 4. Enable sensors and tap Play
 
-**Important:** Domain ID must match between the app and ROS 2 system. Valid range: 0-255.
+**Important:** Domain ID must match between the app and ROS 2 system. Valid range: 0-232 (RTPS specification limit).
 
 ### Which ROS 2 versions are supported?
 
@@ -51,7 +75,7 @@ All versions require rmw_zenoh_cpp middleware. The app auto-detects which versio
    ```
    - Domain ID in app Settings must match ROS_DOMAIN_ID on host
    - Default is 0 if not set
-   - Valid range: 0-255
+   - Valid range: 0-232 (RTPS specification limit)
 
 2. **Zenoh router not running**:
    ```bash
@@ -131,16 +155,16 @@ On your ROS 2 system:
 
 ```bash
 # Check if topic appears
-ros2 topic list | grep ios
+ros2 topic list | grep conduit
 
 # Echo data from IMU sensor
-ros2 topic echo /ios/imu
+ros2 topic echo /conduit/imu
 
 # Check publish rate
-ros2 topic hz /ios/imu
+ros2 topic hz /conduit/imu
 
 # View topic info
-ros2 topic info /ios/imu --verbose
+ros2 topic info /conduit/imu --verbose
 ```
 
 ### Why is my sensor showing "Not Available"?
@@ -170,10 +194,10 @@ Yes! Conduit supports multi-camera streaming:
 1. Tap the Camera sensor row
 2. Select multiple cameras (front, wide, ultra-wide, telephoto)
 3. Each camera publishes to separate topic:
-   - `/ios/camera/front/compressed`
-   - `/ios/camera/wide/compressed`
-   - `/ios/camera/ultrawide/compressed`
-   - `/ios/camera/telephoto/compressed`
+   - `/conduit/camera/front/compressed`
+   - `/conduit/camera/wide/compressed`
+   - `/conduit/camera/ultrawide/compressed`
+   - `/conduit/camera/telephoto/compressed`
 
 **Note:** Wide, ultra-wide, and telephoto cameras require Premium unlock.
 
