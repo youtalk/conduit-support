@@ -20,8 +20,6 @@ See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and netw
 
 ### I used Conduit 1.x — what changed in 2.0?
 
-**Topic namespace:** Default is now `/conduit/*` (was `/ios/*`). If you have ROS 2 subscribers hardcoded to the old `ios` namespace, either remap in your subscriber or change the app's namespace in Settings.
-
 **Transport choice:** 2.0 adds DDS (CycloneDDS) alongside Zenoh. Existing Zenoh users can keep their current router setup — Zenoh remains fully supported. DDS is opt-in via Settings → Transport.
 
 **Supported distros:** Kilted and Rolling join Humble and Jazzy.
