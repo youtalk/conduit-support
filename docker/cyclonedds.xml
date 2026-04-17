@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain id="any">
+    <General>
+      <!-- Uncomment and set to the interface that reaches your iOS device.
+           On Linux servers this is usually eth0, enp0s5, wlan0, etc.
+           On a Parallels VM it's typically enp0s5. -->
+      <!-- <Interfaces><NetworkInterface name="eth0"/></Interfaces> -->
+    </General>
+    <Discovery>
+      <!-- Uncomment and add the iOS device IP for unicast discovery.
+           Required if multicast is blocked on your network. -->
+      <!--
+      <Peers>
+        <Peer address="192.168.1.50"/>
+      </Peers>
+      -->
+    </Discovery>
+  </Domain>
+</CycloneDDS>

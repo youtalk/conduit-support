@@ -1,0 +1,55 @@
+# Docker Compose for ROS 2 + rmw_cyclonedds_cpp testing
+#
+# Linux hosts only. macOS Docker Desktop does not provide true host
+# networking and will not receive DDS traffic from external iOS devices.
+#
+# Usage:
+#   Start: docker compose -f compose-dds.yml up ros-jazzy-dds -d
+#   Stop:  docker compose -f compose-dds.yml down
+#
+# Environment Variables:
+#   ROS_DOMAIN_ID  - ROS 2 domain ID (0-232, default: 0)
+#   CYCLONEDDS_URI - Optional path to a CycloneDDS XML config mounted into
+#                    the container. Defaults to /etc/cyclonedds/cyclonedds.xml
+#                    mounted from ./cyclonedds.xml.
+
+services:
+  ros-jazzy-dds:
+    build:
+      context: .
+      dockerfile: Dockerfile.dds
+      args:
+        ROS_DISTRO: jazzy
+    container_name: ros_jazzy_dds
+    hostname: ros-jazzy-dds
+    network_mode: host
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - ROS_DISTRO=jazzy
+      - CYCLONEDDS_URI=file:///etc/cyclonedds/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/etc/cyclonedds/cyclonedds.xml:ro
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  ros-humble-dds:
+    build:
+      context: .
+      dockerfile: Dockerfile.dds
+      args:
+        ROS_DISTRO: humble
+    container_name: ros_humble_dds
+    hostname: ros-humble-dds
+    network_mode: host
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - ROS_DISTRO=humble
+      - CYCLONEDDS_URI=file:///etc/cyclonedds/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/etc/cyclonedds/cyclonedds.xml:ro
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
