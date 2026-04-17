@@ -11,7 +11,7 @@ Conduit 2.0 supports two transports — choose based on your ROS 2 middleware:
 | **RMW** | rmw_zenoh_cpp | rmw_cyclonedds_cpp |
 | **Router required** | Yes (rmw_zenohd) | No |
 | **Network** | TCP/UDP to router | Multicast or unicast on LAN |
-| **Distros** | Humble, Jazzy, Kilted, Rolling | Jazzy, Kilted, Rolling |
+| **Distros** | Humble, Jazzy, Kilted, Rolling | Humble, Jazzy, Kilted, Rolling |
 | **Setup** | Enter router IP in Settings | Set discovery mode in Settings |
 
 **Recommendation:** Use **Zenoh** if you already have rmw_zenoh_cpp set up. Use **DDS** if your stack uses rmw_cyclonedds_cpp and you want zero-broker operation.
@@ -20,7 +20,7 @@ See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and netw
 
 ### I used Conduit 1.x — what changed in 2.0?
 
-**Topic namespace:** Default is now `/conduit/*` (was `ios/*`). If you have ROS 2 subscribers hardcoded to the old `ios` namespace, either remap in your subscriber or change the app's namespace in Settings.
+**Topic namespace:** Default is now `/conduit/*` (was `/ios/*`). If you have ROS 2 subscribers hardcoded to the old `ios` namespace, either remap in your subscriber or change the app's namespace in Settings.
 
 **Transport choice:** 2.0 adds DDS (CycloneDDS) alongside Zenoh. Existing Zenoh users can keep their current router setup — Zenoh remains fully supported. DDS is opt-in via Settings → Transport.
 
@@ -61,7 +61,7 @@ See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and netw
    source /opt/ros/jazzy/setup.bash
    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
    export ROS_DOMAIN_ID=0  # Valid range: 0-232
-   ros2 topic list
+   ros2 topic list  # Verify the RMW is active (no topics expected yet)
    ```
 
 2. In the Conduit app:
@@ -136,10 +136,9 @@ Yes, for testing:
 - You can verify app functionality without ROS 2
 - However, you won't be able to receive data without a Zenoh router
 
-For production use, you need:
-- ROS 2 Humble, Jazzy, Kilted, or Rolling
-- rmw_zenoh_cpp middleware
-- Zenoh router running
+For production use, you need a ROS 2 system (Humble, Jazzy, Kilted, or Rolling) with **one** of the supported transports:
+- **Zenoh:** `rmw_zenoh_cpp` middleware and a running Zenoh router (`rmw_zenohd`).
+- **DDS:** `rmw_cyclonedds_cpp` middleware on the same LAN as your iOS device — no broker required.
 
 ### Which sensors work on which platforms?
 
