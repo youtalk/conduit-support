@@ -31,6 +31,11 @@ Information about sensor availability and limitations on different Apple platfor
 - ❌ Camera, LiDAR, Microphone (iOS restriction)
 - ⚠️ Background processing mode available for continuous streaming
 
+**DDS Transport on iOS:**
+- The app must bind to the `en0` (WiFi) interface for DDS discovery; cellular and VPN interfaces are not supported.
+- Multicast discovery may fail on consumer WiFi access points with "AP isolation" enabled — use Unicast or Hybrid mode.
+- DDS does not cross NAT or subnet boundaries; use Zenoh for cross-subnet scenarios.
+
 ---
 
 ## visionOS (Apple Vision Pro)
