@@ -2,7 +2,7 @@
 
 Common issues and solutions for Conduit.
 
-> **Which transport are you using?** Check Settings → Transport in the Conduit app. Zenoh and DDS have different failure modes. Zenoh issues are under "## Connection Issues" and "## Topic Issues" below; DDS-specific issues are in "## DDS Transport Issues" near the bottom of this page.
+> **Which transport are you using?** Check Settings → Transport in the Conduit app. Zenoh and DDS have different failure modes. Zenoh issues are under "## Connection Issues" and "## Topic Issues" below; DDS-specific issues are in "## DDS Transport Issues" at the bottom of this page.
 
 ## Connection Issues
 
@@ -374,13 +374,13 @@ Common issues and solutions for Conduit.
 
 2. **CameraInfo reliability:** CameraInfo uses BestEffort with TransientLocal (`latchedBestEffort`). Standard `image_transport` subscribers expect Reliable — override the subscriber QoS.
 
-3. **Large messages (Camera, LiDAR):** Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see KNOWN_ISSUES.md.
+3. **Large messages (Camera, LiDAR):** Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ### Disconnect takes several seconds (DDS)
 
 **Problem:** Pressing Stop in the app causes a 2-5 second delay before "Publishing" clears.
 
-**Expected behavior:** DDS disconnect is serialized to avoid an iOS-specific participant-delete deadlock. See KNOWN_ISSUES.md.
+**Expected behavior:** DDS disconnect is serialized to avoid an iOS-specific participant-delete deadlock. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ### iOS cannot reach the ROS 2 host (DDS over LAN)
 
