@@ -361,6 +361,26 @@ Common issues and solutions for Conduit.
    - DDS uses UDP ports starting at `7400 + 250 * domain_id` (for domain 0: 7400, 7401, 7410, 7411).
    - Allow UDP on those ports, or disable the firewall for the test LAN.
 
+### `ros2` CLI shows stale topics after changing `RMW_IMPLEMENTATION` or `CYCLONEDDS_URI`
+
+**Problem:** You switched transports (e.g. Zenoh → DDS) or updated `CYCLONEDDS_URI` (peers, interface, tracing), but `ros2 topic list` keeps returning the previous transport's results or an empty list.
+
+**Cause:** The `ros2` CLI talks to a long-lived background daemon (`_ros2_daemon`). The daemon is started with whatever `RMW_IMPLEMENTATION` / DDS config was in effect at first launch and caches its RMW context — later env-var changes in your shell are ignored until the daemon is restarted.
+
+**Fix:** Stop the daemon, then let the next CLI invocation start a fresh one in the new environment:
+
+```bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=123
+export CYCLONEDDS_URI='<CycloneDDS>…</CycloneDDS>'
+
+ros2 daemon stop
+ros2 daemon start          # optional — `ros2 topic list` will also autostart it
+ros2 topic list
+```
+
+Any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or the Peer list, re-run `ros2 daemon stop` before the next command. This also applies when switching back to `rmw_zenoh_cpp`.
+
 ### Topics appear but `ros2 topic echo` shows no data (DDS)
 
 **Problem:** Discovery works but data does not flow.
