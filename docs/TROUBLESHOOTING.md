@@ -337,6 +337,8 @@ Common issues and solutions for Conduit.
 
 **Solutions:**
 
+0. **Restart the cached `ros2` daemon first** — if you changed `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, or `CYCLONEDDS_URI` in this shell, the daemon is still running with the old context and will lie to you. Run `ros2 daemon stop` before any of the checks below. See [`ros2` CLI shows stale topics after changing `RMW_IMPLEMENTATION` or `CYCLONEDDS_URI`](#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri) for the full failure mode.
+
 1. **Verify RMW implementation:**
    ```bash
    echo $RMW_IMPLEMENTATION

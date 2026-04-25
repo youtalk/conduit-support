@@ -1,17 +1,20 @@
 <div align="center">
 
-<img src="images/app_icon.png" width="128" height="128" alt="Conduit App Icon">
+<a href="https://apps.apple.com/app/id6757171237">
+<img src="images/app_icon.png" width="128" height="128" alt="Download Conduit on the App Store">
+</a>
 
 # Conduit
 
+</div>
+
 **Transform your Apple devices into ROS 2 sensor publishers**
 
-Stream real-time sensor data directly to your robotics system via **Zenoh** or **DDS** — pick the transport that matches your ROS 2 setup.
+Stream real-time sensor data directly to your robotics system via **Zenoh** or **DDS** — pick the transport that matches your ROS 2 setup. No bridge, no `rcl` / `rclcpp`, no CMake on a non-Linux host.
+Used cumulatively by **10,000+ ROS 2 developers worldwide** — has ranked as high as **#4 in the App Store's Developer Tools category** (Japan) since January 2026.
 
-[![Download on App Store](https://img.shields.io/badge/Download-App%20Store-blue?style=for-the-badge&logo=apple)](https://apps.apple.com/jp/app/conduit-powered-by-ros/id6757171237?l=en-US)
-[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20|%20Jazzy%20|%20Kilted%20|%20Rolling-green?style=for-the-badge)](https://ros.org)
-
-</div>
+[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20|%20Jazzy%20|%20Kilted%20|%20Rolling-22314E?style=for-the-badge)](https://docs.ros.org)
+[![Built on swift-ros2](https://img.shields.io/badge/Built%20on-swift--ros2%200.6.0-orange?style=for-the-badge&logo=swift)](https://github.com/youtalk/swift-ros2)
 
 ---
 
@@ -45,13 +48,23 @@ Stream real-time sensor data directly to your robotics system via **Zenoh** or *
 
 ---
 
+## Built on swift-ros2
+
+All ROS 2 wire work — Zenoh / DDS FFI, XCDR v1 codec, Humble/Jazzy/Kilted/Rolling wire codecs, the publisher/subscription API — is delegated to [**swift-ros2**](https://github.com/youtalk/swift-ros2), a native Swift client library for ROS 2 that was extracted from Conduit and now ships independently.
+
+swift-ros2 covers every consumer device OS that runs Swift: **iOS / iPadOS / macOS / Mac Catalyst / visionOS** (pre-built xcframeworks via SwiftPM), plus **Linux** (Ubuntu 22.04 / 24.04, x86_64 + aarch64), **Windows** (x86_64), and **Android** (arm64-v8a + x86_64) via source build. By worldwide market share, that's roughly 90%+ of identifiable consumer devices — phones, tablets, laptops, headsets, SBCs — all able to publish and subscribe through the same SwiftPM-resolvable package.
+
+If you want to wire your own Swift app into a ROS 2 graph (rather than use Conduit as a black-box sensor publisher), [swift-ros2](https://github.com/youtalk/swift-ros2) is the SDK underneath this app.
+
+---
+
 ## Features
 
 | Platform | Sensors |
 |----------|---------|
-| iOS/iPadOS 16+ | All 12 sensors |
+| iOS / iPadOS 16+ | All 12 sensors |
 | visionOS 1+ | Camera, IMU, Game Controller |
-| macOS 13+ | Camera, Battery, Game Controller |
+| macOS 13+ (Mac Catalyst) | Camera, Battery, Game Controller |
 
 ### Transports
 
@@ -64,15 +77,21 @@ See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
 
 ### 12 Sensor Types
 
-**Motion**: IMU (100Hz) · Magnetometer (100Hz) · GPS (1Hz) · Proximity (10Hz)
+- **Motion**: IMU (100Hz) · Magnetometer (100Hz) · GPS (1Hz) · Proximity (10Hz)
+- **Perception**: Camera (15Hz) · LiDAR (10Hz)
+- **Environment**: Barometer (10Hz) · Illuminance (10Hz) · Thermal (1Hz)
+- **Input**: Game Controller (50Hz) · Microphone (`audio_common_msgs/AudioData`, streaming)
+- **Status**: Battery (1Hz)
 
-**Perception**: Camera (15Hz) · LiDAR (10Hz)
+### MCAP Recording
 
-**Environment**: Barometer (10Hz) · Illuminance (10Hz) · Temperature (1Hz)
+Capture every published topic to a local **MCAP** file with one tap, replay it later in [Foxglove](https://foxglove.dev/), `ros2 bag play`, or any MCAP-aware tool. Recordings live in the app's Documents directory and ship out via the standard share sheet (Files, AirDrop, Mail, …) — Conduit never uploads them. Schemas are written into the MCAP header automatically so the bag round-trips through any reader without external `.msg` files.
 
-**Input**: Game Controller (50Hz) · Microphone
+Same wire path as live publishing: the same XCDR v1 encoder from [swift-ros2](https://github.com/youtalk/swift-ros2) feeds both the Zenoh / DDS publisher and the MCAP writer, so the on-disk bytes match what arrives on the ROS 2 graph.
 
-**Status**: Battery (1Hz)
+### In-App Purchases
+
+A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal, Battery, Microphone, Front camera) ships free. Wide / Ultra-wide / Telephoto cameras, LiDAR, Game Controller, Background publishing, and MCAP Recording are unlocked individually via App Store In-App Purchases.
 
 ---
 
@@ -124,7 +143,6 @@ See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
 <b>3. Start Publishing</b><br>
 <sub>Select sensors and stream to ROS 2</sub>
 </td>
-<td width="25%"></td>
 </tr>
 </table>
 
@@ -132,7 +150,7 @@ See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
 
 ## Quick Start
 
-1. **Download** from [App Store](https://apps.apple.com/jp/app/conduit-powered-by-ros/id6757171237?l=en-US)
+1. **Download** from the [App Store](https://apps.apple.com/app/id6757171237)
 2. **Choose your transport** — see [TRANSPORTS.md](docs/TRANSPORTS.md)
 
 ### Quick Start — Zenoh
@@ -155,11 +173,20 @@ See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
    source /opt/ros/jazzy/setup.bash
    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
    export ROS_DOMAIN_ID=0  # Valid range: 0-232
+
+   # If you previously ran ros2 commands under a different RMW
+   # (e.g. rmw_zenoh_cpp), restart the cached ros2 daemon so it picks up
+   # the new RMW_IMPLEMENTATION / ROS_DOMAIN_ID / CYCLONEDDS_URI.
+   ros2 daemon stop
+   ros2 daemon start          # optional — `ros2 topic list` will autostart it
+
    ros2 topic list
    ```
 2. In the Conduit app: Settings → Transport: **DDS**, Discovery Mode: **Hybrid**, add the host IP to Unicast Peers, Network Interface: `en0`, set Domain ID to match.
 3. Enable sensors and tap Play.
 4. Verify: `ros2 topic echo /conduit/imu --qos-reliability best_effort`
+
+> **Note:** Re-run `ros2 daemon stop` any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or the unicast peer list — the daemon caches the first context and silently ignores later env-var changes. See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri) for the full failure mode.
 
 ---
 
@@ -210,17 +237,18 @@ ros2 topic list
 ros2 topic echo /conduit/imu --qos-reliability best_effort
 ```
 
-See [docker/README.md](docker/README.md) for the complete Docker guide. The `compose-dds.yml` file is added in a follow-up Phase 4 PR.
+See [docker/README.md](docker/README.md) for the complete Docker guide.
 
 ---
 
 ## Documentation
 
-- [Transports](docs/TRANSPORTS.md) - Zenoh vs DDS comparison and when to use each
-- [FAQ](docs/FAQ.md) - Frequently asked questions
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md) - Common issues and solutions
-- [Platform Notes](docs/PLATFORM_NOTES.md) - Platform-specific information
-- [Known Issues](docs/KNOWN_ISSUES.md) - Current limitations and workarounds
+- [Transports](docs/TRANSPORTS.md) — Zenoh vs DDS comparison and when to use each
+- [FAQ](docs/FAQ.md) — Frequently asked questions
+- [Troubleshooting Guide](docs/TROUBLESHOOTING.md) — Common issues and solutions
+- [Platform Notes](docs/PLATFORM_NOTES.md) — Platform-specific information
+- [Known Issues](docs/KNOWN_ISSUES.md) — Current limitations and workarounds
+- [Privacy Policy](PRIVACY.md) — Data handling, sensor permissions, analytics
 
 ---
 
@@ -235,4 +263,5 @@ See [docker/README.md](docker/README.md) for the complete Docker guide. The `com
 
 - [App Website](https://www.youtalk.jp/conduit)
 - [Source Code](https://github.com/youtalk/conduit)
-- [Privacy Policy](https://www.youtalk.jp/conduit/#privacy-policy)
+- [swift-ros2 (underlying ROS 2 client library)](https://github.com/youtalk/swift-ros2)
+- [Privacy Policy](PRIVACY.md)
