@@ -80,8 +80,18 @@ See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
 - **Motion**: IMU (100Hz) · Magnetometer (100Hz) · GPS (1Hz) · Proximity (10Hz)
 - **Perception**: Camera (15Hz) · LiDAR (10Hz)
 - **Environment**: Barometer (10Hz) · Illuminance (10Hz) · Temperature (1Hz)
-- **Input**: Game Controller (50Hz) · Microphone
+- **Input**: Game Controller (50Hz) · Microphone (`audio_common_msgs/AudioData`, streaming)
 - **Status**: Battery (1Hz)
+
+### MCAP Recording
+
+Capture every published topic to a local **MCAP** file with one tap, replay it later in [Foxglove](https://foxglove.dev/), `ros2 bag play`, or any MCAP-aware tool. Recordings live in the app's Documents directory and ship out via the standard share sheet (Files, AirDrop, Mail, …) — Conduit never uploads them. Schemas are written into the MCAP header automatically so the bag round-trips through any reader without external `.msg` files.
+
+Same wire path as live publishing: the same XCDR v1 encoder from [swift-ros2](https://github.com/youtalk/swift-ros2) feeds both the Zenoh / DDS publisher and the MCAP writer, so the on-disk bytes match what arrives on the ROS 2 graph.
+
+### In-App Purchases
+
+A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Temperature, Battery, Microphone) ships free. Camera, LiDAR, Game Controller, Background publishing, and MCAP Recording are unlocked individually via App Store In-App Purchases.
 
 ---
 
