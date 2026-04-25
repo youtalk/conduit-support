@@ -11,7 +11,7 @@
 **Transform your Apple devices into ROS 2 sensor publishers**
 
 Stream real-time sensor data directly to your robotics system via **Zenoh** or **DDS** — pick the transport that matches your ROS 2 setup. No bridge, no `rcl` / `rclcpp`, no CMake on a non-Linux host.
-Used cumulatively by **10,000+ ROS 2 developers worldwide** — peaked at **#4 in the App Store's Developer Tools category** (Japan) since January 2026.
+Used cumulatively by **10,000+ ROS 2 developers worldwide** — has ranked as high as **#4 in the App Store's Developer Tools category** (Japan) since January 2026.
 
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20|%20Jazzy%20|%20Kilted%20|%20Rolling-22314E?style=for-the-badge)](https://docs.ros.org)
 [![Built on swift-ros2](https://img.shields.io/badge/Built%20on-swift--ros2%200.6.0-orange?style=for-the-badge&logo=swift)](https://github.com/youtalk/swift-ros2)
@@ -79,7 +79,7 @@ See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
 
 - **Motion**: IMU (100Hz) · Magnetometer (100Hz) · GPS (1Hz) · Proximity (10Hz)
 - **Perception**: Camera (15Hz) · LiDAR (10Hz)
-- **Environment**: Barometer (10Hz) · Illuminance (10Hz) · Temperature (1Hz)
+- **Environment**: Barometer (10Hz) · Illuminance (10Hz) · Thermal (1Hz)
 - **Input**: Game Controller (50Hz) · Microphone (`audio_common_msgs/AudioData`, streaming)
 - **Status**: Battery (1Hz)
 
@@ -91,7 +91,7 @@ Same wire path as live publishing: the same XCDR v1 encoder from [swift-ros2](ht
 
 ### In-App Purchases
 
-A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Temperature, Battery, Microphone) ships free. Camera, LiDAR, Game Controller, Background publishing, and MCAP Recording are unlocked individually via App Store In-App Purchases.
+A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal, Battery, Microphone, Front camera) ships free. Wide / Ultra-wide / Telephoto cameras, LiDAR, Game Controller, Background publishing, and MCAP Recording are unlocked individually via App Store In-App Purchases.
 
 ---
 

@@ -26,7 +26,7 @@ The app may access, transmit, and (when MCAP recording is enabled) write the fol
 
 - All sensor data collection is **opt-in**. Sensors are disabled by default.
 - Data is transmitted **only to the Zenoh router or DDS subscriber you configure** (typically on your local network — under your control, not ours).
-- **No sensor data is sent to our servers** or any third-party servers. Conduit operates no backend; the app is a wire-level publisher only.
+- **No sensor data is sent to our servers** or any third-party servers. Conduit does not operate a backend that receives, stores, or relays sensor streams; the app is a wire-level publisher only. (Anonymous **app-usage analytics** events are a separate path — see the Analytics Data section below.)
 - **Background GPS tracking is not supported** due to privacy constraints. Location data is only collected while the app is active.
 
 ### Analytics Data
@@ -60,7 +60,7 @@ This data is used solely to improve app functionality and user experience.
 - **MCAP recordings (opt-in)**: When you start a recording, the app writes the same sensor messages to a local `.mcap` file in the app's Documents directory. Recordings stay on-device and are never uploaded by Conduit. You can browse, delete, or share them via the iOS / macOS share sheet (e.g. Files, AirDrop, mail) — Conduit hands the file off to the system from there.
 - **Configuration settings**: Stored locally on your device using iOS Keychain and UserDefaults. The 16-byte ROS 2 publisher GID is generated once and persisted to Keychain so the same publisher identity survives app launches.
 - **Network transmission**: Data is sent over your local network to the Zenoh router or DDS subscriber you configure.
-- **Firebase Analytics**: Collects anonymous usage statistics. Subject to [Google's Privacy Policy](https://policies.google.com/privacy). You can opt out by disabling analytics in iOS Settings → Privacy → Analytics & Improvements.
+- **Firebase Analytics**: Collects anonymous usage statistics. Subject to [Google's Privacy Policy](https://policies.google.com/privacy). You can opt out at any time from inside the app — **Settings → Privacy → Send Usage Statistics** — which calls Firebase's `setAnalyticsCollectionEnabled(false)` and persists the choice across launches.
 
 ## Permissions
 
@@ -80,7 +80,7 @@ You have the right to:
 
 - **Control sensor access**: Enable/disable any sensor at any time
 - **Delete app data**: Uninstall the app to remove all local data
-- **Opt out of analytics**: Disable analytics in iOS Settings
+- **Opt out of analytics**: Toggle off **Settings → Privacy → Send Usage Statistics** inside the app at any time
 
 ## In-App Purchases
 
