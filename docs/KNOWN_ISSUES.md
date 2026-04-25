@@ -208,13 +208,15 @@ ros2 topic echo /conduit/camera/front/camera_info \
 **Status**: By design (business model)
 
 **Free Sensors**:
-- IMU, GPS, Magnetic Field, Proximity, Barometer, Illuminance, Battery, Thermal
+- IMU, GPS, Magnetic Field, Proximity, Barometer, Illuminance, Battery, Thermal, **Microphone**
 - Front camera
 
-**Premium Sensors**:
+**Premium Sensors / Features** (one-time In-App Purchase per item):
 - LiDAR
-- Wide/Ultra-wide/Telephoto cameras
+- Wide / Ultra-wide / Telephoto cameras
 - Game Controller
+- **Background mode** — keep publishing while the app is backgrounded
+- **MCAP Recording** — record live topics to a local `.mcap` file
 
 ### Premium Purchases Not Syncing
 

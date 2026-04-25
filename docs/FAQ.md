@@ -59,8 +59,16 @@ See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and netw
    source /opt/ros/jazzy/setup.bash
    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
    export ROS_DOMAIN_ID=0  # Valid range: 0-232
+
+   # Restart the cached ros2 daemon so it picks up the new RMW.
+   # Skip this on a fresh shell where the daemon hasn't started yet.
+   ros2 daemon stop
+   ros2 daemon start          # optional — `ros2 topic list` autostarts it
+
    ros2 topic list  # Verify the RMW is active (no topics expected yet)
    ```
+
+   **Re-run `ros2 daemon stop` whenever you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or the unicast peer list.** The daemon caches the first context it saw and silently ignores later env-var changes — symptoms include `ros2 topic list` showing topics from the wrong domain, missing the iOS topics entirely, or "topic exists but no data". See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri).
 
 2. In the Conduit app:
    - Tap Settings → Transport: **DDS**
@@ -152,25 +160,28 @@ For production use, you need a ROS 2 system (Humble, Jazzy, Kilted, or Rolling) 
 
 ### How do I enable background mode?
 
+Background mode is a premium In-App Purchase. After unlocking it:
+
 1. Tap Settings → Enable "Background Mode"
 2. Grant location permission if using GPS
 
 **Limitations:**
 - GPS background tracking not supported (privacy constraints)
-- Camera and LiDAR stop in background (iOS restrictions)
-- Only IMU, GPS (foreground), Magnetometer, Barometer, Battery, Thermal continue in background
+- Camera, LiDAR, and Microphone stop in background (iOS restrictions on ARKit and audio session)
+- Only IMU, GPS (foreground only), Magnetometer, Barometer, Battery, Thermal continue in background
 
 ### What are the premium features?
 
 **Free features:**
 - IMU, GPS, Magnetometer, Barometer, Battery, Thermal, Proximity, Illuminance, **Microphone**
 - Front camera
-- Background processing mode (basic)
 
-**Premium features** (In-App Purchase):
-- **LiDAR sensor** - Point cloud depth sensing
-- **Multi-camera** - Wide, ultra-wide, telephoto cameras
-- **Game Controller** - Bluetooth controller input
+**Premium features** (one-time In-App Purchase per feature):
+- **Multi-camera** — Wide, ultra-wide, telephoto cameras (front camera stays free)
+- **LiDAR sensor** — Point cloud depth sensing (iPhone Pro / iPad Pro / Vision Pro)
+- **Game Controller** — MFi / Bluetooth controller input
+- **Background mode** — Continue publishing supported sensors when the app is backgrounded
+- **MCAP Recording** — Record live topics to a local `.mcap` file for replay in Foxglove or `ros2 bag play`
 
 ### How do I verify data is being published?
 
@@ -339,6 +350,39 @@ No. iOS restricts microphone access to foreground apps only. The microphone stop
 
 Keep the app in the foreground when using the Microphone sensor.
 
+---
+
+## MCAP Recording
+
+### How does MCAP recording work?
+
+When you start a recording, Conduit writes every published topic — same XCDR v1 bytes as the live Zenoh / DDS publish path — to a local `.mcap` file in the app's Documents directory. Schemas are embedded in the MCAP header automatically, so the bag round-trips through any MCAP-aware reader (Foxglove, `ros2 bag play`, the `mcap` CLI) without external `.msg` files.
+
+Recordings are saved on-device only. Conduit never uploads them. From the in-app Recordings list you can share a recording via the system share sheet (Files, AirDrop, mail, …) or delete it.
+
+### Can I record while publishing live to ROS 2?
+
+Yes. Recording is a tee on the same publish path, not a separate pipeline — every message you send to ROS 2 is also written to the bag.
+
+### How do I replay an MCAP file?
+
+```bash
+# Foxglove Studio: File → Open → select the .mcap
+
+# ros2 bag (Jazzy / Kilted / Rolling — bundled mcap_storage_plugin):
+ros2 bag play recording.mcap
+
+# Humble: install ros-humble-rosbag2-storage-mcap first
+sudo apt install ros-humble-rosbag2-storage-mcap
+ros2 bag play recording.mcap --storage mcap
+```
+
+### Why is the Recording button greyed out?
+
+MCAP Recording is a one-time In-App Purchase (see [premium features](#what-are-the-premium-features)). After unlocking it, the Recording control becomes active in the FAB mode selector.
+
+---
+
 ### Does Conduit work offline?
 
 No. Conduit requires network connectivity to:
@@ -367,4 +411,4 @@ This will clear:
 
 Firebase Analytics collects anonymous app usage statistics only (opt-out available in iOS Settings).
 
-See our [Privacy Policy](https://www.youtalk.jp/conduit/#privacy-policy) for details.
+See our [Privacy Policy](../PRIVACY.md) for details.

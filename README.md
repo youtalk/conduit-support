@@ -173,11 +173,20 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Tempera
    source /opt/ros/jazzy/setup.bash
    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
    export ROS_DOMAIN_ID=0  # Valid range: 0-232
+
+   # If you previously ran ros2 commands under a different RMW
+   # (e.g. rmw_zenoh_cpp), restart the cached ros2 daemon so it picks up
+   # the new RMW_IMPLEMENTATION / ROS_DOMAIN_ID / CYCLONEDDS_URI.
+   ros2 daemon stop
+   ros2 daemon start          # optional — `ros2 topic list` will autostart it
+
    ros2 topic list
    ```
 2. In the Conduit app: Settings → Transport: **DDS**, Discovery Mode: **Hybrid**, add the host IP to Unicast Peers, Network Interface: `en0`, set Domain ID to match.
 3. Enable sensors and tap Play.
 4. Verify: `ros2 topic echo /conduit/imu --qos-reliability best_effort`
+
+> **Note:** Re-run `ros2 daemon stop` any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or the unicast peer list — the daemon caches the first context and silently ignores later env-var changes. See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri) for the full failure mode.
 
 ---
 
