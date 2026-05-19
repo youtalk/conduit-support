@@ -104,7 +104,7 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 <td align="center" width="25%">
 <img src="images/motion-enabled.png" width="180" alt="Motion Sensors"><br>
 <b>Motion</b><br>
-<sub>IMU, GPS, Magnetic Field, Proximity</sub>
+<sub>IMU, GPS, Magnetometer, Proximity</sub>
 </td>
 <td align="center" width="25%">
 <img src="images/perception-enabled.png" width="180" alt="Perception Sensors"><br>
