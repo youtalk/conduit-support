@@ -109,7 +109,7 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 <td align="center" width="25%">
 <img src="images/perception-enabled.png" width="180" alt="Perception Sensors"><br>
 <b>Perception</b><br>
-<sub>Microphone, Cameras, LiDAR</sub>
+<sub>Microphone, Camera, LiDAR</sub>
 </td>
 <td align="center" width="25%">
 <img src="images/status-enabled.png" width="180" alt="Status Sensors"><br>
