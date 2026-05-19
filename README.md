@@ -78,9 +78,9 @@ See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
 ### 12 Sensor Types
 
 - **Motion**: IMU (100Hz) · Magnetometer (100Hz) · GPS (1Hz) · Proximity (10Hz)
-- **Perception**: Camera (15Hz) · LiDAR (10Hz)
+- **Perception**: Camera (30Hz) · LiDAR (30Hz) · Microphone (`audio_common_msgs/AudioData`, streaming)
 - **Environment**: Barometer (10Hz) · Illuminance (10Hz) · Thermal (1Hz)
-- **Input**: Game Controller (50Hz) · Microphone (`audio_common_msgs/AudioData`, streaming)
+- **Input**: Game Controller (50Hz)
 - **Status**: Battery (1Hz)
 
 ### MCAP Recording
@@ -97,7 +97,7 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 
 ## Screenshots
 
-### Sensor Tabs
+### Main Tabs
 
 <table>
 <tr>
@@ -109,39 +109,44 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 <td align="center" width="25%">
 <img src="images/perception-enabled.png" width="180" alt="Perception Sensors"><br>
 <b>Perception</b><br>
-<sub>Camera, LiDAR</sub>
+<sub>Microphone, Camera, LiDAR</sub>
 </td>
 <td align="center" width="25%">
 <img src="images/status-enabled.png" width="180" alt="Status Sensors"><br>
 <b>Status</b><br>
-<sub>Battery, Thermal, Barometer, etc.</sub>
+<sub>Battery, Thermal, Barometer, Illuminance, Game Controller</sub>
 </td>
 <td align="center" width="25%">
-<img src="images/settings.png" width="180" alt="Settings"><br>
-<b>Settings</b><br>
-<sub>Router, Node, ROS 2 Distribution</sub>
+<img src="images/recordings.png" width="180" alt="Recordings"><br>
+<b>Recordings</b><br>
+<sub>MCAP bags — record alongside or instead of live publishing</sub>
 </td>
 </tr>
 </table>
 
-### Getting Started
+### Onboarding & Settings
 
 <table>
 <tr>
 <td align="center" width="25%">
-<img src="images/onboarding1.png" width="180" alt="Step 1: Start Router"><br>
-<b>1. Start Zenoh Router</b><br>
-<sub>Run rmw_zenohd on your ROS 2 system</sub>
+<img src="images/setup-communication.png" width="180" alt="Setup Communication"><br>
+<b>1. Setup Communication</b><br>
+<sub>Pick Zenoh or DDS, follow the host-side recipe</sub>
 </td>
 <td align="center" width="25%">
-<img src="images/onboarding2.png" width="180" alt="Step 2: Connect"><br>
-<b>2. Connect to Router</b><br>
-<sub>Enter IP address and port</sub>
+<img src="images/switch-transport.png" width="180" alt="Switch Transport Anytime"><br>
+<b>2. Switch Transport Anytime</b><br>
+<sub>Change transport, router, or discovery later from Settings</sub>
 </td>
 <td align="center" width="25%">
-<img src="images/onboarding3.png" width="180" alt="Step 3: Publish"><br>
-<b>3. Start Publishing</b><br>
-<sub>Select sensors and stream to ROS 2</sub>
+<img src="images/start-publishing.png" width="180" alt="Start Publishing or Recording"><br>
+<b>3. Publish or Record</b><br>
+<sub>Tap Play to stream, or Record to save an MCAP file</sub>
+</td>
+<td align="center" width="25%">
+<img src="images/settings.png" width="180" alt="Settings"><br>
+<b>Settings</b><br>
+<sub>Transport, Domain ID, Device IP, Router address</sub>
 </td>
 </tr>
 </table>
