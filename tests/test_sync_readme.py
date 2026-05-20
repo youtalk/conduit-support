@@ -61,3 +61,31 @@ def test_on_pre_build_hook_writes_index(tmp_path, monkeypatch):
 
     out = (docs_path / "index.md").read_text()
     assert "![icon](assets/img/app_icon.png)" in out
+
+
+def test_rewrites_bare_uppercase_md_link():
+    out = sync_readme.rewrite("[Privacy](PRIVACY.md)")
+    assert out == "[Privacy](privacy.md)"
+
+
+def test_rewrites_bare_uppercase_md_with_underscore():
+    out = sync_readme.rewrite("[Platform Notes](PLATFORM_NOTES.md)")
+    assert out == "[Platform Notes](platform-notes.md)"
+
+
+def test_rewrites_bare_uppercase_md_preserves_anchor():
+    out = sync_readme.rewrite("[Trouble](TROUBLESHOOTING.md#some-anchor)")
+    assert out == "[Trouble](troubleshooting.md#some-anchor)"
+
+
+def test_rewrites_docker_readme_to_github_url():
+    out = sync_readme.rewrite("[Docker](docker/README.md)")
+    assert out == (
+        "[Docker](https://github.com/youtalk/conduit-support/tree/main/docker)"
+    )
+
+
+def test_leaves_uppercase_url_alone_when_part_of_path():
+    # Don't accidentally munge things that aren't intended .md filenames
+    src = "[GitHub](https://github.com/youtalk/conduit-support/blob/main/README.md)"
+    assert sync_readme.rewrite(src) == src
