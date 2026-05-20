@@ -16,7 +16,7 @@ Conduit 2.0 supports two transports — choose based on your ROS 2 middleware:
 
 **Recommendation:** Use **Zenoh** if you already have rmw_zenoh_cpp set up. Use **DDS** if your stack uses rmw_cyclonedds_cpp and you want zero-broker operation.
 
-See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and network-requirements reference.
+See [transports.md](transports.md) for a deeper side-by-side comparison and network-requirements reference.
 
 ### I used Conduit 1.x — what changed in 2.0?
 
@@ -68,7 +68,7 @@ See [TRANSPORTS.md](TRANSPORTS.md) for a deeper side-by-side comparison and netw
    ros2 topic list  # Verify the RMW is active (no topics expected yet)
    ```
 
-   **Re-run `ros2 daemon stop` whenever you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or the unicast peer list.** The daemon caches the first context it saw and silently ignores later env-var changes — symptoms include `ros2 topic list` showing topics from the wrong domain, missing the iOS topics entirely, or "topic exists but no data". See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri).
+   **Re-run `ros2 daemon stop` whenever you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or the unicast peer list.** The daemon caches the first context it saw and silently ignores later env-var changes — symptoms include `ros2 topic list` showing topics from the wrong domain, missing the iOS topics entirely, or "topic exists but no data". See [troubleshooting.md](troubleshooting.md#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri).
 
 2. In the Conduit app:
    - Tap Settings → Transport: **DDS**
@@ -411,4 +411,4 @@ This will clear:
 
 Firebase Analytics collects anonymous app usage statistics only (opt-out available in iOS Settings).
 
-See our [Privacy Policy](../PRIVACY.md) for details.
+See our [Privacy Policy](privacy.md) for details.
