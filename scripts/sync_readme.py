@@ -56,4 +56,5 @@ def on_pre_build(config) -> None:  # type: ignore[no-untyped-def]
     if not readme.exists():
         return
     docs_dir.mkdir(parents=True, exist_ok=True)
-    (docs_dir / "index.md").write_text(rewrite(readme.read_text()))
+    text = readme.read_text(encoding="utf-8")
+    (docs_dir / "index.md").write_text(rewrite(text), encoding="utf-8", newline="\n")
