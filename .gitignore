@@ -5,3 +5,8 @@
 
 # Generated from README.md by scripts/sync_readme.py
 /docs/index.md
+
+# Python
+.venv/
+__pycache__/
+*.pyc
