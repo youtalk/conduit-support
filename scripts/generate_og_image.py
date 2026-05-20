@@ -1,14 +1,15 @@
 """Generate the OpenGraph share image (1200x630) for conduit.youtalk.jp.
 
-Renders the same visual language as the in-app hero:
-- App icon on the left at App-icon scale
-- Gradient backdrop (Apple Blue -> Indigo with subtle blue/purple haze)
-- Tagline in SF Pro Rounded if available, otherwise system fallback
-- Soft glass card containing the tagline
+Layout:
+- Plain white background — no tint, no gradient mesh, no glass card.
+- App icon on the left at its native rounded-square shape (no drop shadow).
+- "Conduit" rendered in the heaviest SF Pro Rounded weight available,
+  filled with the Apple Blue → Indigo gradient.
+- Subtitle and footer in muted dark gray.
 
-Output: docs/assets/img/og-card.png
+Output: docs/assets/img/og-card.png (committed; not part of MkDocs build).
 
-Run manually (not part of MkDocs build) so the image is committed:
+Re-run after editing:
 
     python scripts/generate_og_image.py
 """
@@ -17,7 +18,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 ICON = ROOT / "docs" / "assets" / "img" / "app_icon.png"
@@ -25,122 +26,175 @@ OUT = ROOT / "docs" / "assets" / "img" / "og-card.png"
 
 WIDTH, HEIGHT = 1200, 630
 
+# Apple system palette (matches docs/assets/css/conduit.css).
+BLUE   = (0, 122, 255)
+INDIGO = (88, 86, 214)
+LABEL  = (29, 29, 31)      # #1d1d1f
+LABEL2 = (110, 110, 115)   # SF secondary-label-ish
+
 
 def _font(size: int, weight: str = "Bold") -> ImageFont.FreeTypeFont:
-    """Best-effort SF Pro Rounded; otherwise a reasonable system fallback."""
-    candidates = [
-        f"/System/Library/Fonts/SF-Pro-Rounded-{weight}.otf",
-        f"/System/Library/Fonts/SFNSRounded.ttf",
-        f"/Library/Fonts/SF-Pro-Rounded-{weight}.otf",
-        "/System/Library/Fonts/Helvetica.ttc",
-        "/Library/Fonts/Arial Unicode.ttf",
-    ]
-    for path in candidates:
-        if os.path.exists(path):
+    """SF Pro Rounded at the requested named weight, with safe fallbacks.
+
+    On modern macOS the rounded family ships as a single variable font
+    (``SFNSRounded.ttf``) whose default variation is Regular — opening it
+    via ``ImageFont.truetype`` without selecting a named variation silently
+    gives Regular weight regardless of what the caller asked for. We pick
+    the matching named instance via ``set_variation_by_name``.
+    """
+    weight_chain = {
+        "Heavy":    ["Heavy", "Black", "Bold"],
+        "Black":    ["Black", "Heavy", "Bold"],
+        "Bold":     ["Bold", "Heavy"],
+        "Semibold": ["Semibold", "Bold"],
+        "Medium":   ["Medium", "Semibold", "Regular"],
+        "Regular":  ["Regular", "Medium"],
+    }
+    weights = weight_chain.get(weight, [weight])
+
+    # 1) Discrete OTF files (older Apple installs, custom installs).
+    for w in weights:
+        for path in (
+            f"/System/Library/Fonts/SF-Pro-Rounded-{w}.otf",
+            f"/Library/Fonts/SF-Pro-Rounded-{w}.otf",
+        ):
+            if os.path.exists(path):
+                try:
+                    return ImageFont.truetype(path, size)
+                except OSError:
+                    continue
+
+    # 2) Variable font with named instances (default on modern macOS).
+    for path in ("/System/Library/Fonts/SFNSRounded.ttf",
+                 "/System/Library/Fonts/SFCompactRounded.ttf"):
+        if not os.path.exists(path):
+            continue
+        try:
+            f = ImageFont.truetype(path, size)
+        except OSError:
+            continue
+        try:
+            names = {n.decode("ascii", "ignore") for n in f.get_variation_names()}
+        except (OSError, AttributeError):
+            names = set()
+        for w in weights:
+            if w in names:
+                try:
+                    f.set_variation_by_name(w)
+                except (OSError, AttributeError):
+                    pass
+                return f
+        return f
+
+    # 3) Last resort.
+    for fallback in ("/System/Library/Fonts/Helvetica.ttc",
+                     "/Library/Fonts/Arial Unicode.ttf"):
+        if os.path.exists(fallback):
             try:
-                return ImageFont.truetype(path, size)
+                return ImageFont.truetype(fallback, size)
             except OSError:
                 continue
     return ImageFont.load_default()
 
 
-def _radial(size: tuple[int, int], color: tuple[int, int, int, int],
-            center: tuple[float, float], radius: float) -> Image.Image:
-    """A radial gradient on a transparent canvas, centred at `center`."""
-    w, h = size
-    img = Image.new("RGBA", size, (0, 0, 0, 0))
-    cx, cy = center[0] * w, center[1] * h
-    r, g, b, a_max = color
-    # 1px mask scaled up — much faster than per-pixel loops.
-    mask = Image.new("L", size, 0)
+def _gradient_text(
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    color_start: tuple[int, int, int],
+    color_end: tuple[int, int, int],
+) -> Image.Image:
+    """Render `text` filled with a horizontal gradient.
+
+    Returns a tight RGBA image just big enough to hold the glyphs.
+    """
+    # Probe the bounding box on a throwaway canvas.
+    probe = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+    pd = ImageDraw.Draw(probe)
+    bbox = pd.textbbox((0, 0), text, font=font)
+    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    # Add a tiny pad so descenders / anti-aliasing aren't clipped.
+    pad_x, pad_y = 4, 6
+    canvas_w, canvas_h = w + pad_x * 2, h + pad_y * 2
+
+    # 1. Build the gradient fill.
+    grad = Image.new("RGB", (canvas_w, canvas_h))
+    g_px = grad.load()
+    for x in range(canvas_w):
+        t = x / max(canvas_w - 1, 1)
+        r = int(color_start[0] * (1 - t) + color_end[0] * t)
+        g = int(color_start[1] * (1 - t) + color_end[1] * t)
+        b = int(color_start[2] * (1 - t) + color_end[2] * t)
+        for y in range(canvas_h):
+            g_px[x, y] = (r, g, b)
+
+    # 2. Build the text alpha mask.
+    mask = Image.new("L", (canvas_w, canvas_h), 0)
     md = ImageDraw.Draw(mask)
-    steps = 22
-    for i in range(steps, 0, -1):
-        rad = radius * (i / steps)
-        alpha = int(a_max * (1 - i / steps) ** 1.6)
-        md.ellipse((cx - rad, cy - rad, cx + rad, cy + rad), fill=alpha)
-    mask = mask.filter(ImageFilter.GaussianBlur(radius=radius * 0.18))
-    tint = Image.new("RGBA", size, (r, g, b, 255))
-    img.paste(tint, (0, 0), mask)
-    return img
+    md.text((pad_x - bbox[0], pad_y - bbox[1]), text, font=font, fill=255)
+
+    # 3. Compose gradient + mask onto a transparent RGBA tile.
+    out = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    out.paste(grad, (0, 0), mask)
+    return out
 
 
 def build() -> None:
-    # Apple gradient background (top-left → bottom-right blue -> indigo)
-    bg = Image.new("RGB", (WIDTH, HEIGHT), (245, 245, 247))
-    grad = Image.new("RGB", (WIDTH, HEIGHT))
-    g_px = grad.load()
-    for y in range(HEIGHT):
-        for x in range(WIDTH):
-            t = (x / WIDTH * 0.55 + y / HEIGHT * 0.45)
-            r = int(0 * (1 - t) + 88 * t)
-            g = int(122 * (1 - t) + 86 * t)
-            b = int(255 * (1 - t) + 214 * t)
-            g_px[x, y] = (r, g, b)
-    bg = grad
+    bg = Image.new("RGBA", (WIDTH, HEIGHT), (255, 255, 255, 255))
 
-    # Atmospheric blurred orbs for depth.
-    bg = Image.alpha_composite(
-        bg.convert("RGBA"),
-        _radial((WIDTH, HEIGHT), (0, 122, 255, 180), (0.08, 0.10), 520),
-    )
-    bg = Image.alpha_composite(
-        bg, _radial((WIDTH, HEIGHT), (175, 82, 222, 160), (0.92, 0.18), 460),
-    )
-    bg = Image.alpha_composite(
-        bg, _radial((WIDTH, HEIGHT), (48, 176, 199, 140), (0.85, 0.92), 480),
-    )
-
-    draw = ImageDraw.Draw(bg)
-
-    # ----- Glass card (frosted panel containing the headline) -----
-    card_pad = 60
-    card = (card_pad, card_pad, WIDTH - card_pad, HEIGHT - card_pad)
-    card_img = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    cdraw = ImageDraw.Draw(card_img)
-    cdraw.rounded_rectangle(card, radius=44, fill=(255, 255, 255, 64))
-    cdraw.rounded_rectangle(card, radius=44, outline=(255, 255, 255, 140), width=2)
-    bg = Image.alpha_composite(bg, card_img)
-    draw = ImageDraw.Draw(bg)
-
-    # ----- App icon -----
+    # ----- App icon (no shadow, no decorative frame) -----
     icon_size = 220
-    icon = Image.open(ICON).convert("RGBA")
-    icon = icon.resize((icon_size, icon_size), Image.LANCZOS)
-
-    # Round the corners.
+    icon = Image.open(ICON).convert("RGBA").resize(
+        (icon_size, icon_size), Image.LANCZOS
+    )
     rmask = Image.new("L", (icon_size, icon_size), 0)
     ImageDraw.Draw(rmask).rounded_rectangle(
-        (0, 0, icon_size, icon_size), radius=int(icon_size * 0.225), fill=255
+        (0, 0, icon_size, icon_size),
+        radius=int(icon_size * 0.225),
+        fill=255,
     )
     icon.putalpha(rmask)
+    icon_x, icon_y = 120, (HEIGHT - icon_size) // 2
+    bg.alpha_composite(icon, dest=(icon_x, icon_y))
 
-    # Soft shadow under the icon.
-    shadow = Image.new("RGBA", (icon_size + 80, icon_size + 80), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).rounded_rectangle(
-        (40, 50, icon_size + 40, icon_size + 50),
-        radius=int(icon_size * 0.225), fill=(0, 60, 200, 160),
-    )
-    shadow = shadow.filter(ImageFilter.GaussianBlur(28))
-    bg.alpha_composite(shadow, dest=(120 - 40, 180 - 40))
-    bg.alpha_composite(icon, dest=(120, 180))
-
-    # ----- Text -----
-    eyebrow = _font(28, "Semibold")
-    title   = _font(112, "Bold")
-    sub     = _font(34, "Regular")
-    foot    = _font(26, "Medium")
+    # ----- Text block -----
+    eyebrow_font = _font(28, "Semibold")
+    title_font   = _font(132, "Heavy")     # heaviest SF Rounded available
+    sub_font     = _font(34, "Regular")
+    foot_font    = _font(26, "Medium")
 
     text_x = 380
-    draw.text((text_x, 180), "APPLE-NATIVE · ROS 2", font=eyebrow,
-              fill=(255, 255, 255, 230))
-    draw.text((text_x, 220), "Conduit", font=title, fill=(255, 255, 255, 255))
-    draw.text((text_x, 360),
-              "Stream 12 real-time sensors from iPhone,\n"
-              "iPad, Mac, and Apple Vision Pro into ROS 2.",
-              font=sub, fill=(255, 255, 255, 235), spacing=10)
-    draw.text((text_x, 500), "conduit.youtalk.jp", font=foot,
-              fill=(255, 255, 255, 200))
+    draw = ImageDraw.Draw(bg)
+
+    # Eyebrow — Apple Blue, uppercase.
+    draw.text(
+        (text_x, icon_y - 6),
+        "APPLE-NATIVE · ROS 2",
+        font=eyebrow_font,
+        fill=BLUE + (255,),
+    )
+
+    # Title — heavy weight, blue → indigo gradient.
+    title_img = _gradient_text("Conduit", title_font, BLUE, INDIGO)
+    bg.alpha_composite(title_img, dest=(text_x - 4, icon_y + 30))
+
+    # Subtitle — muted dark gray.
+    subtitle_y = icon_y + 30 + title_img.height + 10
+    draw.text(
+        (text_x, subtitle_y),
+        "Stream 12 real-time sensors from iPhone,\n"
+        "iPad, Mac, and Apple Vision Pro into ROS 2.",
+        font=sub_font,
+        fill=LABEL + (255,),
+        spacing=10,
+    )
+
+    # Footer URL — secondary gray.
+    draw.text(
+        (text_x, HEIGHT - 110),
+        "conduit.youtalk.jp",
+        font=foot_font,
+        fill=LABEL2 + (255,),
+    )
 
     bg.convert("RGB").save(OUT, "PNG", optimize=True)
     print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size // 1024} KB)")
