@@ -47,8 +47,10 @@ _MD_INLINE_RE = re.compile(r"\]\(images/")
 #
 #   </div>
 #
-# We allow flexible whitespace so README tweaks don't silently bypass the rule.
+# Anchored with \A so only the README's opening block is rewritten; if the
+# same centered block ever recurs elsewhere it won't be silently consumed.
 _HERO_BLOCK_RE = re.compile(
+    r"\A\s*"
     r"<div align=\"center\">\s*"
     r"<a href=\"(?P<app_url>https://apps\.apple\.com/[^\"]+)\">\s*"
     r"<img src=\"images/app_icon\.png\"[^>]*>\s*"

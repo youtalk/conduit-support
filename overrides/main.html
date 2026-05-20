@@ -64,11 +64,10 @@
 {% block extrahead %}
   {{ super() }}
   {% if page and page.is_homepage %}
-  <script>
-    document.documentElement.dataset.conduitHome = "true";
-    document.addEventListener("DOMContentLoaded", function () {
-      document.body.setAttribute("data-conduit-home", "true");
-    });
-  </script>
+  {# Tag <html> so home-only CSS selectors (data-conduit-home) match
+     immediately during head parse — no DOMContentLoaded flash. CSS uses
+     `[data-conduit-home="true"] …` so the attribute on <html> alone is
+     enough; <body> doesn't need to mirror it. #}
+  <script>document.documentElement.dataset.conduitHome = "true";</script>
   {% endif %}
 {% endblock %}

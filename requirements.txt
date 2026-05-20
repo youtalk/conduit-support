@@ -1,2 +1,5 @@
 mkdocs-material
 pytest
+# Pillow is only needed when re-running scripts/generate_og_image.py
+# (the committed og-card.png is what MkDocs ships).
+pillow

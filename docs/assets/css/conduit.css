@@ -274,14 +274,15 @@ body,
   background: var(--conduit-bg-elevated);
 }
 
-/* Hide the bare "# Conduit" H1 on the home page — the hero replaces it.
-   The hero block sits ABOVE this rule in DOM order; we just kill the H1.
-   The class is added by the home-hero partial so it scopes to index only. */
-body[data-conduit-home="true"] .md-content__inner > h1:first-of-type {
+/* Hide any stray "# Conduit" H1 on the home page — sync_readme.py normally
+   strips it and replaces with the hero, but if the regex ever misses the
+   H1 will surface unstyled; this is the belt-and-braces fallback. The
+   data-conduit-home attribute is set on <html> by overrides/main.html. */
+[data-conduit-home="true"] .md-content__inner > h1:first-of-type {
   display: none;
 }
 
-/* ----- 6. Hero block (rendered by overrides/partials/conduit-hero.html) ----- */
+/* ----- 6. Hero block (injected into index.md by scripts/sync_readme.py) ----- */
 
 .conduit-hero {
   position: relative;
@@ -522,13 +523,13 @@ body[data-conduit-home="true"] .md-content__inner > h1:first-of-type {
   to   { opacity: 1; transform: translate3d(0, 0,   0); }
 }
 .conduit-hero,
-body[data-conduit-home="true"] .md-content > article > *:not(.conduit-hero) {
+[data-conduit-home="true"] .md-content > article > *:not(.conduit-hero) {
   animation: conduit-rise .7s cubic-bezier(.22,.8,.2,1) both;
 }
-body[data-conduit-home="true"] .md-content > article > *:nth-child(2)  { animation-delay: .08s; }
-body[data-conduit-home="true"] .md-content > article > *:nth-child(3)  { animation-delay: .14s; }
-body[data-conduit-home="true"] .md-content > article > *:nth-child(4)  { animation-delay: .20s; }
-body[data-conduit-home="true"] .md-content > article > *:nth-child(5)  { animation-delay: .26s; }
+[data-conduit-home="true"] .md-content > article > *:nth-child(2)  { animation-delay: .08s; }
+[data-conduit-home="true"] .md-content > article > *:nth-child(3)  { animation-delay: .14s; }
+[data-conduit-home="true"] .md-content > article > *:nth-child(4)  { animation-delay: .20s; }
+[data-conduit-home="true"] .md-content > article > *:nth-child(5)  { animation-delay: .26s; }
 
 /* ----- 7. Admonitions become glass cards ----- */
 
@@ -673,12 +674,9 @@ body[data-conduit-home="true"] .md-content > article > *:nth-child(5)  { animati
 [data-md-color-scheme="slate"] .md-footer-meta { background: rgba(255,255,255,0.04); }
 .md-footer-meta__inner { font-family: var(--conduit-font-rounded); font-weight: 500; }
 
-/* ----- 11. Hide bare "# Conduit" H1 also when JS doesn't fire (defensive) ----- */
-.md-content article > h1:first-child + .conduit-hero { display: none; }
-
-/* ----- 12. Reduce-motion respect ----- */
+/* ----- 11. Reduce-motion respect ----- */
 @media (prefers-reduced-motion: reduce) {
   .conduit-hero,
-  body[data-conduit-home="true"] .md-content > article > * { animation: none !important; }
+  [data-conduit-home="true"] .md-content > article > * { animation: none !important; }
   .md-typeset table:not([class]) img:hover { transform: none; }
 }
