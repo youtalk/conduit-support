@@ -1,1 +1,7 @@
 .DS_Store
+
+# MkDocs build output
+/site/
+
+# Generated from README.md by scripts/sync_readme.py
+/docs/index.md
