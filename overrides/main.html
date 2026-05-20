@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{#
+   Conduit support-site overrides.
+
+   Two responsibilities:
+
+   1. OpenGraph / Twitter card metadata, with sensible per-page defaults that
+      individual pages can override via Markdown front-matter (`title`,
+      `description`, `og_image`).
+   2. Tag <body> with data-conduit-home="true" on the home page so the
+      home-only styles in docs/assets/css/conduit.css (hero stagger
+      animation, defensive H1 hiding) scope correctly.
+#}
+
+{% set _og_image_default = "assets/img/og-card.png" %}
+{% set _og_image = page.meta.get("og_image") if page and page.meta else None %}
+{% set _og_image_url = (config.site_url ~ (_og_image or _og_image_default)) | replace("//assets", "/assets") %}
+{% set _page_title = (page.meta.title if page and page.meta and page.meta.title else page.title if page and page.title else config.site_name) %}
+{% if page and page.is_homepage %}
+  {% set _page_title = config.site_name %}
+{% endif %}
+{% set _page_description = (page.meta.description if page and page.meta and page.meta.description else config.site_description) %}
+{% set _page_url = (config.site_url ~ (page.url if page and page.url else "")) if config.site_url else "" %}
+
+{% block site_meta %}
+  {{ super() }}
+
+  {# Theme color matches Apple Blue used in the hero gradient. #}
+  <meta name="theme-color" content="#007AFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B0B0F" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  {# OpenGraph. #}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:title" content="{{ _page_title }}">
+  <meta property="og:description" content="{{ _page_description }}">
+  {% if _page_url %}<meta property="og:url" content="{{ _page_url }}">{% endif %}
+  <meta property="og:image" content="{{ _og_image_url }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Conduit — Apple-native ROS 2 sensor publisher">
+  <meta property="og:locale" content="en_US">
+
+  {# Twitter card. #}
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ _page_title }}">
+  <meta name="twitter:description" content="{{ _page_description }}">
+  <meta name="twitter:image" content="{{ _og_image_url }}">
+  <meta name="twitter:image:alt" content="Conduit — Apple-native ROS 2 sensor publisher">
+
+  {# Canonical link is already emitted by Material; we keep ours implicit. #}
+{% endblock %}
+
+{% block htmltitle %}
+  {%- if page and page.is_homepage -%}
+    <title>{{ config.site_name }} — {{ config.site_description }}</title>
+  {%- else -%}
+    {{ super() }}
+  {%- endif -%}
+{% endblock %}
+
+{% block extrahead %}
+  {{ super() }}
+  {% if page and page.is_homepage %}
+  {# Tag <html> so home-only CSS selectors (data-conduit-home) match
+     immediately during head parse — no DOMContentLoaded flash. CSS uses
+     `[data-conduit-home="true"] …` so the attribute on <html> alone is
+     enough; <body> doesn't need to mirror it. #}
+  <script>document.documentElement.dataset.conduitHome = "true";</script>
+  {% endif %}
+{% endblock %}

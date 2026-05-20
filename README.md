@@ -267,6 +267,5 @@ See [docker/README.md](docker/README.md) for the complete Docker guide.
 ## Links
 
 - [App Website](https://www.youtalk.jp/conduit)
-- [Source Code](https://github.com/youtalk/conduit)
 - [swift-ros2 (underlying ROS 2 client library)](https://github.com/youtalk/swift-ros2)
 - [Privacy Policy](PRIVACY.md)
