@@ -60,6 +60,6 @@ Use DDS if:
 - You want the shortest network path (no extra hop through a router).
 
 See also:
-- [FAQ.md](FAQ.md) — setup Q&A
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — failure modes for both transports
-- [KNOWN_ISSUES.md](KNOWN_ISSUES.md) — current limitations
+- [faq.md](faq.md) — setup Q&A
+- [troubleshooting.md](troubleshooting.md) — failure modes for both transports
+- [known-issues.md](known-issues.md) — current limitations

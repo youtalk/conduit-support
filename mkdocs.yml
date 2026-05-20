@@ -1,0 +1,56 @@
+site_name: Conduit
+site_url: https://conduit.youtalk.jp/
+site_description: Turn your Apple device into a ROS 2 sensor publisher
+repo_url: https://github.com/youtalk/conduit-support
+repo_name: youtalk/conduit-support
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/img/app_icon.png
+  favicon: assets/img/app_icon.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - search.suggest
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - FAQ: faq.md
+  - Troubleshooting: troubleshooting.md
+  - Platform notes: platform-notes.md
+  - Transports (Zenoh / DDS): transports.md
+  - Known issues: known-issues.md
+  - Privacy policy: privacy.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+
+plugins:
+  - search
+
+hooks:
+  - scripts/sync_readme.py

@@ -1,0 +1,44 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests/ -v
+      - run: mkdocs build --strict
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Verify CNAME present in source
+        run: test -f CNAME
+      - name: Copy CNAME into docs/ so MkDocs publishes it
+        run: cp CNAME docs/CNAME
+      - run: mkdocs gh-deploy --force

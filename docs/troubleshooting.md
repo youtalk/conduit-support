@@ -396,13 +396,13 @@ Any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or 
 
 2. **CameraInfo reliability:** CameraInfo uses BestEffort with TransientLocal (`latchedBestEffort`). Standard `image_transport` subscribers expect Reliable — override the subscriber QoS.
 
-3. **Large messages (Camera, LiDAR):** Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+3. **Large messages (Camera, LiDAR):** Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see [known-issues.md](known-issues.md).
 
 ### Disconnect takes several seconds (DDS)
 
 **Problem:** Pressing Stop in the app causes a 2-5 second delay before "Publishing" clears.
 
-**Expected behavior:** DDS disconnect is serialized to avoid an iOS-specific participant-delete deadlock. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+**Expected behavior:** DDS disconnect is serialized to avoid an iOS-specific participant-delete deadlock. See [known-issues.md](known-issues.md).
 
 ### iOS cannot reach the ROS 2 host (DDS over LAN)
 
@@ -417,7 +417,7 @@ Any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or 
 
 If your issue isn't listed here:
 
-1. **Check** [Known Issues](KNOWN_ISSUES.md)
+1. **Check** [Known Issues](known-issues.md)
 2. **Search** [existing issues](https://github.com/youtalk/conduit-support/issues)
 3. **Ask in** [Discussions](https://github.com/youtalk/conduit-support/discussions)
 4. **Create** [new issue](https://github.com/youtalk/conduit-support/issues/new/choose) with details
