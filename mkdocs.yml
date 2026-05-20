@@ -10,16 +10,19 @@ theme:
   custom_dir: overrides
   logo: assets/img/app_icon.png
   favicon: assets/img/app_icon.png
+  font: false  # let our CSS pick SF Pro / system rounded instead of Google Roboto
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: blue
+      accent: indigo
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: blue
+      accent: indigo
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -30,6 +33,9 @@ theme:
     - navigation.sections
     - search.suggest
     - content.code.copy
+
+extra_css:
+  - assets/css/conduit.css
 
 nav:
   - Home: index.md
@@ -42,12 +48,22 @@ nav:
 
 markdown_extensions:
   - admonition
+  - meta            # YAML front-matter → page.meta (used by OG overrides)
   - pymdownx.details
+  - pymdownx.magiclink:   # auto-link bare URLs / GitHub refs
+      hide_protocol: false
+      repo_url_shortener: true
+      repo_url_shorthand: true
+      social_url_shorthand: true
+      provider: github
+      user: youtalk
+      repo: conduit-support
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - tables
   - attr_list
+  - md_in_html
 
 plugins:
   - search

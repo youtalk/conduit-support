@@ -89,3 +89,34 @@ def test_leaves_uppercase_url_alone_when_part_of_path():
     # Don't accidentally munge things that aren't intended .md filenames
     src = "[GitHub](https://github.com/youtalk/conduit-support/blob/main/README.md)"
     assert sync_readme.rewrite(src) == src
+
+
+def test_replaces_centered_hero_block():
+    """The README opening with icon + # Conduit becomes the hero HTML."""
+    readme_opening = (
+        '<div align="center">\n'
+        '\n'
+        '<a href="https://apps.apple.com/app/id6757171237">\n'
+        '<img src="images/app_icon.png" width="128" height="128" alt="x">\n'
+        '</a>\n'
+        '\n'
+        '# Conduit\n'
+        '\n'
+        '</div>\n'
+        '\n'
+        '**Transform your Apple devices**'
+    )
+    out = sync_readme.rewrite(readme_opening)
+    assert 'class="conduit-hero"' in out
+    # The bare `# Conduit` heading must be gone — replaced by the hero title.
+    assert "\n# Conduit\n" not in out
+    # The App Store URL must be carried into the hero.
+    assert "apps.apple.com/app/id6757171237" in out
+    # Body content after the hero must survive.
+    assert "**Transform your Apple devices**" in out
+
+
+def test_hero_replacement_only_runs_once():
+    """A page that doesn't open with the centered block isn't touched."""
+    src = "## Section\n\nNo hero here.\n"
+    assert sync_readme.rewrite(src) == src
