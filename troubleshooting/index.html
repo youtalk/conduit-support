@@ -1,0 +1,1994 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+  
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Turn your Apple device into a ROS 2 sensor publisher">
+      
+      
+      
+        <link rel="canonical" href="https://conduit.youtalk.jp/troubleshooting/">
+      
+      
+        <link rel="prev" href="../faq/">
+      
+      
+        <link rel="next" href="../platform-notes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/img/app_icon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+
+  
+  <meta name="theme-color" content="#007AFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B0B0F" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Conduit">
+  <meta property="og:title" content="Troubleshooting">
+  <meta property="og:description" content="Turn your Apple device into a ROS 2 sensor publisher">
+  <meta property="og:url" content="https://conduit.youtalk.jp/troubleshooting/">
+  <meta property="og:image" content="https://conduit.youtalk.jp/assets/img/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Conduit — Apple-native ROS 2 sensor publisher">
+  <meta property="og:locale" content="en_US">
+
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Troubleshooting">
+  <meta name="twitter:description" content="Turn your Apple device into a ROS 2 sensor publisher">
+  <meta name="twitter:image" content="https://conduit.youtalk.jp/assets/img/og-card.png">
+  <meta name="twitter:image:alt" content="Conduit — Apple-native ROS 2 sensor publisher">
+
+  
+
+    
+      
+        <title>Troubleshooting - Conduit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/conduit.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#troubleshooting-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Conduit" class="md-header__button md-logo" aria-label="Conduit" data-md-component="logo">
+      
+  <img src="../assets/img/app_icon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Conduit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Troubleshooting
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/youtalk/conduit-support" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    youtalk/conduit-support
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../platform-notes/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Platform notes
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../transports/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Transports (Zenoh / DDS)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../known-issues/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Known issues
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../privacy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Privacy policy
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Conduit" class="md-nav__button md-logo" aria-label="Conduit" data-md-component="logo">
+      
+  <img src="../assets/img/app_icon.png" alt="logo">
+
+    </a>
+    Conduit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/youtalk/conduit-support" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    youtalk/conduit-support
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#connection-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Connection Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connection-failed-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Connection Failed: Timeout"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Connection Refused"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-unreachable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Network Unreachable"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#topic-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topic Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Topic Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topic-doesnt-appear-in-ros2-topic-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topic doesn't appear in ros2 topic list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topic-appears-but-ros2-topic-echo-shows-no-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topic appears but ros2 topic echo shows no data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensor-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sensor Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sensor Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#camera-permission-denied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Camera Permission Denied"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lidar-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "LiDAR Not Available"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microphone-permission-denied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Microphone Permission Denied"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gps-location-services-disabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "GPS Location Services Disabled"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sensor-shows-0-hz-rate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sensor shows 0 Hz rate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-specific-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform-Specific Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Platform-Specific Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visionos-no-gps-sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        visionOS: No GPS Sensor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tvos-most-sensors-unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tvOS: Most Sensors Unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macos-imu-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        macOS: IMU Not Available
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simulator-mock-data-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simulator: Mock Data Only
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ros2-topic-echo-conduitaudio-fails-with-unknown-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ros2 topic echo /conduit/audio fails with "unknown type"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-battery-drain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High battery drain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#app-becomes-unresponsive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        App becomes unresponsive
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-rate-lower-than-configured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data rate lower than configured
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timestamps-seem-incorrect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timestamps seem incorrect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dds-transport-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DDS Transport Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DDS Transport Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-topics-appear-when-using-dds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No topics appear when using DDS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ros2 CLI shows stale topics after changing RMW_IMPLEMENTATION or CYCLONEDDS_URI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topics-appear-but-ros2-topic-echo-shows-no-data-dds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topics appear but ros2 topic echo shows no data (DDS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disconnect-takes-several-seconds-dds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disconnect takes several seconds (DDS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ios-cannot-reach-the-ros-2-host-dds-over-lan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iOS cannot reach the ROS 2 host (DDS over LAN)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-more-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting More Help
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../platform-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Platform notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transports (Zenoh / DDS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../known-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#connection-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Connection Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connection-failed-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Connection Failed: Timeout"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Connection Refused"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-unreachable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Network Unreachable"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#topic-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topic Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Topic Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topic-doesnt-appear-in-ros2-topic-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topic doesn't appear in ros2 topic list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topic-appears-but-ros2-topic-echo-shows-no-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topic appears but ros2 topic echo shows no data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensor-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sensor Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sensor Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#camera-permission-denied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Camera Permission Denied"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lidar-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "LiDAR Not Available"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microphone-permission-denied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Microphone Permission Denied"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gps-location-services-disabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "GPS Location Services Disabled"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sensor-shows-0-hz-rate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sensor shows 0 Hz rate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-specific-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform-Specific Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Platform-Specific Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visionos-no-gps-sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        visionOS: No GPS Sensor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tvos-most-sensors-unavailable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tvOS: Most Sensors Unavailable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macos-imu-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        macOS: IMU Not Available
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simulator-mock-data-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simulator: Mock Data Only
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ros2-topic-echo-conduitaudio-fails-with-unknown-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ros2 topic echo /conduit/audio fails with "unknown type"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-battery-drain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High battery drain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#app-becomes-unresponsive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        App becomes unresponsive
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-rate-lower-than-configured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data rate lower than configured
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timestamps-seem-incorrect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timestamps seem incorrect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dds-transport-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DDS Transport Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DDS Transport Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-topics-appear-when-using-dds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No topics appear when using DDS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ros2 CLI shows stale topics after changing RMW_IMPLEMENTATION or CYCLONEDDS_URI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topics-appear-but-ros2-topic-echo-shows-no-data-dds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topics appear but ros2 topic echo shows no data (DDS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disconnect-takes-several-seconds-dds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disconnect takes several seconds (DDS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ios-cannot-reach-the-ros-2-host-dds-over-lan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iOS cannot reach the ROS 2 host (DDS over LAN)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-more-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting More Help
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="troubleshooting-guide">Troubleshooting Guide</h1>
+<p>Common issues and solutions for Conduit.</p>
+<blockquote>
+<p><strong>Which transport are you using?</strong> Check Settings → Transport in the Conduit app. Zenoh and DDS have different failure modes. Zenoh issues are under "## Connection Issues" and "## Topic Issues" below; DDS-specific issues are in "## DDS Transport Issues" at the bottom of this page.</p>
+</blockquote>
+<h2 id="connection-issues">Connection Issues</h2>
+<h3 id="connection-failed-timeout">"Connection Failed: Timeout"</h3>
+<p><strong>Problem</strong>: App cannot reach the Zenoh router.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>
+<p><strong>Verify router is running</strong>:
+   <div class="highlight"><pre><span></span><code><span class="c1"># On ROS 2 system</span>
+ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>rmw_zenohd
+
+<span class="c1"># If not running, start it</span>
+<span class="nb">source</span><span class="w"> </span>/opt/ros/jazzy/setup.bash
+<span class="nb">export</span><span class="w"> </span><span class="nv">RMW_IMPLEMENTATION</span><span class="o">=</span>rmw_zenoh_cpp
+ros2<span class="w"> </span>run<span class="w"> </span>rmw_zenoh_cpp<span class="w"> </span>rmw_zenohd
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Check IP address</strong>:
+   <div class="highlight"><pre><span></span><code><span class="c1"># Get your ROS 2 system&#39;s IP</span>
+ip<span class="w"> </span>addr<span class="w"> </span>show<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;inet &quot;</span><span class="w">  </span><span class="c1"># Linux</span>
+ifconfig<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;inet &quot;</span><span class="w">      </span><span class="c1"># macOS</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>Update router address in app Settings</p>
+</li>
+<li>
+<p><strong>Verify same network</strong>: iPhone and ROS 2 system must be on same WiFi/LAN</p>
+</li>
+<li>
+<p><strong>Test connectivity</strong>:
+   <div class="highlight"><pre><span></span><code><span class="c1"># From iPhone, ping ROS 2 system</span>
+<span class="c1"># Or from ROS 2 system, ping iPhone</span>
+ping<span class="w"> </span>&lt;device-ip&gt;
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="connection-refused">"Connection Refused"</h3>
+<p><strong>Problem</strong>: Router is not listening on port 7447.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>
+<p><strong>Check router is running</strong>: See "Timeout" solutions above</p>
+</li>
+<li>
+<p><strong>Verify port</strong>:
+   <div class="highlight"><pre><span></span><code><span class="c1"># Check if port 7447 is listening</span>
+netstat<span class="w"> </span>-an<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="m">7447</span>
+lsof<span class="w"> </span>-i<span class="w"> </span>:7447
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Check firewall</strong>:
+   <div class="highlight"><pre><span></span><code><span class="c1"># Ubuntu/Linux</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>status
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">7447</span>/tcp
+
+<span class="c1"># macOS</span>
+<span class="c1"># System Settings → Network → Firewall → Allow port 7447</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Try different port</strong>: If 7447 is blocked, configure router with different port</p>
+</li>
+</ol>
+<h3 id="network-unreachable">"Network Unreachable"</h3>
+<p><strong>Problem</strong>: No network connectivity.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>
+<p><strong>Enable WiFi</strong> on iPhone: Settings → WiFi</p>
+</li>
+<li>
+<p><strong>Connect to same network</strong> as ROS 2 system</p>
+</li>
+<li>
+<p><strong>Check router running</strong>: iPhone → Settings → WiFi → (i) → Router address</p>
+</li>
+<li>
+<p><strong>Restart network</strong>:</p>
+</li>
+<li>Toggle WiFi off/on</li>
+<li>Restart iPhone</li>
+<li>Restart router</li>
+</ol>
+<h2 id="topic-issues">Topic Issues</h2>
+<h3 id="topic-doesnt-appear-in-ros2-topic-list">Topic doesn't appear in <code>ros2 topic list</code></h3>
+<p><strong>Problem</strong>: Conduit is publishing but topic is invisible.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Verify domain IDs match</strong> (most common issue):
+   <div class="highlight"><pre><span></span><code><span class="c1"># Check ROS 2 system domain ID</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$ROS_DOMAIN_ID</span>
+
+<span class="c1"># Check Docker container domain ID</span>
+docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ros_jazzy_zenoh<span class="w"> </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;echo \$ROS_DOMAIN_ID&quot;</span>
+</code></pre></div></li>
+<li>Domain ID in app Settings must match ROS_DOMAIN_ID on host</li>
+<li>Valid range: 0-232 (RTPS specification limit)</li>
+<li>
+<p>Default is 0 if not set</p>
+</li>
+<li>
+<p><strong>Verify RMW_IMPLEMENTATION</strong>:
+   <div class="highlight"><pre><span></span><code><span class="nb">echo</span><span class="w"> </span><span class="nv">$RMW_IMPLEMENTATION</span>
+<span class="c1"># Must be: rmw_zenoh_cpp</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Check wire mode</strong>:</p>
+</li>
+<li>App Settings → Wire Mode should match your ROS 2 version</li>
+<li>
+<p>Try "Auto-detect" first</p>
+</li>
+<li>
+<p><strong>Restart Zenoh router</strong>:
+   <div class="highlight"><pre><span></span><code><span class="c1"># Kill existing router</span>
+pkill<span class="w"> </span>rmw_zenohd
+
+<span class="c1"># Restart with correct domain ID</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ROS_DOMAIN_ID</span><span class="o">=</span><span class="m">0</span><span class="w">  </span><span class="c1"># Match app&#39;s domain ID</span>
+ros2<span class="w"> </span>run<span class="w"> </span>rmw_zenoh_cpp<span class="w"> </span>rmw_zenohd
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Check app connection state</strong>: Should show "Publishing"</p>
+</li>
+</ol>
+<h3 id="topic-appears-but-ros2-topic-echo-shows-no-data">Topic appears but <code>ros2 topic echo</code> shows no data</h3>
+<p><strong>Problem</strong>: Topic exists but no messages received.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Verify sensor is publishing</strong>:</li>
+<li>Check message count in app (should be increasing)</li>
+<li>
+<p>Rate should be &gt; 0 Hz</p>
+</li>
+<li>
+<p><strong>Check QoS compatibility</strong>:</p>
+</li>
+<li>App uses: Reliability=BestEffort, History=KeepLast(10) by default</li>
+<li>
+<p>Try adjusting in sensor settings</p>
+</li>
+<li>
+<p><strong>Restart app</strong>: Stop and restart publishing</p>
+</li>
+<li>
+<p><strong>Check wire format</strong>:</p>
+</li>
+<li>Ensure wire mode matches your ROS 2 version</li>
+<li>Try switching between Humble/Jazzy modes</li>
+</ol>
+<h2 id="sensor-issues">Sensor Issues</h2>
+<h3 id="camera-permission-denied">"Camera Permission Denied"</h3>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Grant permission</strong>:</li>
+<li>iOS Settings → Privacy &amp; Security → Camera</li>
+<li>
+<p>Find "Conduit" and enable</p>
+</li>
+<li>
+<p><strong>Restart app</strong> after granting permission</p>
+</li>
+</ol>
+<h3 id="lidar-not-available">"LiDAR Not Available"</h3>
+<p><strong>Reasons:</strong></p>
+<ol>
+<li><strong>Device doesn't have LiDAR</strong>:</li>
+<li>Required: iPhone 12 Pro, iPhone 13 Pro, iPhone 14 Pro, iPhone 15 Pro</li>
+<li>iPad Pro 2020 or newer</li>
+<li>
+<p>Apple Vision Pro</p>
+</li>
+<li>
+<p><strong>Camera permission required</strong>: LiDAR uses ARKit which requires camera access</p>
+</li>
+<li>
+<p><strong>Premium unlock required</strong>: LiDAR is a premium feature</p>
+</li>
+</ol>
+<h3 id="microphone-permission-denied">"Microphone Permission Denied"</h3>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Grant permission</strong>:</li>
+<li>iOS Settings → Privacy &amp; Security → Microphone</li>
+<li>
+<p>Find "Conduit" and enable</p>
+</li>
+<li>
+<p><strong>Restart app</strong> after granting permission</p>
+</li>
+</ol>
+<h3 id="gps-location-services-disabled">"GPS Location Services Disabled"</h3>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Enable location services</strong>:</li>
+<li>
+<p>iOS Settings → Privacy &amp; Security → Location Services → ON</p>
+</li>
+<li>
+<p><strong>Grant app permission</strong>:</p>
+</li>
+<li>iOS Settings → Privacy &amp; Security → Location Services → Conduit</li>
+<li>
+<p>Select "While Using the App"</p>
+</li>
+<li>
+<p><strong>Restart app</strong></p>
+</li>
+</ol>
+<h3 id="sensor-shows-0-hz-rate">Sensor shows 0 Hz rate</h3>
+<p><strong>Problem</strong>: Sensor enabled but not publishing data.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>
+<p><strong>Check connection state</strong>: Must show "Publishing"</p>
+</li>
+<li>
+<p><strong>Verify sensor permission</strong>: Check iOS Settings → Privacy</p>
+</li>
+<li>
+<p><strong>Try different sensor</strong>: Test if other sensors work</p>
+</li>
+<li>
+<p><strong>Restart publishing</strong>: Stop and start again</p>
+</li>
+<li>
+<p><strong>Check logs</strong>: Look for error messages in app</p>
+</li>
+</ol>
+<h2 id="platform-specific-issues">Platform-Specific Issues</h2>
+<h3 id="visionos-no-gps-sensor">visionOS: No GPS Sensor</h3>
+<p><strong>Expected behavior</strong>: Vision Pro doesn't have GPS hardware (indoor device).</p>
+<p><strong>Workaround</strong>: Use WiFi positioning if available, or use iPhone/iPad for GPS data.</p>
+<h3 id="tvos-most-sensors-unavailable">tvOS: Most Sensors Unavailable</h3>
+<p><strong>Expected behavior</strong>: Apple TV only has Game Controller support.</p>
+<p><strong>Reason</strong>: Apple TV is a stationary device without motion/location sensors.</p>
+<h3 id="macos-imu-not-available">macOS: IMU Not Available</h3>
+<p><strong>Expected behavior</strong>: Macs don't have accelerometer/gyroscope.</p>
+<p><strong>Workaround</strong>: Use iPhone/iPad for IMU data.</p>
+<h3 id="simulator-mock-data-only">Simulator: Mock Data Only</h3>
+<p><strong>Expected behavior</strong>: Simulator generates synthetic sensor data.</p>
+<p><strong>Note</strong>: Useful for development/testing, but not real sensor readings.</p>
+<h3 id="ros2-topic-echo-conduitaudio-fails-with-unknown-type"><code>ros2 topic echo /conduit/audio</code> fails with "unknown type"</h3>
+<p><strong>Problem</strong>: <code>audio_common_msgs</code> package is not installed on the ROS 2 system.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>
+<p><strong>Use the pre-built Docker image</strong> (includes audio_common_msgs):
+   <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">7447</span>:7447<span class="w"> </span>--name<span class="w"> </span>ros_jazzy_zenoh<span class="w"> </span>ghcr.io/youtalk/conduit-support:jazzy
+docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ros_jazzy_zenoh<span class="w"> </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">&quot;source /opt/ros/jazzy/setup.bash &amp;&amp; \</span>
+<span class="s2">   source /ros2_ws/install/setup.bash &amp;&amp; \</span>
+<span class="s2">   export RMW_IMPLEMENTATION=rmw_zenoh_cpp &amp;&amp; \</span>
+<span class="s2">   ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData&quot;</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Install on native ROS 2</strong>:
+   <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>ros-jazzy-audio-common<span class="w">   </span><span class="c1"># Jazzy</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>ros-humble-audio-common<span class="w">  </span><span class="c1"># Humble</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Build from source</strong> if apt package is unavailable:
+   <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
+git<span class="w"> </span>clone<span class="w"> </span>--branch<span class="w"> </span>ros2<span class="w"> </span>--depth<span class="w"> </span><span class="m">1</span><span class="w"> </span>https://github.com/ros-drivers/audio_common.git
+<span class="nb">cd</span><span class="w"> </span>~/ros2_ws<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>audio_common_msgs
+<span class="nb">source</span><span class="w"> </span>install/setup.bash
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="performance-issues">Performance Issues</h2>
+<h3 id="high-battery-drain">High battery drain</h3>
+<p><strong>Causes:</strong></p>
+<ol>
+<li>
+<p><strong>Too many sensors enabled</strong>: Disable unused sensors</p>
+</li>
+<li>
+<p><strong>High publishing rates</strong>: Reduce rate for non-critical sensors</p>
+</li>
+<li>
+<p><strong>Camera/LiDAR active</strong>: These consume significant power</p>
+</li>
+</ol>
+<p><strong>Solutions:</strong></p>
+<ul>
+<li>Enable only sensors you need</li>
+<li>Reduce rates (e.g., GPS 1Hz instead of 10Hz)</li>
+<li>Disable camera when not needed</li>
+</ul>
+<h3 id="app-becomes-unresponsive">App becomes unresponsive</h3>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Memory warning</strong>: iOS killed background sensors</li>
+<li>Check Console logs</li>
+<li>
+<p>Reduce number of active sensors</p>
+</li>
+<li>
+<p><strong>Network issues</strong>: Connection lost</p>
+</li>
+<li>Verify router still running</li>
+<li>
+<p>Check WiFi signal strength</p>
+</li>
+<li>
+<p><strong>Restart app</strong>: Force quit and relaunch</p>
+</li>
+</ol>
+<h2 id="data-issues">Data Issues</h2>
+<h3 id="data-rate-lower-than-configured">Data rate lower than configured</h3>
+<p><strong>Possible reasons:</strong></p>
+<ol>
+<li><strong>Hardware limitation</strong>: Some sensors have max rates</li>
+<li>IMU: 100 Hz max</li>
+<li>Camera: 30 Hz max</li>
+<li>
+<p>GPS: 1-10 Hz typical</p>
+</li>
+<li>
+<p><strong>Network congestion</strong>: Local network can't handle bandwidth</p>
+</li>
+<li>
+<p><strong>CPU load</strong>: iOS throttling due to thermal/battery</p>
+</li>
+</ol>
+<p><strong>Solutions:</strong></p>
+<ul>
+<li>Reduce rates for non-critical sensors</li>
+<li>Reduce number of active sensors</li>
+<li>Check network bandwidth</li>
+</ul>
+<h3 id="timestamps-seem-incorrect">Timestamps seem incorrect</h3>
+<p><strong>Check:</strong></p>
+<ol>
+<li>
+<p><strong>System time</strong>: Ensure iOS device clock is accurate</p>
+</li>
+<li>
+<p><strong>Timezone</strong>: ROS 2 uses UTC, iOS uses local time</p>
+</li>
+<li>
+<p><strong>Timestamp source</strong>: Verify using correct time source (system vs sensor)</p>
+</li>
+</ol>
+<h2 id="dds-transport-issues">DDS Transport Issues</h2>
+<h3 id="no-topics-appear-when-using-dds">No topics appear when using DDS</h3>
+<p><strong>Problem:</strong> App shows "Publishing" but <code>ros2 topic list</code> on the ROS 2 host returns nothing.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>
+<p><strong>Restart the cached <code>ros2</code> daemon first</strong> — if you changed <code>RMW_IMPLEMENTATION</code>, <code>ROS_DOMAIN_ID</code>, or <code>CYCLONEDDS_URI</code> in this shell, the daemon is still running with the old context and will lie to you. Run <code>ros2 daemon stop</code> before any of the checks below. See <a href="#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri"><code>ros2</code> CLI shows stale topics after changing <code>RMW_IMPLEMENTATION</code> or <code>CYCLONEDDS_URI</code></a> for the full failure mode.</p>
+</li>
+<li>
+<p><strong>Verify RMW implementation:</strong>
+   <div class="highlight"><pre><span></span><code><span class="nb">echo</span><span class="w"> </span><span class="nv">$RMW_IMPLEMENTATION</span>
+<span class="c1"># Must be: rmw_cyclonedds_cpp</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Check domain IDs match</strong> (0-232 valid range for DDS/RTPS):
+   <div class="highlight"><pre><span></span><code><span class="nb">echo</span><span class="w"> </span><span class="nv">$ROS_DOMAIN_ID</span>
+</code></pre></div>
+   Must match the Domain ID field in Conduit Settings.</p>
+</li>
+<li>
+<p><strong>Verify network interface binding on iOS:</strong></p>
+</li>
+<li>Conduit Settings → Transport → DDS → Network Interface must be <code>en0</code> (WiFi).</li>
+<li>
+<p>Leaving this as "auto" frequently fails because iOS may select a cellular or VPN interface.</p>
+</li>
+<li>
+<p><strong>Multicast blocked by WiFi AP:</strong></p>
+</li>
+<li>Many consumer access points enable "AP isolation" or drop multicast.</li>
+<li>
+<p>Workaround: switch Discovery Mode to <strong>Unicast</strong> and add the ROS 2 host IP to the Unicast Peers list in Settings.</p>
+</li>
+<li>
+<p><strong>Firewall on ROS 2 host:</strong></p>
+</li>
+<li>DDS uses UDP ports starting at <code>7400 + 250 * domain_id</code> (for domain 0: 7400, 7401, 7410, 7411).</li>
+<li>Allow UDP on those ports, or disable the firewall for the test LAN.</li>
+</ol>
+<h3 id="ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri"><code>ros2</code> CLI shows stale topics after changing <code>RMW_IMPLEMENTATION</code> or <code>CYCLONEDDS_URI</code></h3>
+<p><strong>Problem:</strong> You switched transports (e.g. Zenoh → DDS) or updated <code>CYCLONEDDS_URI</code> (peers, interface, tracing), but <code>ros2 topic list</code> keeps returning the previous transport's results or an empty list.</p>
+<p><strong>Cause:</strong> The <code>ros2</code> CLI talks to a long-lived background daemon (<code>_ros2_daemon</code>). The daemon is started with whatever <code>RMW_IMPLEMENTATION</code> / DDS config was in effect at first launch and caches its RMW context — later env-var changes in your shell are ignored until the daemon is restarted.</p>
+<p><strong>Fix:</strong> Stop the daemon, then let the next CLI invocation start a fresh one in the new environment:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">RMW_IMPLEMENTATION</span><span class="o">=</span>rmw_cyclonedds_cpp
+<span class="nb">export</span><span class="w"> </span><span class="nv">ROS_DOMAIN_ID</span><span class="o">=</span><span class="m">123</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">CYCLONEDDS_URI</span><span class="o">=</span><span class="s1">&#39;&lt;CycloneDDS&gt;…&lt;/CycloneDDS&gt;&#39;</span>
+
+ros2<span class="w"> </span>daemon<span class="w"> </span>stop
+ros2<span class="w"> </span>daemon<span class="w"> </span>start<span class="w">          </span><span class="c1"># optional — `ros2 topic list` will also autostart it</span>
+ros2<span class="w"> </span>topic<span class="w"> </span>list
+</code></pre></div>
+<p>Any time you change <code>RMW_IMPLEMENTATION</code>, <code>ROS_DOMAIN_ID</code>, <code>CYCLONEDDS_URI</code>, or the Peer list, re-run <code>ros2 daemon stop</code> before the next command. This also applies when switching back to <code>rmw_zenoh_cpp</code>.</p>
+<h3 id="topics-appear-but-ros2-topic-echo-shows-no-data-dds">Topics appear but <code>ros2 topic echo</code> shows no data (DDS)</h3>
+<p><strong>Problem:</strong> Discovery works but data does not flow.</p>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li>
+<p><strong>QoS mismatch:</strong> Conduit uses BestEffort reliability for high-rate sensors (IMU, camera). If your subscriber requests Reliable, it will not match. Use <code>--qos-profile sensor_data</code> or <code>--qos-reliability best_effort</code> on the subscriber:
+   <div class="highlight"><pre><span></span><code>ros2<span class="w"> </span>topic<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>/conduit/imu<span class="w"> </span>--qos-reliability<span class="w"> </span>best_effort
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>CameraInfo reliability:</strong> CameraInfo uses BestEffort with TransientLocal (<code>latchedBestEffort</code>). Standard <code>image_transport</code> subscribers expect Reliable — override the subscriber QoS.</p>
+</li>
+<li>
+<p><strong>Large messages (Camera, LiDAR):</strong> Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see <a href="../known-issues/">known-issues.md</a>.</p>
+</li>
+</ol>
+<h3 id="disconnect-takes-several-seconds-dds">Disconnect takes several seconds (DDS)</h3>
+<p><strong>Problem:</strong> Pressing Stop in the app causes a 2-5 second delay before "Publishing" clears.</p>
+<p><strong>Expected behavior:</strong> DDS disconnect is serialized to avoid an iOS-specific participant-delete deadlock. See <a href="../known-issues/">known-issues.md</a>.</p>
+<h3 id="ios-cannot-reach-the-ros-2-host-dds-over-lan">iOS cannot reach the ROS 2 host (DDS over LAN)</h3>
+<p><strong>Problem:</strong> <code>ping</code> from iOS to host works, but DDS discovery fails.</p>
+<p><strong>Solutions:</strong>
+- Confirm both devices are on the same subnet; DDS default transport is UDP, which does not cross routers without configuration.
+- Corporate networks often block multicast and inter-client UDP. Use a dedicated test LAN or phone hotspot.
+- On macOS Docker Desktop, the Docker container <strong>cannot</strong> receive DDS from iOS because Docker Desktop does not provide true host networking. Run the subscriber on Linux, a Parallels VM, or natively on macOS instead.</p>
+<h2 id="getting-more-help">Getting More Help</h2>
+<p>If your issue isn't listed here:</p>
+<ol>
+<li><strong>Check</strong> <a href="../known-issues/">Known Issues</a></li>
+<li><strong>Search</strong> <a href="https://github.com/youtalk/conduit-support/issues">existing issues</a></li>
+<li><strong>Ask in</strong> <a href="https://github.com/youtalk/conduit-support/discussions">Discussions</a></li>
+<li><strong>Create</strong> <a href="https://github.com/youtalk/conduit-support/issues/new/choose">new issue</a> with details</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
