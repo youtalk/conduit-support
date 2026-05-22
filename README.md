@@ -44,6 +44,23 @@ Used cumulatively by **10,000+ ROS 2 developers worldwide** — has ranked as hi
 <sub>Step-by-step guide to connect Conduit with your ROS 2 system</sub>
 </td>
 </tr>
+<tr>
+<td align="center" width="33%">
+<a href="https://www.youtube.com/watch?v=TgNgDvFeAMs">
+<img src="https://img.youtube.com/vi/TgNgDvFeAMs/0.jpg" width="280" alt="Cyclone DDS Demo"><br>
+<b>Cyclone DDS</b>
+</a><br>
+<sub>Native ROS 2 communication over Cyclone DDS — no Zenoh router, no bridge</sub>
+</td>
+<td align="center" width="33%">
+<a href="https://www.youtube.com/watch?v=yhI3eWcWSNQ">
+<img src="https://img.youtube.com/vi/yhI3eWcWSNQ/0.jpg" width="280" alt="MCAP Recording Demo"><br>
+<b>MCAP Recording</b>
+</a><br>
+<sub>Record every topic and export an MCAP file for Foxglove or ros2 bag</sub>
+</td>
+<td align="center" width="33%"></td>
+</tr>
 </table>
 
 ---

@@ -120,3 +120,38 @@ def test_hero_replacement_only_runs_once():
     """A page that doesn't open with the centered block isn't touched."""
     src = "## Section\n\nNo hero here.\n"
     assert sync_readme.rewrite(src) == src
+
+
+_DEMO_CELL = (
+    '<a href="https://www.youtube.com/watch?v=d28sQYQlpYY">\n'
+    '<img src="https://img.youtube.com/vi/d28sQYQlpYY/0.jpg" width="280" '
+    'alt="Teleoperation Demo"><br>\n'
+    "<b>Teleoperation</b>\n"
+    "</a><br>\n"
+    "<sub>Control robots using Game Controller sensor</sub>"
+)
+
+
+def test_demo_thumbnail_becomes_iframe_embed():
+    out = sync_readme.rewrite(_DEMO_CELL)
+    assert 'src="https://www.youtube.com/embed/d28sQYQlpYY"' in out
+    assert "<iframe" in out
+    # Title and surrounding caption are preserved.
+    assert "<b>Teleoperation</b>" in out
+    assert "<sub>Control robots using Game Controller sensor</sub>" in out
+    # The clickable watch-page link is gone — it became the iframe player.
+    assert "youtube.com/watch?v=" not in out
+
+
+def test_demo_thumbnail_rewrite_is_idempotent():
+    once = sync_readme.rewrite(_DEMO_CELL)
+    assert sync_readme.rewrite(once) == once
+
+
+def test_non_youtube_anchor_with_image_is_untouched():
+    src = (
+        '<a href="https://example.com/page">\n'
+        '<img src="https://img.youtube.com/vi/x/0.jpg"><br>\n'
+        "<b>Not a video</b>\n</a>"
+    )
+    assert sync_readme.rewrite(src) == src
