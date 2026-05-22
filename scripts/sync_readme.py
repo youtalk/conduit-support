@@ -1,6 +1,6 @@
 """MkDocs on_pre_build hook: regenerate docs/index.md from README.md.
 
-Three responsibilities:
+Four responsibilities:
 
 1. Rewrite image paths (``images/`` → ``assets/img/``) so the same Markdown
    source works as both the GitHub README and the MkDocs home page.
@@ -9,6 +9,10 @@ Three responsibilities:
 3. Replace the README's centered icon + ``# Conduit`` heading block with a
    custom HTML hero that matches the Conduit app's design language. The hero
    ships inside ``index.md`` and is styled by ``docs/assets/css/conduit.css``.
+4. Turn demo-video thumbnails (a YouTube thumbnail image linked to the watch
+   page) into inline ``<iframe>`` players: GitHub strips ``<iframe>`` from
+   README markup, so the README keeps the clickable thumbnails while the
+   MkDocs site gets real embedded players.
 """
 from __future__ import annotations
 
@@ -32,6 +36,18 @@ _BARE_DOC_RE = re.compile(
 _HTML_ATTR_RE = re.compile(r'(\b(?:src|href)=")images/')
 # ](images/...)
 _MD_INLINE_RE = re.compile(r"\]\(images/")
+# A demo-video cell: <a href="...watch?v=ID"> wrapping a YouTube thumbnail
+# <img> and a <b>Title</b>. Rewritten to an inline <iframe> player for the
+# site (GitHub strips <iframe>, so README keeps the thumbnail link).
+_YT_THUMB_RE = re.compile(
+    r'<a href="https://www\.youtube\.com/watch\?v=([\w-]+)">\s*'
+    r"<img[^>]*>\s*<br>\s*"
+    r"<b>([^<]+)</b>\s*</a>"
+)
+_YT_IFRAME_ALLOW = (
+    "accelerometer; autoplay; clipboard-write; encrypted-media; "
+    "gyroscope; picture-in-picture; web-share"
+)
 
 # ----- Hero replacement -----
 
@@ -122,6 +138,18 @@ def rewrite(text: str) -> str:
     def _hero_repl(match: re.Match[str]) -> str:
         return _HERO_HTML.format(app_url=match.group("app_url"))
 
+    def _yt_repl(match: re.Match[str]) -> str:
+        video_id, title = match.group(1), match.group(2)
+        return (
+            f'<iframe width="100%" height="170" '
+            f'src="https://www.youtube.com/embed/{video_id}" '
+            f'title="{title}" frameborder="0" '
+            f'allow="{_YT_IFRAME_ALLOW}" '
+            f'referrerpolicy="strict-origin-when-cross-origin" '
+            f"allowfullscreen></iframe><br>\n"
+            f"<b>{title}</b>"
+        )
+
     text = _HERO_BLOCK_RE.sub(_hero_repl, text, count=1)
     text = _DOCS_LINK_RE.sub(_docs_repl, text)
     text = _DOCKER_README_RE.sub(
@@ -131,6 +159,7 @@ def rewrite(text: str) -> str:
     text = _BARE_DOC_RE.sub(_bare_repl, text)
     text = _HTML_ATTR_RE.sub(r'\1assets/img/', text)
     text = _MD_INLINE_RE.sub("](assets/img/", text)
+    text = _YT_THUMB_RE.sub(_yt_repl, text)
     return text
 
 
