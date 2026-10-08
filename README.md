@@ -13,8 +13,8 @@
 Stream real-time sensor data directly to your robotics system via **Zenoh** or **DDS** — pick the transport that matches your ROS 2 setup. No bridge, no `rcl` / `rclcpp`, no CMake on a non-Linux host.
 Used cumulatively by **10,000+ ROS 2 developers worldwide** — has ranked as high as **#4 in the App Store's Developer Tools category** (Japan) since January 2026.
 
-[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20|%20Jazzy%20|%20Kilted%20|%20Rolling-22314E?style=for-the-badge)](https://docs.ros.org)
-[![Built on swift-ros2](https://img.shields.io/badge/Built%20on-swift--ros2%200.6.0-orange?style=for-the-badge&logo=swift)](https://github.com/youtalk/swift-ros2)
+[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20|%20Jazzy%20|%20Kilted%20|%20Lyrical%20|%20Rolling-22314E?style=for-the-badge)](https://docs.ros.org)
+[![Built on swift-ros2](https://img.shields.io/badge/Built%20on-swift--ros2%202.1.0-orange?style=for-the-badge&logo=swift)](https://github.com/youtalk/swift-ros2)
 
 ---
 
@@ -67,7 +67,7 @@ Used cumulatively by **10,000+ ROS 2 developers worldwide** — has ranked as hi
 
 ## Built on swift-ros2
 
-All ROS 2 wire work — Zenoh / DDS FFI, XCDR v1 codec, Humble/Jazzy/Kilted/Rolling wire codecs, the publisher/subscription API — is delegated to [**swift-ros2**](https://github.com/youtalk/swift-ros2), a native Swift client library for ROS 2 that was extracted from Conduit and now ships independently.
+All ROS 2 wire work — Zenoh / DDS FFI, XCDR v1 codec, Humble/Jazzy/Kilted/Lyrical/Rolling wire codecs, the publisher/subscription API — is delegated to [**swift-ros2**](https://github.com/youtalk/swift-ros2), a native Swift client library for ROS 2 that was extracted from Conduit and now ships independently.
 
 swift-ros2 covers every consumer device OS that runs Swift: **iOS / iPadOS / macOS / Mac Catalyst / visionOS** (pre-built xcframeworks via SwiftPM), plus **Linux** (Ubuntu 22.04 / 24.04, x86_64 + aarch64), **Windows** (x86_64), and **Android** (arm64-v8a + x86_64) via source build. By worldwide market share, that's roughly 90%+ of identifiable consumer devices — phones, tablets, laptops, headsets, SBCs — all able to publish and subscribe through the same SwiftPM-resolvable package.
 
@@ -179,12 +179,12 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 
 1. Start the Zenoh router on your ROS 2 system:
    ```bash
-   source /opt/ros/jazzy/setup.bash
+   source /opt/ros/lyrical/setup.bash   # or jazzy / humble / …
    export RMW_IMPLEMENTATION=rmw_zenoh_cpp
    export ROS_DOMAIN_ID=0  # Valid range: 0-232
    ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
-2. In the Conduit app: Settings → Transport: **Zenoh**, enter the host IP and port `7447`, set Domain ID to match.
+2. In the Conduit app: Settings → Transport: **Zenoh**, enter the host IP and port `7447`, set Domain ID to match, and set Distribution to your host's ROS 2 release (Lyrical by default).
 3. Enable sensors and tap Play.
 4. Verify: `ros2 topic echo /conduit/imu`
 
@@ -192,7 +192,7 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 
 1. On your ROS 2 host:
    ```bash
-   source /opt/ros/jazzy/setup.bash
+   source /opt/ros/lyrical/setup.bash   # or jazzy / humble / …
    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
    export ROS_DOMAIN_ID=0  # Valid range: 0-232
 
@@ -204,7 +204,7 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 
    ros2 topic list
    ```
-2. In the Conduit app: Settings → Transport: **DDS**, Discovery Mode: **Hybrid**, add the host IP to Unicast Peers, Network Interface: `en0`, set Domain ID to match.
+2. In the Conduit app: Settings → Transport: **DDS**, Discovery Mode: **Hybrid**, add the host IP to Unicast Peers, Network Interface: `en0`, set Domain ID to match, and set Distribution to your host's ROS 2 release (Lyrical by default).
 3. Enable sensors and tap Play.
 4. Verify: `ros2 topic echo /conduit/imu --qos-reliability best_effort`
 
@@ -218,6 +218,8 @@ A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal
 
 Pre-built images on ghcr.io:
 ```bash
+# ROS 2 Lyrical
+docker run -d -p 7447:7447 --name ros_lyrical_zenoh ghcr.io/youtalk/conduit-support:lyrical
 # ROS 2 Jazzy
 docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
 # ROS 2 Humble
@@ -230,14 +232,14 @@ git clone https://github.com/youtalk/conduit-support.git
 cd conduit-support/docker
 
 # Default domain ID (0)
-docker compose up ros-jazzy -d
+docker compose up ros-lyrical -d
 
 # Custom domain ID via .env (recommended for persistence)
 echo "ROS_DOMAIN_ID=5" > .env
-docker compose up ros-jazzy -d
+docker compose up ros-lyrical -d
 
 # Or override per-invocation
-ROS_DOMAIN_ID=5 docker compose up ros-jazzy -d
+ROS_DOMAIN_ID=5 docker compose up ros-lyrical -d
 
 # Stop
 docker compose down
@@ -250,11 +252,11 @@ docker compose down
 ```bash
 cd conduit-support/docker
 echo "ROS_DOMAIN_ID=0" > .env
-docker compose -f compose-dds.yml up -d
+docker compose -f compose-dds.yml up ros-lyrical-dds -d
 
 # Verify
-docker exec -it ros_jazzy_dds bash
-source /opt/ros/jazzy/setup.bash
+docker exec -it ros_lyrical_dds bash
+source /opt/ros/lyrical/setup.bash
 ros2 topic list
 ros2 topic echo /conduit/imu --qos-reliability best_effort
 ```
