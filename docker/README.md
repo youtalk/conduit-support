@@ -207,7 +207,7 @@ In Xcode:
 1. Select **iPhone 17 Pro (Simulator)** as target
 2. Click **Run** (⌘R)
 3. Wait for simulator to launch
-4. Tap **"Connect & Publish"** button in app
+4. Tap **Start Publishing** in the app
 
 ### 6. Verify Data Flow
 
@@ -451,9 +451,7 @@ open -a Docker
 3. Verify the distribution:
    - Settings → Distribution should match the container's ROS 2 release
 
-4. Check app logs in Xcode console:
-   - Look for "Running in simulator - using mock data"
-   - Look for "Started publishing at 100 Hz"
+4. Check the Xcode console for errors
 
 5. Restart both app and container:
    ```bash
@@ -495,7 +493,6 @@ docker compose build --no-cache
 - [ ] Domain ID matches between container and iOS app
 - [ ] Settings → Router Address set to the container IP
 - [ ] iOS Simulator app built and running
-- [ ] App shows "Running in simulator - using mock data"
 - [ ] App shows "Publishing" status
 - [ ] `ros2 topic list` shows `/conduit/imu`
 - [ ] `ros2 topic echo /conduit/imu` receives messages

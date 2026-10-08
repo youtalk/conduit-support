@@ -200,7 +200,7 @@ if [ -z "$MSG_SAMPLE" ]; then
     echo ""
     echo "If messages are not appearing:"
     echo "1. Verify iOS app is running in Simulator"
-    echo "2. Tap 'Connect & Publish' button in app"
+    echo "2. Tap 'Start Publishing' in the app"
     echo "3. Check Xcode console for errors"
     echo "4. Verify the app's Settings:"
     echo -e "   ${CYAN}Transport: Zenoh, Router: tcp/${CONTAINER_IP}:7447${NC}"
