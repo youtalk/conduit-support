@@ -2,13 +2,14 @@
 # Purpose: Test iOS ROS 2 sensor publisher with iOS Simulator
 #
 # Build args:
-#   ROS_DISTRO: humble or jazzy (default: jazzy)
+#   ROS_DISTRO: humble | jazzy | kilted | lyrical | rolling (default: lyrical)
 #
 # Usage:
 #   docker build --build-arg ROS_DISTRO=humble -t ros-humble-zenoh .
 #   docker build --build-arg ROS_DISTRO=jazzy -t ros-jazzy-zenoh .
+#   docker build --build-arg ROS_DISTRO=lyrical -t ros-lyrical-zenoh .
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO=lyrical
 FROM ros:${ROS_DISTRO}
 
 # Re-declare ARG after FROM (Docker requirement)

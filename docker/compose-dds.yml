@@ -4,7 +4,7 @@
 # networking and will not receive DDS traffic from external iOS devices.
 #
 # Usage:
-#   Start: docker compose -f compose-dds.yml up ros-jazzy-dds -d
+#   Start: docker compose -f compose-dds.yml up ros-lyrical-dds -d   (or ros-jazzy-dds / ros-humble-dds)
 #   Stop:  docker compose -f compose-dds.yml down
 #
 # Environment Variables:
@@ -14,6 +14,26 @@
 #                    mounted from ./cyclonedds.xml.
 
 services:
+  ros-lyrical-dds:
+    build:
+      context: .
+      dockerfile: Dockerfile.dds
+      args:
+        ROS_DISTRO: lyrical
+    container_name: ros_lyrical_dds
+    hostname: ros-lyrical-dds
+    network_mode: host
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - ROS_DISTRO=lyrical
+      - CYCLONEDDS_URI=file:///etc/cyclonedds/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/etc/cyclonedds/cyclonedds.xml:ro
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
   ros-jazzy-dds:
     build:
       context: .

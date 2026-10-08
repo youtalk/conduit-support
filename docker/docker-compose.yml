@@ -1,9 +1,10 @@
 # Docker Compose for ROS 2 + rmw_zenoh_cpp testing
 #
 # Usage:
-#   Start Jazzy:  docker compose up ros-jazzy -d
-#   Start Humble: docker compose up ros-humble -d
-#   Stop all:     docker compose down
+#   Start Lyrical: docker compose up ros-lyrical -d
+#   Start Jazzy:   docker compose up ros-jazzy -d
+#   Start Humble:  docker compose up ros-humble -d
+#   Stop all:      docker compose down
 #
 # Environment Variables:
 #   ROS_DOMAIN_ID: ROS 2 domain ID (0-255, default: 0)
@@ -12,6 +13,32 @@
 # Note: Only run ONE service at a time since they use the same port (7447)
 
 services:
+  ros-lyrical:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ROS_DISTRO: lyrical
+    container_name: ros_lyrical_zenoh
+    hostname: ros-lyrical
+    network_mode: bridge
+    ports:
+      - "7447:7447/tcp"
+    environment:
+      - RMW_IMPLEMENTATION=rmw_zenoh_cpp
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - ROS_DISTRO=lyrical
+    stdin_open: true
+    tty: true
+    command: /usr/local/bin/start-router.sh
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "rmw_zenohd"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
   ros-jazzy:
     build:
       context: .

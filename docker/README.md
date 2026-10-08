@@ -13,7 +13,8 @@ Choose the one that matches your Conduit app's Transport setting. See [../docs/T
 
 ## Overview
 
-A unified Dockerfile supports both ROS 2 distributions via build arguments:
+A unified Dockerfile supports each ROS 2 distribution via build arguments:
+- **ros-lyrical**: ROS 2 Lyrical with rmw_zenoh_cpp
 - **ros-jazzy**: ROS 2 Jazzy with rmw_zenoh_cpp
 - **ros-humble**: ROS 2 Humble with rmw_zenoh_cpp
 
@@ -29,11 +30,11 @@ Each container provides:
 The unified `Dockerfile` uses `ARG ROS_DISTRO` to select the ROS distribution at build time:
 
 ```dockerfile
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO=lyrical
 FROM ros:${ROS_DISTRO}
 ```
 
-This allows building both Humble and Jazzy images from a single Dockerfile.
+This builds the Lyrical, Jazzy and Humble images from a single Dockerfile.
 
 ## Architecture
 
@@ -96,7 +97,10 @@ cd support/docker
 # Build both Docker images (first time: ~10-15 minutes each)
 docker compose build
 
-# Start Jazzy container (for Jazzy testing)
+# Start Lyrical container (for Lyrical testing)
+docker compose up ros-lyrical -d
+
+# OR Start Jazzy container (for Jazzy testing)
 docker compose up ros-jazzy -d
 
 # OR Start Humble container (for Humble testing)
@@ -115,7 +119,7 @@ docker compose logs -f
 docker compose down
 
 # Start the other distro
-docker compose up ros-humble -d   # or ros-jazzy
+docker compose up ros-humble -d   # or ros-lyrical / ros-jazzy
 ```
 
 #### Configuring ROS_DOMAIN_ID
@@ -183,19 +187,12 @@ docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ros_
 
 ### 4. Configure iOS App
 
-Edit `Config/Config.plist`:
+In the Conduit app, open **Settings**:
 
-```xml
-<key>router_locator</key>
-<string>tcp/172.17.0.2:7447</string>
-
-<key>rate_hz</key>
-<integer>100</integer>
-```
-
-**Important:**
-- Use the container IP from step 3, not `localhost`
-- Select matching wire mode in iOS app UI (Humble or Jazzy toggle)
+- **Transport:** Zenoh
+- **Router Address:** the container IP from step 3 (e.g. `172.17.0.2`), not `localhost`
+- **Router Port:** `7447`
+- **Distribution:** the container's ROS 2 release (Lyrical for `ros-lyrical`, Jazzy for `ros-jazzy`, Humble for `ros-humble`)
 
 ### 5. Build and Run iOS Simulator
 
@@ -393,7 +390,7 @@ open -a Docker
    nc -zv <container-ip> 7447
    ```
 
-4. Verify Config.plist has correct IP
+4. Verify Settings → Router Address is the container IP
 
 5. Check firewall settings on the host system
 
@@ -451,8 +448,8 @@ open -a Docker
    - Check container: `docker exec -it ros_jazzy_zenoh bash -c "echo \$ROS_DOMAIN_ID"`
    - Check app: Open Settings → verify Domain ID field matches
 
-3. Verify wire mode:
-   - Config.plist should have `wire_mode` set to `jazzy`
+3. Verify the distribution:
+   - Settings → Distribution should match the container's ROS 2 release
 
 4. Check app logs in Xcode console:
    - Look for "Running in simulator - using mock data"
@@ -496,7 +493,7 @@ docker compose build --no-cache
 - [ ] Container IP obtained
 - [ ] ROS_DOMAIN_ID configured (in .env or environment variable)
 - [ ] Domain ID matches between container and iOS app
-- [ ] Config.plist updated with container IP
+- [ ] Settings → Router Address set to the container IP
 - [ ] iOS Simulator app built and running
 - [ ] App shows "Running in simulator - using mock data"
 - [ ] App shows "Publishing" status
@@ -602,7 +599,10 @@ After successful Docker testing:
 ```bash
 cd support/docker
 
-# Default domain (0)
+# Default domain (0), Lyrical host
+docker compose -f compose-dds.yml up ros-lyrical-dds -d
+
+# OR a Jazzy host
 docker compose -f compose-dds.yml up ros-jazzy-dds -d
 
 # Custom domain
@@ -612,9 +612,9 @@ ROS_DOMAIN_ID=5 docker compose -f compose-dds.yml up ros-jazzy-dds -d
 The container runs with `network_mode: host` and stays idle (`sleep infinity`) — exec in to run subscribers:
 
 ```bash
-docker exec -it ros_jazzy_dds bash
+docker exec -it ros_lyrical_dds bash   # or ros_jazzy_dds / ros_humble_dds
 # Inside the container:
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/lyrical/setup.bash     # or the distro you started
 source /ros2_ws/install/setup.bash
 ros2 topic list
 ros2 topic echo /conduit/imu --qos-reliability best_effort

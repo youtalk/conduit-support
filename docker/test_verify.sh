@@ -12,6 +12,17 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# ROS 2 distribution of the Zenoh host started by test_setup.sh: lyrical (default), jazzy or humble.
+DISTRO="${1:-lyrical}"
+case "$DISTRO" in
+    lyrical) DISTRO_NAME="Lyrical" ;;
+    jazzy) DISTRO_NAME="Jazzy" ;;
+    humble) DISTRO_NAME="Humble" ;;
+    *) echo -e "${RED}Usage: $0 [lyrical|jazzy|humble]${NC}"; exit 1 ;;
+esac
+SERVICE="ros-${DISTRO}"
+CONTAINER="ros_${DISTRO}_zenoh"
+
 # Banner
 echo -e "${CYAN}"
 echo "=========================================="
@@ -21,21 +32,21 @@ echo -e "${NC}"
 
 # Check if container is running
 echo -e "${BLUE}[1/7] Checking container status...${NC}"
-if ! docker ps | grep -q ros_jazzy_zenoh; then
-    echo -e "${RED}Error: Container is not running${NC}"
-    echo -e "${YELLOW}Run: docker compose up -d${NC}"
+if ! docker ps | grep -q "$CONTAINER"; then
+    echo -e "${RED}Error: Container $CONTAINER is not running${NC}"
+    echo -e "${YELLOW}Run: docker compose up $SERVICE -d${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ Container is running${NC}"
 
 # Get container IP
-CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ros_jazzy_zenoh)
+CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER")
 echo -e "${GREEN}✓ Container IP: ${CONTAINER_IP}${NC}"
 
 # Check if router is running
 echo ""
 echo -e "${BLUE}[2/7] Checking Zenoh router...${NC}"
-if docker exec ros_jazzy_zenoh pgrep -f rmw_zenohd > /dev/null; then
+if docker exec "$CONTAINER" pgrep -f rmw_zenohd > /dev/null; then
     echo -e "${GREEN}✓ rmw_zenohd is running${NC}"
 else
     echo -e "${RED}Error: rmw_zenohd is not running${NC}"
@@ -55,7 +66,7 @@ fi
 # List ROS 2 topics
 echo ""
 echo -e "${BLUE}[4/7] Listing ROS 2 topics...${NC}"
-TOPICS=$(docker exec ros_jazzy_zenoh bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic list" 2>/dev/null)
+TOPICS=$(docker exec "$CONTAINER" bash -c "source /opt/ros/${DISTRO}/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic list" 2>/dev/null)
 
 if echo "$TOPICS" | grep -q "/ios/imu"; then
     echo -e "${GREEN}✓ /ios/imu topic exists${NC}"
@@ -72,7 +83,7 @@ fi
 # Check topic info
 echo ""
 echo -e "${BLUE}[5/7] Checking /ios/imu topic info...${NC}"
-TOPIC_INFO=$(docker exec ros_jazzy_zenoh bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic info /ios/imu -v" 2>/dev/null || echo "Topic not available")
+TOPIC_INFO=$(docker exec "$CONTAINER" bash -c "source /opt/ros/${DISTRO}/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic info /ios/imu -v" 2>/dev/null || echo "Topic not available")
 
 if echo "$TOPIC_INFO" | grep -q "Type: sensor_msgs/msg/Imu"; then
     echo -e "${GREEN}✓ Topic has correct type (sensor_msgs/msg/Imu)${NC}"
@@ -92,7 +103,7 @@ echo ""
 echo -e "${BLUE}[6/7] Sampling messages (5 seconds)...${NC}"
 echo -e "${YELLOW}Press Ctrl+C if no messages appear after 5 seconds${NC}"
 
-MSG_SAMPLE=$(timeout 5 docker exec ros_jazzy_zenoh bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic echo /ios/imu --once" 2>/dev/null || echo "")
+MSG_SAMPLE=$(timeout 5 docker exec "$CONTAINER" bash -c "source /opt/ros/${DISTRO}/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic echo /ios/imu --once" 2>/dev/null || echo "")
 
 if [ -n "$MSG_SAMPLE" ]; then
     echo -e "${GREEN}✓ Messages received!${NC}"
@@ -103,13 +114,13 @@ if [ -n "$MSG_SAMPLE" ]; then
 else
     echo -e "${YELLOW}⚠ No messages received in 5 seconds${NC}"
     echo -e "${YELLOW}  Make sure iOS app is publishing${NC}"
-    echo -e "${YELLOW}  Check Config.plist has correct router IP: tcp/${CONTAINER_IP}:7447${NC}"
+    echo -e "${YELLOW}  Check the app's Settings: Router tcp/${CONTAINER_IP}:7447, Distribution ${DISTRO_NAME}${NC}"
 fi
 
 # Check message rate
 echo ""
 echo -e "${BLUE}[7/7] Checking message rate (5 seconds)...${NC}"
-RATE_INFO=$(timeout 5 docker exec ros_jazzy_zenoh bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic hz /ios/imu" 2>/dev/null || echo "")
+RATE_INFO=$(timeout 5 docker exec "$CONTAINER" bash -c "source /opt/ros/${DISTRO}/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic hz /ios/imu" 2>/dev/null || echo "")
 
 if [ -n "$RATE_INFO" ]; then
     echo -e "${GREEN}✓ Message rate:${NC}"
@@ -139,13 +150,13 @@ echo -e "${NC}"
 # Create summary report
 REPORT=""
 
-if docker ps | grep -q ros_jazzy_zenoh; then
+if docker ps | grep -q "$CONTAINER"; then
     REPORT="${REPORT}${GREEN}✓${NC} Container running\n"
 else
     REPORT="${REPORT}${RED}✗${NC} Container not running\n"
 fi
 
-if docker exec ros_jazzy_zenoh pgrep -f rmw_zenohd > /dev/null 2>&1; then
+if docker exec "$CONTAINER" pgrep -f rmw_zenohd > /dev/null 2>&1; then
     REPORT="${REPORT}${GREEN}✓${NC} Zenoh router active\n"
 else
     REPORT="${REPORT}${RED}✗${NC} Zenoh router not active\n"
@@ -181,7 +192,7 @@ echo ""
 echo -e "${YELLOW}Configuration:${NC}"
 echo -e "  Container IP: ${CYAN}${CONTAINER_IP}${NC}"
 echo -e "  Zenoh Port: ${CYAN}7447${NC}"
-echo -e "  Expected Config.plist: ${CYAN}tcp/${CONTAINER_IP}:7447${NC}"
+echo -e "  Expected router in Settings: ${CYAN}tcp/${CONTAINER_IP}:7447${NC}"
 
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
@@ -191,16 +202,15 @@ if [ -z "$MSG_SAMPLE" ]; then
     echo "1. Verify iOS app is running in Simulator"
     echo "2. Tap 'Connect & Publish' button in app"
     echo "3. Check Xcode console for errors"
-    echo "4. Verify Config.plist settings:"
-    echo -e "   ${CYAN}router_locator: tcp/${CONTAINER_IP}:7447${NC}"
-    echo -e "   ${CYAN}wire_mode: jazzy${NC}"
-    echo -e "   ${CYAN}rate_hz: 100${NC}"
+    echo "4. Verify the app's Settings:"
+    echo -e "   ${CYAN}Transport: Zenoh, Router: tcp/${CONTAINER_IP}:7447${NC}"
+    echo -e "   ${CYAN}Distribution: ${DISTRO_NAME}${NC}"
 else
     echo ""
     echo -e "${GREEN}Success! Data is flowing correctly.${NC}"
     echo ""
     echo "To monitor continuously:"
-    echo -e "  ${CYAN}docker exec -it ros_jazzy_zenoh /usr/local/bin/echo-imu.sh${NC}"
+    echo -e "  ${CYAN}docker exec -it $CONTAINER /usr/local/bin/echo-imu.sh${NC}"
 fi
 
 echo ""
