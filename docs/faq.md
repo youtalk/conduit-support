@@ -46,6 +46,7 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
    - Enter Router Address (e.g., `192.168.1.100`)
    - Enter Router Port (default: `7447`)
    - Enter Domain ID (must match ROS_DOMAIN_ID on host)
+   - Distribution: your host's ROS 2 release (Lyrical by default)
    - Tap Save
 
 4. Enable sensors and tap Play
@@ -76,6 +77,7 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
    - Add the ROS 2 host IP to Unicast Peers
    - **Network Interface: `en0`** (required on iOS — do not leave as "auto")
    - Domain ID: must match `ROS_DOMAIN_ID`
+   - Distribution: your host's ROS 2 release (Lyrical by default)
    - Tap Save
 
 3. Enable sensors and tap Play

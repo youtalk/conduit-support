@@ -121,7 +121,7 @@ Current limitations and known issues in Conduit.
 
 **Status**: Normal behavior
 
-**Reason**: Zenoh session establishment + version detection takes 2-5 seconds.
+**Reason**: Zenoh session establishment takes 2-5 seconds.
 
 **Workaround**: Wait for "Publishing" state before expecting data
 

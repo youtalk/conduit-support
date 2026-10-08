@@ -35,6 +35,7 @@ Conduit 2.0 supports two transports for publishing ROS 2 messages. This page hel
 - Router Address: `<host-ip>`
 - Router Port: `7447`
 - Domain ID: match `ROS_DOMAIN_ID` on host
+- Distribution: your host's ROS 2 release (Lyrical by default)
 
 **DDS:**
 - Settings → Transport: **DDS**
@@ -42,6 +43,7 @@ Conduit 2.0 supports two transports for publishing ROS 2 messages. This page hel
 - Unicast Peers: add the ROS 2 host IP (required for Unicast/Hybrid)
 - Network Interface: `en0` (do **not** use auto)
 - Domain ID: match `ROS_DOMAIN_ID` on host
+- Distribution: your host's ROS 2 release (Lyrical by default)
 
 ## Network Requirements
 
