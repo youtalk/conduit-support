@@ -3,7 +3,7 @@
 # discovers and echoes topics from the iOS app over CycloneDDS.
 #
 # Build args:
-#   ROS_DISTRO: humble | jazzy | kilted | rolling (default: jazzy)
+#   ROS_DISTRO: humble | jazzy | kilted | lyrical | rolling (default: jazzy)
 #
 # Usage:
 #   docker build -f Dockerfile.dds --build-arg ROS_DISTRO=jazzy -t ros-jazzy-dds .
