@@ -81,6 +81,9 @@ body:
       options:
         - ROS 2 Humble
         - ROS 2 Jazzy
+        - ROS 2 Kilted
+        - ROS 2 Lyrical
+        - ROS 2 Rolling
         - Other
         - Not applicable
     validations:
@@ -89,12 +92,14 @@ body:
   - type: dropdown
     id: wire-mode
     attributes:
-      label: Wire Mode Setting
-      description: Which wire mode is configured in the app?
+      label: Distribution Setting
+      description: Which distribution is selected in Conduit's Settings → Distribution?
       options:
-        - Jazzy
         - Humble
-        - Auto-detect
+        - Jazzy
+        - Kilted
+        - Lyrical
+        - Rolling
     validations:
       required: false
 

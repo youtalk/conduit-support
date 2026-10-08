@@ -39,6 +39,9 @@ body:
       options:
         - ROS 2 Humble
         - ROS 2 Jazzy
+        - ROS 2 Kilted
+        - ROS 2 Lyrical
+        - ROS 2 Rolling
         - Other
     validations:
       required: true

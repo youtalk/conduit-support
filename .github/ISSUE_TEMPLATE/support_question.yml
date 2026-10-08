@@ -56,7 +56,7 @@ body:
       label: Current Setup
       description: Describe your current configuration
       placeholder: |
-        - ROS 2 Version: Jazzy
+        - ROS 2 Version: Lyrical
         - Router Address: 192.168.1.100
         - Enabled Sensors: IMU, GPS
     validations:
