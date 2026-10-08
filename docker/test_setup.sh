@@ -12,6 +12,17 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# ROS 2 distribution of the Zenoh host: lyrical (default), jazzy or humble.
+DISTRO="${1:-lyrical}"
+case "$DISTRO" in
+    lyrical) DISTRO_NAME="Lyrical" ;;
+    jazzy) DISTRO_NAME="Jazzy" ;;
+    humble) DISTRO_NAME="Humble" ;;
+    *) echo -e "${RED}Usage: $0 [lyrical|jazzy|humble]${NC}"; exit 1 ;;
+esac
+SERVICE="ros-${DISTRO}"
+CONTAINER="ros_${DISTRO}_zenoh"
+
 # Banner
 echo -e "${CYAN}"
 echo "=========================================="
@@ -43,12 +54,12 @@ cd "$SCRIPT_DIR"
 # Build Docker image
 echo ""
 echo -e "${BLUE}[2/6] Building Docker image (this may take 10-15 minutes)...${NC}"
-docker compose build
+docker compose build "$SERVICE"
 
 # Start container
 echo ""
-echo -e "${BLUE}[3/6] Starting ROS Jazzy container...${NC}"
-docker compose up -d
+echo -e "${BLUE}[3/6] Starting ROS ${DISTRO_NAME} container...${NC}"
+docker compose up "$SERVICE" -d
 
 # Wait for container to be ready
 echo ""
@@ -58,7 +69,7 @@ sleep 5
 # Get container IP
 echo ""
 echo -e "${BLUE}[5/6] Getting container IP address...${NC}"
-CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ros_jazzy_zenoh)
+CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER")
 
 if [ -z "$CONTAINER_IP" ]; then
     echo -e "${RED}Error: Could not get container IP${NC}"
@@ -96,10 +107,9 @@ echo -e "${CYAN}Zenoh Port:${NC} 7447"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
 echo ""
-echo "1. Update iOS app configuration:"
-echo -e "   ${CYAN}Edit: Config/Config.plist${NC}"
-echo -e "   ${CYAN}Set router_locator to: tcp/${CONTAINER_IP}:7447${NC}"
-echo -e "   ${CYAN}Set wire_mode to: jazzy${NC}"
+echo "1. In the Conduit app, open Settings:"
+echo -e "   ${CYAN}Transport: Zenoh, Router: tcp/${CONTAINER_IP}:7447${NC}"
+echo -e "   ${CYAN}Distribution: ${DISTRO_NAME}${NC}"
 echo ""
 echo "2. Build and run iOS app in Xcode:"
 echo -e "   ${CYAN}Select iPhone 17 Pro (Simulator)${NC}"
@@ -107,7 +117,7 @@ echo -e "   ${CYAN}Click Run (⌘R)${NC}"
 echo -e "   ${CYAN}Tap 'Connect & Publish' button${NC}"
 echo ""
 echo "3. Verify data in another terminal:"
-echo -e "   ${CYAN}docker exec -it ros_jazzy_zenoh /usr/local/bin/echo-imu.sh${NC}"
+echo -e "   ${CYAN}docker exec -it $CONTAINER /usr/local/bin/echo-imu.sh${NC}"
 echo ""
 echo -e "${YELLOW}Useful commands:${NC}"
 echo ""
@@ -118,10 +128,10 @@ echo "  View container logs:"
 echo -e "    ${CYAN}docker compose logs -f${NC}"
 echo ""
 echo "  Echo IMU topic:"
-echo -e "    ${CYAN}docker exec -it ros_jazzy_zenoh /usr/local/bin/echo-imu.sh${NC}"
+echo -e "    ${CYAN}docker exec -it $CONTAINER /usr/local/bin/echo-imu.sh${NC}"
 echo ""
 echo "  Check topic rate:"
-echo -e "    ${CYAN}docker exec -it ros_jazzy_zenoh /usr/local/bin/check-topics.sh${NC}"
+echo -e "    ${CYAN}docker exec -it $CONTAINER /usr/local/bin/check-topics.sh${NC}"
 echo ""
 echo "  Stop container:"
 echo -e "    ${CYAN}docker compose down${NC}"

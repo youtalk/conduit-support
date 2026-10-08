@@ -13,7 +13,8 @@ Choose the one that matches your Conduit app's Transport setting. See [../docs/T
 
 ## Overview
 
-A unified Dockerfile supports both ROS 2 distributions via build arguments:
+A unified Dockerfile supports each ROS 2 distribution via build arguments:
+- **ros-lyrical**: ROS 2 Lyrical with rmw_zenoh_cpp
 - **ros-jazzy**: ROS 2 Jazzy with rmw_zenoh_cpp
 - **ros-humble**: ROS 2 Humble with rmw_zenoh_cpp
 
@@ -33,7 +34,7 @@ ARG ROS_DISTRO=jazzy
 FROM ros:${ROS_DISTRO}
 ```
 
-This allows building both Humble and Jazzy images from a single Dockerfile.
+This builds the Lyrical, Jazzy and Humble images from a single Dockerfile.
 
 ## Architecture
 
@@ -96,7 +97,10 @@ cd support/docker
 # Build both Docker images (first time: ~10-15 minutes each)
 docker compose build
 
-# Start Jazzy container (for Jazzy testing)
+# Start Lyrical container (for Lyrical testing)
+docker compose up ros-lyrical -d
+
+# OR Start Jazzy container (for Jazzy testing)
 docker compose up ros-jazzy -d
 
 # OR Start Humble container (for Humble testing)
@@ -115,7 +119,7 @@ docker compose logs -f
 docker compose down
 
 # Start the other distro
-docker compose up ros-humble -d   # or ros-jazzy
+docker compose up ros-humble -d   # or ros-lyrical / ros-jazzy
 ```
 
 #### Configuring ROS_DOMAIN_ID
@@ -602,7 +606,10 @@ After successful Docker testing:
 ```bash
 cd support/docker
 
-# Default domain (0)
+# Default domain (0), Lyrical host
+docker compose -f compose-dds.yml up ros-lyrical-dds -d
+
+# OR a Jazzy host
 docker compose -f compose-dds.yml up ros-jazzy-dds -d
 
 # Custom domain
