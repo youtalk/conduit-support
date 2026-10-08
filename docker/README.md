@@ -30,7 +30,7 @@ Each container provides:
 The unified `Dockerfile` uses `ARG ROS_DISTRO` to select the ROS distribution at build time:
 
 ```dockerfile
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO=lyrical
 FROM ros:${ROS_DISTRO}
 ```
 
