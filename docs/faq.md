@@ -22,7 +22,7 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
 
 **Transport choice:** 2.0 adds DDS (CycloneDDS) alongside Zenoh. Existing Zenoh users can keep their current router setup — Zenoh remains fully supported. DDS is opt-in via Settings → Transport.
 
-**Supported distros:** Kilted and Rolling joined Humble and Jazzy in 2.0; Lyrical joined in the release that added it to Settings → Distribution.
+**Supported distros:** Kilted and Rolling joined Humble and Jazzy in 2.0; Lyrical joined in 2.3.0.
 
 ### How do I connect via Zenoh?
 
