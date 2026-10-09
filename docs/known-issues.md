@@ -121,7 +121,7 @@ Current limitations and known issues in Conduit.
 
 **Status**: Normal behavior
 
-**Reason**: Zenoh session establishment + version detection takes 2-5 seconds.
+**Reason**: Zenoh session establishment takes 2-5 seconds.
 
 **Workaround**: Wait for "Publishing" state before expecting data
 
@@ -133,7 +133,7 @@ Current limitations and known issues in Conduit.
 
 **Behavior**: May take 10-30 seconds to detect router failure.
 
-**Workaround**: App will auto-detect after 3 consecutive publish failures
+**Workaround**: The app detects the loss after 3 consecutive publish failures
 
 ---
 
@@ -146,14 +146,14 @@ Current limitations and known issues in Conduit.
 **Reason**: Wire format changes between rmw_zenoh_cpp versions.
 
 **Mitigation**:
-- Auto-detect mode handles most cases
-- Manual Humble/Jazzy selection available
+- Settings → Distribution: Humble, or Jazzy / Kilted / Lyrical / Rolling (one shared wire format)
 
 **Known Compatible Versions**:
 - ROS 2 Humble: rmw_zenoh_cpp (Humble release)
 - ROS 2 Jazzy: rmw_zenoh_cpp (Jazzy release)
+- ROS 2 Lyrical: rmw_zenoh_cpp (Lyrical release)
 
-**Workaround**: Use matching ROS 2 version and wire mode setting
+**Workaround**: Set Distribution to match the host.
 
 ---
 

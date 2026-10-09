@@ -162,9 +162,9 @@ docker compose up ros-jazzy -d
 You should see output like:
 ```
 ========================================
-ROS 2 Jazzy + rmw_zenoh_cpp Container   (or Humble)
+ROS 2 Lyrical + rmw_zenoh_cpp Container   (or Jazzy / Humble)
 ========================================
-ROS_DISTRO: jazzy
+ROS_DISTRO: lyrical
 RMW_IMPLEMENTATION: rmw_zenoh_cpp
 ROS_DOMAIN_ID: 0
 Container IP: 172.17.0.2
@@ -176,6 +176,9 @@ Starting rmw_zenohd router...
 ### 3. Get Container IP Address
 
 ```bash
+# For Lyrical container:
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ros_lyrical_zenoh
+
 # For Jazzy container:
 docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ros_jazzy_zenoh
 
@@ -207,15 +210,15 @@ In Xcode:
 1. Select **iPhone 17 Pro (Simulator)** as target
 2. Click **Run** (⌘R)
 3. Wait for simulator to launch
-4. Tap **"Connect & Publish"** button in app
+4. Tap **Start Publishing** in the app
 
 ### 6. Verify Data Flow
 
 Open a new terminal and run:
 
 ```bash
-# Terminal 2: Echo IMU messages
-docker exec -it ros_jazzy_zenoh /usr/local/bin/echo-imu.sh
+# Terminal 2: Echo IMU messages (ros_jazzy_zenoh / ros_humble_zenoh for the other containers)
+docker exec -it ros_lyrical_zenoh /usr/local/bin/echo-imu.sh
 ```
 
 You should see IMU messages streaming:
@@ -236,8 +239,8 @@ orientation:
 ### 7. Check Publishing Rate
 
 ```bash
-# Terminal 3: Check rate
-docker exec -it ros_jazzy_zenoh bash -c "source /opt/ros/jazzy/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic hz /conduit/imu"
+# Terminal 3: Check rate (for Jazzy / Humble, use that container name and /opt/ros/<distro>)
+docker exec -it ros_lyrical_zenoh bash -c "source /opt/ros/lyrical/setup.bash && source /ros2_ws/install/setup.bash && export RMW_IMPLEMENTATION=rmw_zenoh_cpp && ros2 topic hz /conduit/imu"
 ```
 
 **Expected:** `average rate: 100.000`
@@ -451,9 +454,7 @@ open -a Docker
 3. Verify the distribution:
    - Settings → Distribution should match the container's ROS 2 release
 
-4. Check app logs in Xcode console:
-   - Look for "Running in simulator - using mock data"
-   - Look for "Started publishing at 100 Hz"
+4. Check the Xcode console for errors
 
 5. Restart both app and container:
    ```bash
@@ -495,7 +496,6 @@ docker compose build --no-cache
 - [ ] Domain ID matches between container and iOS app
 - [ ] Settings → Router Address set to the container IP
 - [ ] iOS Simulator app built and running
-- [ ] App shows "Running in simulator - using mock data"
 - [ ] App shows "Publishing" status
 - [ ] `ros2 topic list` shows `/conduit/imu`
 - [ ] `ros2 topic echo /conduit/imu` receives messages

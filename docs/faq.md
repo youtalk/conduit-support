@@ -11,7 +11,7 @@ Conduit 2.0 supports two transports — choose based on your ROS 2 middleware:
 | **RMW** | rmw_zenoh_cpp | rmw_cyclonedds_cpp |
 | **Router required** | Yes (rmw_zenohd) | No |
 | **Network** | TCP/UDP to router | Multicast or unicast on LAN |
-| **Distros** | Humble, Jazzy, Kilted, Rolling | Humble, Jazzy, Kilted, Rolling |
+| **Distros** | Humble, Jazzy, Kilted, Lyrical, Rolling | Humble, Jazzy, Kilted, Lyrical, Rolling |
 | **Setup** | Enter router IP in Settings | Set discovery mode in Settings |
 
 **Recommendation:** Use **Zenoh** if you already have rmw_zenoh_cpp set up. Use **DDS** if your stack uses rmw_cyclonedds_cpp and you want zero-broker operation.
@@ -22,13 +22,13 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
 
 **Transport choice:** 2.0 adds DDS (CycloneDDS) alongside Zenoh. Existing Zenoh users can keep their current router setup — Zenoh remains fully supported. DDS is opt-in via Settings → Transport.
 
-**Supported distros:** Kilted and Rolling join Humble and Jazzy.
+**Supported distros:** Kilted and Rolling joined Humble and Jazzy in 2.0; Lyrical joined in 2.3.0.
 
 ### How do I connect via Zenoh?
 
 1. Start the Zenoh router on your ROS 2 system:
    ```bash
-   source /opt/ros/jazzy/setup.bash
+   source /opt/ros/lyrical/setup.bash   # or your distro
    export RMW_IMPLEMENTATION=rmw_zenoh_cpp
    export ROS_DOMAIN_ID=0  # Set domain ID (0-232, default: 0)
    ros2 run rmw_zenoh_cpp rmw_zenohd
@@ -46,6 +46,7 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
    - Enter Router Address (e.g., `192.168.1.100`)
    - Enter Router Port (default: `7447`)
    - Enter Domain ID (must match ROS_DOMAIN_ID on host)
+   - Distribution: your host's ROS 2 release (Lyrical by default)
    - Tap Save
 
 4. Enable sensors and tap Play
@@ -56,7 +57,7 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
 
 1. On your ROS 2 system:
    ```bash
-   source /opt/ros/jazzy/setup.bash
+   source /opt/ros/lyrical/setup.bash   # or your distro
    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
    export ROS_DOMAIN_ID=0  # Valid range: 0-232
 
@@ -76,6 +77,7 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
    - Add the ROS 2 host IP to Unicast Peers
    - **Network Interface: `en0`** (required on iOS — do not leave as "auto")
    - Domain ID: must match `ROS_DOMAIN_ID`
+   - Distribution: your host's ROS 2 release (Lyrical by default)
    - Tap Save
 
 3. Enable sensors and tap Play
@@ -90,10 +92,11 @@ Conduit supports:
 - **ROS 2 Humble** (Ubuntu 22.04) - No type hash
 - **ROS 2 Jazzy** (Ubuntu 24.04) - RIHS01 type hash
 - **ROS 2 Kilted** (Ubuntu 24.04) - RIHS01 type hash
+- **ROS 2 Lyrical** (Ubuntu 26.04) - RIHS01 type hash
 - **ROS 2 Rolling** - RIHS01 type hash
 
 Supported RMW implementations:
-- **rmw_zenoh_cpp** — via Zenoh transport (the app auto-detects Humble vs Jazzy wire format)
+- **rmw_zenoh_cpp** — via Zenoh transport (set Settings → Distribution to match the host)
 - **rmw_cyclonedds_cpp 0.10.5** — via DDS transport (default RMW on many ROS 2 distributions)
 
 ### Why can't I see my topics in `ros2 topic list`?
@@ -127,13 +130,12 @@ Supported RMW implementations:
 
 5. **Firewall blocking port 7447**: Check firewall settings on ROS 2 system
 
-### What's the difference between Humble and Jazzy wire modes?
+### What does the Distribution setting change?
 
-- **Jazzy**: Uses type hash in key expressions (RIHS01_...)
-- **Humble**: Uses "TypeHashNotSupported" instead of type hash
-- **Auto-detect**: App queries Zenoh admin space to determine version (recommended)
+- **Humble**: key expressions carry `TypeHashNotSupported` instead of a type hash.
+- **Jazzy, Kilted, Lyrical, Rolling**: key expressions carry the RIHS01 type hash. These four share one wire format, so any of them works with any of these hosts.
 
-Use "Auto-detect" unless you're experiencing specific compatibility issues.
+Pick the release your host runs; there is no automatic detection.
 
 ### Can I use Conduit without a ROS 2 system?
 
@@ -142,7 +144,7 @@ Yes, for testing:
 - You can verify app functionality without ROS 2
 - However, you won't be able to receive data without a Zenoh router
 
-For production use, you need a ROS 2 system (Humble, Jazzy, Kilted, or Rolling) with **one** of the supported transports:
+For production use, you need a ROS 2 system (Humble, Jazzy, Kilted, Lyrical, or Rolling) with **one** of the supported transports:
 - **Zenoh:** `rmw_zenoh_cpp` middleware and a running Zenoh router (`rmw_zenohd`).
 - **DDS:** `rmw_cyclonedds_cpp` middleware on the same LAN as your iOS device — no broker required.
 
@@ -268,11 +270,11 @@ You need the `audio_common_msgs` package installed on your ROS 2 system.
 **Using Docker (easiest):**
 ```bash
 # The pre-built Docker image already includes audio_common_msgs
-docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
+docker run -d -p 7447:7447 --name ros_lyrical_zenoh ghcr.io/youtalk/conduit-support:lyrical
 
 # Echo audio messages
-docker exec ros_jazzy_zenoh bash -c \
-  "source /opt/ros/jazzy/setup.bash && \
+docker exec ros_lyrical_zenoh bash -c \
+  "source /opt/ros/lyrical/setup.bash && \
    source /ros2_ws/install/setup.bash && \
    export RMW_IMPLEMENTATION=rmw_zenoh_cpp && \
    ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData"
@@ -281,6 +283,7 @@ docker exec ros_jazzy_zenoh bash -c \
 **Using a native ROS 2 installation:**
 ```bash
 # Install audio_common (includes audio_common_msgs)
+sudo apt install ros-lyrical-audio-common  # Lyrical
 sudo apt install ros-jazzy-audio-common   # Jazzy
 sudo apt install ros-humble-audio-common  # Humble
 
@@ -369,7 +372,7 @@ Yes. Recording is a tee on the same publish path, not a separate pipeline — ev
 ```bash
 # Foxglove Studio: File → Open → select the .mcap
 
-# ros2 bag (Jazzy / Kilted / Rolling — bundled mcap_storage_plugin):
+# ros2 bag (Jazzy / Kilted / Lyrical / Rolling — bundled mcap_storage_plugin):
 ros2 bag play recording.mcap
 
 # Humble: install ros-humble-rosbag2-storage-mcap first

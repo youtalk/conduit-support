@@ -18,7 +18,7 @@ Common issues and solutions for Conduit.
    ps aux | grep rmw_zenohd
 
    # If not running, start it
-   source /opt/ros/jazzy/setup.bash
+   source /opt/ros/lyrical/setup.bash   # or your distro
    export RMW_IMPLEMENTATION=rmw_zenoh_cpp
    ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
@@ -98,7 +98,7 @@ Common issues and solutions for Conduit.
    echo $ROS_DOMAIN_ID
 
    # Check Docker container domain ID
-   docker exec ros_jazzy_zenoh bash -c "echo \$ROS_DOMAIN_ID"
+   docker exec ros_lyrical_zenoh bash -c "echo \$ROS_DOMAIN_ID"
    ```
    - Domain ID in app Settings must match ROS_DOMAIN_ID on host
    - Valid range: 0-232 (RTPS specification limit)
@@ -110,9 +110,8 @@ Common issues and solutions for Conduit.
    # Must be: rmw_zenoh_cpp
    ```
 
-3. **Check wire mode**:
-   - App Settings → Wire Mode should match your ROS 2 version
-   - Try "Auto-detect" first
+3. **Check the Distribution setting**:
+   - Set Settings → Distribution to match your host (Humble vs Jazzy and later)
 
 4. **Restart Zenoh router**:
    ```bash
@@ -142,9 +141,8 @@ Common issues and solutions for Conduit.
 
 3. **Restart app**: Stop and restart publishing
 
-4. **Check wire format**:
-   - Ensure wire mode matches your ROS 2 version
-   - Try switching between Humble/Jazzy modes
+4. **Check the Distribution setting**:
+   - Set Settings → Distribution to match your host (Humble vs Jazzy and later)
 
 ## Sensor Issues
 
@@ -244,9 +242,9 @@ Common issues and solutions for Conduit.
 
 1. **Use the pre-built Docker image** (includes audio_common_msgs):
    ```bash
-   docker run -d -p 7447:7447 --name ros_jazzy_zenoh ghcr.io/youtalk/conduit-support:jazzy
-   docker exec ros_jazzy_zenoh bash -c \
-     "source /opt/ros/jazzy/setup.bash && \
+   docker run -d -p 7447:7447 --name ros_lyrical_zenoh ghcr.io/youtalk/conduit-support:lyrical
+   docker exec ros_lyrical_zenoh bash -c \
+     "source /opt/ros/lyrical/setup.bash && \
       source /ros2_ws/install/setup.bash && \
       export RMW_IMPLEMENTATION=rmw_zenoh_cpp && \
       ros2 topic echo /conduit/audio audio_common_msgs/msg/AudioData"
@@ -254,6 +252,7 @@ Common issues and solutions for Conduit.
 
 2. **Install on native ROS 2**:
    ```bash
+   sudo apt install ros-lyrical-audio-common  # Lyrical
    sudo apt install ros-jazzy-audio-common   # Jazzy
    sudo apt install ros-humble-audio-common  # Humble
    ```
