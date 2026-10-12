@@ -268,6 +268,7 @@ See [docker/README.md](docker/README.md) for the complete Docker guide.
 ## Documentation
 
 - [Transports](docs/TRANSPORTS.md) — Zenoh vs DDS comparison and when to use each
+- [On-demand capture](docs/ON_DEMAND_CAPTURE.md) — Publish only when subscribed: capture a fresh message on request
 - [FAQ](docs/FAQ.md) — Frequently asked questions
 - [Troubleshooting Guide](docs/TROUBLESHOOTING.md) — Common issues and solutions
 - [Platform Notes](docs/PLATFORM_NOTES.md) — Platform-specific information

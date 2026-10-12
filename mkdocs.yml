@@ -43,6 +43,7 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Platform notes: platform-notes.md
   - Transports (Zenoh / DDS): transports.md
+  - On-demand capture: on-demand-capture.md
   - Known issues: known-issues.md
   - Privacy policy: privacy.md
 
