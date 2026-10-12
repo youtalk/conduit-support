@@ -131,22 +131,22 @@ Common issues and solutions for Conduit.
 
 **Solutions:**
 
-1. **Verify sensor is publishing**:
+1. **Check for "Waiting for subscriber"**:
+   - If the sensor row says Waiting for subscriber, Settings → Publishing → **Publish only when subscribed** is on and no subscription matches the topic. The message count and rate in the next item do not apply to a waiting row.
+   - See [Why does a sensor say "Waiting for subscriber"?](faq.md#why-does-a-sensor-say-waiting-for-subscriber)
+
+2. **Verify sensor is publishing**:
    - Check message count in app (should be increasing)
    - Rate should be > 0 Hz
 
-2. **Check QoS compatibility**:
+3. **Check QoS compatibility**:
    - App uses: Reliability=BestEffort, History=KeepLast(10) by default
    - Try adjusting in sensor settings
 
-3. **Restart app**: Stop and restart publishing
+4. **Restart app**: Stop and restart publishing
 
-4. **Check the Distribution setting**:
+5. **Check the Distribution setting**:
    - Set Settings → Distribution to match your host (Humble vs Jazzy and later)
-
-5. **Check for "Waiting for subscriber"**:
-   - If the sensor row says Waiting for subscriber, Settings → Publishing → **Publish only when subscribed** is on and no subscription matches the topic
-   - See [Why does a sensor say "Waiting for subscriber"?](faq.md#why-does-a-sensor-say-waiting-for-subscriber)
 
 ## Sensor Issues
 
@@ -401,7 +401,7 @@ Any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or 
 
 3. **Large messages (Camera, LiDAR):** Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see [known-issues.md](known-issues.md).
 
-4. **"Waiting for subscriber" on the sensor row:** **Publish only when subscribed** (Settings → Publishing) is on and no subscription matches the topic. Check the subscriber's QoS (best effort, see item 1), its `ROS_DOMAIN_ID`, and the Distribution setting, or turn the setting off. See [On-demand capture](on-demand-capture.md).
+4. **"Waiting for subscriber" on the sensor row:** **Publish only when subscribed** (Settings → Publishing) is on and no subscription matches the topic. Check the subscriber's QoS (best effort, see item 1), or turn the setting off. See [On-demand capture](on-demand-capture.md).
 
 ### Disconnect takes several seconds (DDS)
 
