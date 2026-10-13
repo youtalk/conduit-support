@@ -1,0 +1,22 @@
+# teleop_twist_joy parameters for Conduit's Joy, which uses the ROS 2 joy package's
+# game_controller_node layout (SDL GameController indices):
+#   axes[1]     left stick up/down, up = +1        -> linear.x
+#   axes[0]     left stick left/right, left = +1   -> angular.z
+#   buttons[9]  left shoulder (LB / L1), held      -> deadman (enable_button)
+# Turbo stays off: teleop_twist_joy checks the turbo button before the deadman,
+# so a turbo button would drive the robot without the deadman held.
+# The scales are the speeds at full stick; set them for your robot.
+teleop_twist_joy_node:
+  ros__parameters:
+    require_enable_button: true
+    enable_button: 9
+    enable_turbo_button: -1
+    axis_linear:
+      x: 1
+    scale_linear:
+      x: 0.5
+    axis_angular:
+      yaw: 0
+    scale_angular:
+      yaw: 1.0
+    publish_stamped_twist: false
