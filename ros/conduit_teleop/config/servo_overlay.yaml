@@ -1,0 +1,19 @@
+# Conduit overlay for MoveIt Servo (ROS 2 Jazzy). Load it after the robot's own
+# Servo parameters so these values win, e.g.
+#   Node(package='moveit_servo', executable='servo_node', name='servo_node',
+#        parameters=[servo_params, ...,
+#                    PathJoinSubstitution([FindPackageShare('conduit_teleop'),
+#                                          'config', 'servo_overlay.yaml'])])
+# The key '/**' applies it to any node name, so it works whatever the robot
+# calls its Servo node.
+#
+# incoming_command_timeout: Servo drops a twist whose header.stamp is older
+#   than this on the host clock. The phone's twists cross Wi-Fi and are stamped
+#   with the phone's clock; 0.5 s keeps them while a lost link still stops the
+#   arm quickly. Sync the host clock (chrony) as well.
+# command_in_type: Conduit sends velocities in m/s and rad/s.
+/**:
+  ros__parameters:
+    moveit_servo:
+      incoming_command_timeout: 0.5
+      command_in_type: "speed_units"
