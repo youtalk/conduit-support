@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CycloneDDS for the robot harness. Multicast stays on for the containers on
+     this host; CONDUIT_PHONE_IP adds the phone (or simulator Mac) as a unicast
+     peer for Wi-Fi without multicast. Many processes share the host, so allow
+     more automatic participant indices than the default. HARNESS_DDS_INTERFACE
+     is the LAN interface (entrypoint.sh picks the one that routes to the phone
+     when it is not set): automatic selection can choose a down or VPN
+     interface the phone cannot reach. -->
+<CycloneDDS xmlns="https://cdds.io/config">
+  <Domain id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface name="${HARNESS_DDS_INTERFACE}"/>
+      </Interfaces>
+    </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+      <Peers>
+        <Peer address="${CONDUIT_PHONE_IP:-localhost}"/>
+      </Peers>
+    </Discovery>
+  </Domain>
+</CycloneDDS>
