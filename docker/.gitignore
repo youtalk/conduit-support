@@ -8,3 +8,4 @@ test_results.md
 
 # Local environment overrides (user-specific)
 .env
+robot-harness/reports/

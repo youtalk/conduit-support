@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CycloneDDS for the robot harness. Multicast stays on for the containers on
+     this host; CONDUIT_PHONE_IP adds the phone (or simulator Mac) as a unicast
+     peer for Wi-Fi without multicast. Many processes share the host, so allow
+     more automatic participant indices than the default. -->
+<CycloneDDS xmlns="https://cdds.io/config">
+  <Domain id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface autodetermine="true" priority="default"/>
+      </Interfaces>
+    </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+      <Peers>
+        <Peer address="${CONDUIT_PHONE_IP:-localhost}"/>
+      </Peers>
+    </Discovery>
+  </Domain>
+</CycloneDDS>
