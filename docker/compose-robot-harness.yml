@@ -4,7 +4,9 @@
 # which Docker Desktop on macOS does not provide.
 #
 # Build once (from this directory):
-#   docker compose -f compose-robot-harness.yml build
+#   docker compose -f compose-robot-harness.yml build shell
+# (every service has a profile, so a plain `build` builds nothing; all of them
+# share the one image).
 # Fake mobile robot + conduit_teleop:
 #   docker compose -f compose-robot-harness.yml --profile mobile up -d
 # MoveIt Servo Panda + gripper action server:
@@ -20,9 +22,16 @@
 #   ROS_DOMAIN_ID     default 123
 #   HARNESS_RMW       rmw_cyclonedds_cpp (default) or rmw_zenoh_cpp
 #   CONDUIT_PHONE_IP  phone or simulator-Mac IP, added as a DDS unicast peer
+#   HARNESS_DDS_INTERFACE  DDS network interface (e.g. wlp130s0f0); default:
+#                     the interface that routes to CONDUIT_PHONE_IP, else the
+#                     default route's
 #   JOY_TOPIC         Joy topic conduit_teleop reads, default /joy
 #                     (/conduit/joy for Conduit's Game Controller sensor)
 #   PHONE_OFFSET_NS   phone clock offset for the probe (host - phone), from conduit_gate_ping
+
+# Own project name: this directory's other compose files use the default
+# project ("docker"), and the harness must not adopt or remove their containers.
+name: conduit-robot-harness
 
 x-harness: &harness
   image: conduit-robot-harness:jazzy
@@ -35,6 +44,7 @@ x-harness: &harness
     - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-123}
     - CYCLONEDDS_URI=file:///etc/cyclonedds/cyclonedds.xml
     - CONDUIT_PHONE_IP=${CONDUIT_PHONE_IP:-localhost}
+    - HARNESS_DDS_INTERFACE=${HARNESS_DDS_INTERFACE:-}
   volumes:
     - ./robot-harness/cyclonedds.xml:/etc/cyclonedds/cyclonedds.xml:ro
     - ./robot-harness/reports:/reports
@@ -62,8 +72,13 @@ services:
     <<: *harness
     profiles: [probe]
     container_name: conduit_harness_probe
+    # The probe runs as the container's main process (not under `ros2 run`,
+    # which does not pass a signal on to its child), and Ctrl-C, `stop`, `down`
+    # and `docker kill -s INT` all deliver SIGINT, which writes the report.
+    stop_signal: SIGINT
+    stop_grace_period: 10s
     command: >-
-      ros2 run conduit_gate_probe conduit_gate_probe --ros-args
+      /ros2_ws/install/conduit_gate_probe/lib/conduit_gate_probe/conduit_gate_probe --ros-args
       -p report_dir:=/reports
       -p joy_topic:=${JOY_TOPIC:-/joy}
       -p phone_offset_ns:=${PHONE_OFFSET_NS:-0}
