@@ -242,11 +242,13 @@ Yes! Conduit supports multi-camera streaming:
 
 1. Tap the Camera sensor row
 2. Select multiple cameras (front, wide, ultra-wide, telephoto)
-3. Each camera publishes to separate topic:
-   - `/conduit/camera/front/compressed`
-   - `/conduit/camera/wide/compressed`
-   - `/conduit/camera/ultrawide/compressed`
-   - `/conduit/camera/telephoto/compressed`
+3. Each camera publishes to its own topics (default namespace `conduit`):
+   - `/conduit/camera/front/image_raw/compressed`
+   - `/conduit/camera/wide/image_raw/compressed`
+   - `/conduit/camera/ultrawide/image_raw/compressed`
+   - `/conduit/camera/telephoto/image_raw/compressed`
+
+   These are the default compressed outputs. With the camera's output set to raw, the image goes to `.../image_raw` instead (or to both topics). Each camera also publishes `/conduit/camera/<camera>/camera_info`.
 
 **Note:** Wide, ultra-wide, and telephoto cameras require Premium unlock.
 

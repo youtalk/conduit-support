@@ -44,6 +44,7 @@ nav:
   - Platform notes: platform-notes.md
   - Transports (Zenoh / DDS): transports.md
   - On-demand capture: on-demand-capture.md
+  - Teleoperation: teleop.md
   - Known issues: known-issues.md
   - Privacy policy: privacy.md
 

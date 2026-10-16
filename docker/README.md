@@ -648,3 +648,23 @@ If multicast is blocked (corporate/consumer WiFi):
 - Docker Documentation: https://docs.docker.com
 - ROS 2 Jazzy: https://docs.ros.org/en/jazzy/
 - rmw_zenoh: https://github.com/ros2/rmw_zenoh
+
+## Robot harness (Conduit 3.0)
+
+`compose-robot-harness.yml` runs test robots for Conduit's Robots tab on a Linux host (host networking; not Docker Desktop on macOS):
+
+- **mobile** — a fake mobile robot (`/fake_robot/...` camera, scan, odometry, battery; `/map`, `/diagnostics`, `/tf`, `/tf_static`) behind `conduit_teleop` (`/joy` → `teleop_twist_joy` → `joy_watchdog` → `/cmd_vel`). The robot drives from `/cmd_vel` and stops 0.5 s after the last command.
+- **arm** — MoveIt Servo with the Panda on mock hardware (`/servo_node/delta_twist_cmds`, `/servo_node/switch_command_type`, `/servo_node/status`), Conduit's Servo overlay from `conduit_teleop` (`ros/conduit_teleop/config/servo_overlay.yaml`: `incoming_command_timeout: 0.5`, `command_in_type: speed_units`; the same file real robots load), and a `control_msgs/action/GripperCommand` server on `/panda_hand_controller/gripper_cmd`.
+- **probe** — `conduit_gate_probe`, which times `/joy` → `/cmd_vel`, stops, Servo twists and Servo output on the host clock and answers the clock echo on `/conduit/gate/ping`. Ctrl-C writes `robot-harness/reports/gate-<time>.json`.
+
+```bash
+cd docker
+docker compose -f compose-robot-harness.yml build shell   # one image for every profile
+ROS_DOMAIN_ID=123 CONDUIT_PHONE_IP=<phone-ip> docker compose -f compose-robot-harness.yml --profile mobile up -d
+```
+
+In Conduit: Settings → Transport DDS, Domain ID 123, Distribution Jazzy, and the host's IP as a DDS peer (or Zenoh with router `tcp/<host-ip>:7447` and `HARNESS_RMW=rmw_zenoh_cpp ... --profile zenoh`). The harness's `conduit_teleop` listens to one Joy topic: the Robots drive view (Conduit 3.0) publishes `/joy`, the default; Conduit's Game Controller sensor publishes `/conduit/joy`, so start the harness with `JOY_TOPIC=/conduit/joy` to drive with the sensor.
+
+- **DDS interface:** the harness binds CycloneDDS to the interface that routes to `CONDUIT_PHONE_IP` (or the default route's). Set `HARNESS_DDS_INTERFACE` (for example `wlp130s0f0`) to choose it yourself; CycloneDDS's automatic choice can be a wired port without a cable or a VPN, which the phone cannot reach.
+- **Zenoh:** the `zenoh` profile's router listens on TCP 7447, so stop any other router on that port first (for example this directory's `docker-compose.yml` containers).
+- **Gate probe:** `gate-probe` runs the probe as the container's main process and stops it with SIGINT, so Ctrl-C on `up`, `docker compose ... stop` and `docker kill -s INT conduit_harness_probe` all write the report.
