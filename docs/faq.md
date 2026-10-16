@@ -203,6 +203,19 @@ ros2 topic hz /conduit/imu
 ros2 topic info /conduit/imu --verbose
 ```
 
+### Why does a sensor say "Waiting for subscriber"?
+
+Requires Conduit 2.4.0 or later.
+
+**Publish only when subscribed** (Settings → Publishing) is on, and none of that sensor's topics has a ROS 2 subscriber. The sensor is still running; Conduit just sends nothing until a subscriber appears. The row shows its normal rate again as soon as one connects. See [On-demand capture](on-demand-capture.md) for how the setting works.
+
+If you expected data, check:
+
+1. **Is anything subscribed?** For example, run `ros2 topic echo /conduit/imu` on the host.
+2. **Subscriber QoS.** Sensor topics default to best effort. On DDS, a subscriber that requests reliable delivery does not match them. Subscribe with `--qos-reliability best_effort` (or `qos_profile_sensor_data` in rclpy), or set the sensor's QoS to Reliable in its settings.
+3. **Domain ID and Distribution.** `ROS_DOMAIN_ID` on the host must match the Domain ID in Conduit, and Settings → Distribution must match your host (Humble vs Jazzy and later).
+4. **Want continuous publishing?** Turn off Settings → Publishing → **Publish only when subscribed**. It is off by default.
+
 ### Why is my sensor showing "Not Available"?
 
 **Common reasons:**
