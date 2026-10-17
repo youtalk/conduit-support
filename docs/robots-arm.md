@@ -51,3 +51,49 @@ near singularity", "Halted: joint bound", …). The clutch stays disabled until 
 Conduit also publishes the raw pose (`/conduit/pose`, `/tf`) and `/conduit/teleop/clutch`
 (`std_msgs/Bool`, true while the clutch is held, false on any pose discontinuity), so a custom
 consumer can move relative to the pose at engage time.
+
+## Servo overlay
+
+`conduit_teleop` installs a MoveIt Servo parameter overlay at
+`share/conduit_teleop/config/servo_overlay.yaml` (source:
+[`ros/conduit_teleop/config/servo_overlay.yaml`](https://github.com/youtalk/conduit-support/blob/main/ros/conduit_teleop/config/servo_overlay.yaml)).
+Build `conduit_teleop` as described in [Teleoperation](teleop.md) to get it.
+
+```yaml
+/**:
+  ros__parameters:
+    moveit_servo:
+      incoming_command_timeout: 0.5
+      command_in_type: "speed_units"
+```
+
+| parameter | value | what it does |
+| --- | --- | --- |
+| `moveit_servo.command_in_type` | `speed_units` | Servo reads the twist as m/s and rad/s, which is what Conduit sends (not unitless −1 … 1 commands). |
+| `moveit_servo.incoming_command_timeout` | `0.5` | Servo drops a twist whose `header.stamp` is older than this on the host clock (default 0.1 s). The phone stamps its twists with its own clock and they cross Wi-Fi, so 0.1 s drops many of them; 0.5 s keeps them, and a lost link still stops the arm within half a second. Releasing the clutch stops the arm at once with explicit zero twists. |
+
+The `/**` key applies the file to any node, so it works whatever your launch file names the
+Servo node.
+
+**Load it after your robot's own Servo parameters.** A node applies its parameter sources in
+order, so the last one wins:
+
+```python
+from launch.substitutions import PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+servo_node = Node(
+    package="moveit_servo", executable="servo_node", name="servo_node",
+    parameters=[servo_params, robot_description, robot_description_semantic,
+                robot_description_kinematics,
+                PathJoinSubstitution([FindPackageShare("conduit_teleop"), "config", "servo_overlay.yaml"])],
+)
+```
+
+Check that it took effect (with your Servo node's name):
+
+```bash
+ros2 param get /servo_node moveit_servo.incoming_command_timeout   # Double value is: 0.5
+ros2 param get /servo_node moveit_servo.command_in_type            # String value is: speed_units
+```
