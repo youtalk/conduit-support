@@ -17,23 +17,37 @@ the overlay uses the `moveit_servo.` parameter namespace, which Humble's Servo p
 configures differently.
 
 1. **Servo overlay.** Load `conduit_teleop`'s Servo overlay after your robot's own Servo
-   parameters, so Servo takes speeds and keeps phone-stamped twists for 0.5 s. The
+   parameters, so Servo takes speeds and keeps twists for 0.5 s. The
    [Servo overlay](#servo-overlay) section below shows the file and how to load it.
 
-2. **Time sync.** Servo drops a twist whose stamp is older than `incoming_command_timeout` on the
-   host clock. The 0.5 s stop when the link is lost holds only while the host and phone clocks
-   agree. If the phone clock runs ahead, a twist never looks stale and the arm keeps moving on the
-   last twist until the host clock catches up with its stamp plus 0.5 s. Keep the host on NTP with
-   chrony, and the iPhone on **Settings → General → Date & Time → Set Automatically**:
+2. **Time sync.** Servo drops a twist whose stamp is older than `incoming_command_timeout` on its
+   own clock, and it keeps moving on the last twist until then. Conduit therefore stamps every
+   twist, moving or zero, on the robot's clock instead of the phone's. It measures that clock
+   from the profile's **Joint states** topic: the difference between each message's
+   `header.stamp` and the time it arrives, taking the lowest-latency sample over the last 10 s,
+   and it never stamps a twist ahead of the robot's real time. The 0.5 s stop when the link is
+   lost then holds even when the phone's clock differs from the host's, so neither chrony nor
+   **Set Automatically** is needed for it. The requirements on the Joint states topic:
 
-   ```bash
-   sudo apt install chrony
-   chronyc tracking      # "System time" should be a few milliseconds
-   ```
+   - It must be stamped by the computer that runs Servo (the same clock Servo uses), and never
+     in the future. Joint states published by another computer, such as a robot controller
+     while Servo runs on a laptop, are measured as if they were Servo's clock, and Conduit
+     cannot tell.
+   - New arm profiles bind `/joint_states` by default. A namespaced topic, for example
+     `/arm/joint_states`, must be typed into the **Joint states** slot.
+   - The host must run on wall-clock time. With simulation time (`use_sim_time`), HOLD cannot
+     be used.
 
-   If the clocks still differ, the arm view shows **Robot clock differs from the phone**. Conduit
-   measures the difference from the stamps on the profile's **Joint states** topic, so bind it.
-   The warning is only a notice on the phone while the link is up: it does not stop the arm.
+   HOLD is refused until the robot clock is known. The arm view says why:
+
+   | Message | Meaning |
+   | --- | --- |
+   | "Set Joint states in the profile. HOLD needs the robot clock." | No Joint states topic is bound. |
+   | "Reading the robot clock from Joint states" | Conduit is still collecting stamps (it needs ten Joint states messages). |
+   | "Robot and phone clocks are more than a day apart (simulation time?). HOLD is off." | The stamps are not wall-clock time: simulation time, unstamped messages, or a clock that was never set. |
+
+   If the robot clock becomes unusable while HOLD is held (a simulator starts, say), the arm
+   lets go and shows "Robot clock changed. Release and press again."
 
 3. **Gripper (optional).** A `control_msgs/action/GripperCommand` server; the profile holds its
    action name (**Gripper action**) and the open and closed positions in metres (**Gripper open
@@ -81,8 +95,7 @@ Build `conduit_teleop` as described in [Teleoperation](teleop.md) to get it.
 | parameter | value | what it does |
 | --- | --- | --- |
 | `moveit_servo.command_in_type` | `speed_units` | Servo reads the twist as m/s and rad/s, which is what Conduit sends (not unitless −1 … 1 commands). |
-| `moveit_servo.incoming_command_timeout` | `0.5` | Servo drops a twist whose `header.stamp` is older than this on the host clock (default 0.1 s). The phone stamps its twists with its own clock and they cross Wi-Fi, so 0.1 s drops many of them; 0.5 s keeps them, and a lost link stops the arm within half a second as long as the host and phone clocks agree
-(see Time sync above). Releasing the clutch stops the arm at once with explicit zero twists. |
+| `moveit_servo.incoming_command_timeout` | `0.5` | Servo drops a twist whose `header.stamp` is older than this on the host clock (default 0.1 s). Conduit stamps its twists on the robot's clock and they cross Wi-Fi, so 0.1 s drops many of them; 0.5 s keeps them, and a lost link stops the arm within about half a second (see Time sync above). Releasing the clutch stops the arm at once with explicit zero twists. |
 
 The `/**` key applies the file to any node, so it works whatever your launch file names the
 Servo node.

@@ -67,11 +67,10 @@ allowance is spent it shows the Conduit Plus paywall instead.
   Wi-Fi, it publishes zero velocity at 10 Hz for 1 s and then stays silent until Joy resumes (it is
   also silent before the first Joy), so the robot stops without the watchdog fighting Nav2.
 - Arms: releasing the clutch sends zero twists at once. If the link is lost, Servo stops on its
-  command timeout (0.5 s with the overlay), but only while the host and phone clocks agree: Servo
-  compares the twist's stamp with the host clock, so a phone clock that runs ahead keeps the last
-  twist alive and the arm can keep moving until the host catches up. Keep the host on chrony and
-  the phone on Set Automatically ([time sync](robots-arm.md#host-setup)), and keep the arm's own
-  emergency stop within reach.
+  command timeout (0.5 s with the overlay). Conduit stamps every twist, the zero ones included, on
+  the robot's clock, which it reads from the profile's Joint states topic, so the stop does not
+  depend on the phone's clock being right. HOLD stays off until that clock is known
+  ([time sync](robots-arm.md#host-setup)). Keep the arm's own emergency stop within reach.
 
 ## When something is wrong
 
