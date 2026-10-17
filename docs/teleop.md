@@ -130,7 +130,7 @@ to drive from the drive view, `joy_topic:=/conduit/joy` to drive with the Game C
 If you set a profile's Joy topic to the sensor's topic, Conduit pauses the sensor while that drive
 view is open.
 
-In the drive view, touching the on-screen stick (or holding Space on a hardware keyboard, or LB / L1 on a
+In the drive view, touching the on-screen joystick (or holding Space on a hardware keyboard, or LB / L1 on a
 controller) holds `buttons[9]`, and **Slow / Fast** scales the stick on the phone: Fast sends it
 unscaled, so the parameter file's scales are the drive view's top speeds. Slow is the default and
 halves both the forward and the turn rate. The watchdog behaves

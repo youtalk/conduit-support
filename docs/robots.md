@@ -10,7 +10,7 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
 **Open** shows the drive view:
 
 - **Mobile robots** — camera, map with the robot's pose and LaserScan, status and
-  diagnostics; drive with the on-screen stick, a game controller or a hardware keyboard. Conduit
+  diagnostics; drive with the on-screen joystick, a game controller or a hardware keyboard. Conduit
   sends `sensor_msgs/Joy`; [`conduit_teleop`](robots-mobile.md) turns it into `cmd_vel`.
 - **Robot arms** — hold the clutch and move the iPhone: a [MoveIt Servo](robots-arm.md) arm
   follows, while the screen shows the wrist camera, the gripper and the joints.

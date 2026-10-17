@@ -11,7 +11,7 @@ Captions in English; no music under the voice-over.
 | 4 | 0:25 | Split screen: phone HUD and the Kachaka driving forward, back, turning | the robot moves the way the stick points |
 | 5 | 0:10 | STOP mid-drive, then lifting the finger | the robot stops; "STOP is not an emergency stop" on screen |
 | 6 | 0:10 | Mini map tapped → full map with LaserScan on the walls | robot marker and scan |
-| 7 | 0:10 | A game controller drives; the stick hides | controller in hand, robot moving |
+| 7 | 0:10 | A game controller drives; the on-screen joystick stays visible | controller in hand, robot moving |
 | 8 | 0:10 | iPad: camera with map, status and diagnostics tiles | tile layout |
 | 9 | 0:15 | Arm profile Open → portrait arm view, Align | wrist camera, Align, scale, Rot, gripper, joints, HOLD |
 | 10 | 0:25 | Split screen: phone in hand with HOLD pressed, Panda simulation following | end effector moves with the phone; release stops it |

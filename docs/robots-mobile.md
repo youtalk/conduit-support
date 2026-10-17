@@ -32,11 +32,14 @@ until Joy resumes (it is also silent before the first Joy), so it does not fight
 - **Slow / Fast** is set on the phone and starts on Slow. Slow halves both the forward and the
   turn rate (also for a controller's sticks); Fast sends the stick unscaled. The parameter file
   holds the full-speed scales.
+- **On-screen joystick:** the virtual joystick is the touch input in every case. Touch it to
+  drive and lift your finger to stop.
 - **Game controllers** (MFi and other GameController devices) drive with their own buttons: hold
-  LB / L1 and use the left stick. The on-screen stick hides while one is connected.
+  LB / L1 and use the left stick. The on-screen joystick stays visible while one is connected, so
+  you can use either; the "Game controller" chip only shows that one is connected.
 - **Hardware keyboard** (Mac, or an iPad with a keyboard): Space = deadman, arrows or WASD = stick, Shift = Fast while held.
-- **VoiceOver:** four hold-to-move buttons (Forward, Back, Turn left, Turn right) replace the
-  stick.
+- **VoiceOver:** the joystick takes direct touch. It is labelled "Drive joystick" with the hint
+  "Drag to drive; lift your finger to stop". There are no separate direction buttons.
 - After STOP, a lost link or the app going to the background, nothing drives until you let go of
   every input and press again.
 - The Game Controller sensor publishes `<namespace>/joy` (`/conduit/joy` by default); the drive

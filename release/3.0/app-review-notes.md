@@ -9,7 +9,7 @@ The Robots tab (iPhone) or the Robots toolbar button (iPad, Mac) lists robot pro
 profile subscribes to the robot's camera, map, odometry, battery and diagnostics on the ROS 2
 network and shows them in a drive view:
 
-- Mobile robots: the user drives with an on-screen stick, a game controller or a hardware keyboard.
+- Mobile robots: the user drives with an on-screen virtual joystick, a game controller or a hardware keyboard.
   Conduit sends standard ROS 2 joystick messages; the robot's own software turns them into motion.
 - Robot arms: while the user holds the on-screen clutch, Conduit converts the iPhone's motion
   (ARKit world tracking) into velocity commands for MoveIt Servo.
