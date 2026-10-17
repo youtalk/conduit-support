@@ -1,6 +1,6 @@
 # Conduit 3.0 demo video — shot list
 
-Target length 2:30, landscape 1080p, screen recording plus a second camera on the robot.
+Target length 3:00, landscape 1080p, screen recording plus a second camera on the robot.
 Captions in English; no music under the voice-over.
 
 | # | length | shot | what must be visible |

@@ -9,7 +9,7 @@ The Robots tab (iPhone) or the Robots toolbar button (iPad, Mac) lists robot pro
 profile subscribes to the robot's camera, map, odometry, battery and diagnostics on the ROS 2
 network and shows them in a drive view:
 
-- Mobile robots: the user drives with an on-screen stick, a game controller or the Mac keyboard.
+- Mobile robots: the user drives with an on-screen stick, a game controller or a hardware keyboard.
   Conduit sends standard ROS 2 joystick messages; the robot's own software turns them into motion.
 - Robot arms: while the user holds the on-screen clutch, Conduit converts the iPhone's motion
   (ARKit world tracking) into velocity commands for MoveIt Servo.
@@ -22,7 +22,7 @@ to discover topics" starts discovery, and topic names can also be typed by hand.
 publishing and recording features work without a robot.
 
 The camera is used for the existing camera sensors and, with ARKit, for the Device Pose sensor
-and arm teleoperation (motion tracking). Nothing leaves the user's local network.
+and arm teleoperation (motion tracking). Sensor and robot data go only to the ROS 2 host the user configures.
 
 ## Conduit Plus
 

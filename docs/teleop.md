@@ -1,6 +1,6 @@
 ---
 title: Teleoperation with a game controller
-description: Drive a ROS 2 robot from a game controller paired with your iPhone, iPad or Mac, through teleop_twist_joy and a watchdog that stops the robot when the link drops.
+description: Drive a ROS 2 robot from a game controller or from Conduit's Robots drive view, through teleop_twist_joy and a watchdog that stops the robot when the link drops.
 ---
 
 # Teleoperation with a game controller
@@ -8,7 +8,7 @@ description: Drive a ROS 2 robot from a game controller paired with your iPhone,
 !!! note "Requires Conduit 2.5 or later"
     The Joy layout and the setup on this page need **Conduit 2.5 or later**. Settings → **About & Help** shows your version. Conduit 2.4 and earlier publish an older Joy layout with Best Effort QoS (see the next box).
 
-Conduit's **Game Controller** sensor publishes `sensor_msgs/msg/Joy` from any controller paired with your iPhone, iPad or Mac (Xbox, PlayStation, MFi). It publishes on **`/conduit/joy`**: the sensor's topic is `joy`, under Conduit's namespace, which is `conduit` unless you changed Settings → **Namespace** (then it is `/<namespace>/joy`). That is why the commands below pass `joy_topic:=/conduit/joy`. On the robot, [`teleop_twist_joy`](https://github.com/ros2/teleop_twist_joy) turns the Joy messages into velocity commands. This page sets that up with **`conduit_teleop`**, a ROS 2 package in this repository.
+Conduit's **Game Controller** sensor publishes `sensor_msgs/msg/Joy` from any controller paired with your iPhone, iPad or Mac (Xbox, PlayStation, MFi). It publishes on **`/conduit/joy`**: the sensor's topic is `joy`, under Conduit's namespace, which is `conduit` unless you changed Settings → **Namespace** (then it is `/<namespace>/joy`). That is why the commands below pass `joy_topic:=/conduit/joy`. (Conduit 3.0's [drive view](#drive-view) uses `/joy` instead.) On the robot, [`teleop_twist_joy`](https://github.com/ros2/teleop_twist_joy) turns the Joy messages into velocity commands. This page sets that up with **`conduit_teleop`**, a ROS 2 package in this repository.
 
 !!! warning "Conduit 2.5 changes the Joy message to the ROS 2 `joy` layout"
     From Conduit 2.5, Game Controller publishes `Joy` exactly like the ROS 2 `joy` package's `game_controller_node`. Compared with Conduit 2.4 and earlier:
@@ -130,16 +130,18 @@ to drive from the drive view, `joy_topic:=/conduit/joy` to drive with the Game C
 If you set a profile's Joy topic to the sensor's topic, Conduit pauses the sensor while that drive
 view is open.
 
-In the drive view, touching the on-screen stick (or holding Space on a Mac, or LB / L1 on a
+In the drive view, touching the on-screen stick (or holding Space on a hardware keyboard, or LB / L1 on a
 controller) holds `buttons[9]`, and **Slow / Fast** scales the stick on the phone: Fast sends it
-unscaled, so the parameter file's scales are the drive view's top speeds. The watchdog behaves
+unscaled, so the parameter file's scales are the drive view's top speeds. Slow is the default and
+halves both the forward and the turn rate. The watchdog behaves
 the same for both sources.
 
 ### Kachaka
 
 The [kachaka-api](https://github.com/pf-robotics/kachaka-api) ROS 2 bridge takes velocity on
 `/kachaka/manual_control/cmd_vel` while manual control is enabled. `kachaka.launch.py` starts
-`conduit_teleop` for it:
+`conduit_teleop` for it, so run it instead of `conduit_teleop.launch.py`, not together with it
+(both would start a `teleop_twist_joy_node` and a `joy_watchdog` with the same names):
 
 ```bash
 ros2 launch conduit_teleop kachaka.launch.py
@@ -149,7 +151,8 @@ ros2 launch conduit_teleop kachaka.launch.py
 - `params_file` is the package's `config/kachaka_teleop_twist_joy.yaml`, a full copy of
   `teleop_twist_joy.yaml` (same axes, deadman and turbo off) with full-stick speeds of
   **0.3 m/s** and **1.57 rad/s**. The bridge divides `cmd_vel` by exactly these maximums, so Fast reaches
-  Kachaka's top speed at full stick and Slow drives at up to 0.15 m/s. The default file's 0.5 m/s
+  Kachaka's top speed at full stick. With the default Slow setting the top is 0.15 m/s and
+  0.79 rad/s. The default file's 0.5 m/s
   would ask for more than Kachaka's top speed beyond 60 % of the stick.
 - Two seconds after start it calls `<kachaka_namespace>/manual_control/set_enabled` with `true`.
 
@@ -160,6 +163,7 @@ ros2 launch conduit_teleop kachaka.launch.py
 
 ## Troubleshooting
 
+- **The drive view is open but the robot does not move.** Check that Joy arrives on the profile's Joy topic: `ros2 topic hz /joy`. Then check that `conduit_teleop` listens on that topic (its default `joy_topic` is `/joy`) and that you are touching the stick, which is the deadman.
 - **Nothing on `/cmd_vel` while you hold LB, and `ros2 topic hz /conduit/joy` shows nothing.** No Joy reaches the host. Check the topic name (`ros2 topic list | grep joy`), the domain ID and the transport.
 - **The robot turns the wrong way.** Remove any axis inversion you set up for Conduit 2.4 or earlier.
 - **Nothing on `/cmd_vel` although Joy arrives.** Hold LB (`buttons[9]`). Check `ros2 topic echo /conduit/joy --field buttons` while you press it.

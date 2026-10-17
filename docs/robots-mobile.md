@@ -29,11 +29,12 @@ until Joy resumes (it is also silent before the first Joy), so it does not fight
 | touching the stick, Space, or the left shoulder | `buttons[9]` | deadman (`enable_button`) |
 | right shoulder | `buttons[10]` | not used: turbo is off and masked unless the deadman is held |
 
-- **Slow / Fast** is set on the phone: Slow halves the stick, Fast sends it unscaled.
-  The parameter file holds the full-speed scales.
+- **Slow / Fast** is set on the phone and starts on Slow. Slow halves both the forward and the
+  turn rate (also for a controller's sticks); Fast sends the stick unscaled. The parameter file
+  holds the full-speed scales.
 - **Game controllers** (MFi and other GameController devices) drive with their own buttons: hold
   LB / L1 and use the left stick. The on-screen stick hides while one is connected.
-- **Mac keyboard:** Space = deadman, arrows or WASD = stick, Shift = Fast while held.
+- **Hardware keyboard** (Mac, or an iPad with a keyboard): Space = deadman, arrows or WASD = stick, Shift = Fast while held.
 - **VoiceOver:** four hold-to-move buttons (Forward, Back, Turn left, Turn right) replace the
   stick.
 - After STOP, a lost link or the app going to the background, nothing drives until you let go of
@@ -48,11 +49,12 @@ until Joy resumes (it is also silent before the first Joy), so it does not fight
 The [kachaka-api](https://github.com/pf-robotics/kachaka-api) ROS 2 bridge takes velocity on
 `/kachaka/manual_control/cmd_vel` once manual control is enabled. On the host, run
 `conduit_teleop`'s Kachaka launch file, which sets both up and drives at Kachaka's own speeds
-([Teleoperation → Kachaka](teleop.md#kachaka)):
+([Teleoperation → Kachaka](teleop.md#kachaka)). It starts `conduit_teleop` itself, so use it
+instead of `conduit_teleop.launch.py`, not together with it:
 
 ```bash
 ros2 launch conduit_teleop kachaka.launch.py
 ```
 
-Profile: Camera, Map `/kachaka/mapping/map`, Map frame `map`, Base frame `base_footprint`, the
+Profile: Camera `/kachaka/front_camera/image_raw/compressed`, Map `/kachaka/mapping/map`, Map frame `map`, Base frame `base_footprint`, the
 LaserScan, Odometry and Battery topics the bridge lists, Joy output `/joy`.
