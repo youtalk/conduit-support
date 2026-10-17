@@ -43,6 +43,10 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Platform notes: platform-notes.md
   - Transports (Zenoh / DDS): transports.md
+  - Robots:
+      - Overview: robots.md
+      - Mobile robots: robots-mobile.md
+      - Robot arms: robots-arm.md
   - On-demand capture: on-demand-capture.md
   - Teleoperation: teleop.md
   - Known issues: known-issues.md

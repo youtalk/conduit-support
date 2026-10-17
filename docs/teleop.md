@@ -110,6 +110,54 @@ Keep the rest of the copy as it is, including the `teleop_twist_joy_node:` key. 
 !!! danger "Not an emergency stop"
     Neither Conduit nor `conduit_teleop` is a safety system. Keep the robot's own emergency stop within reach.
 
+## Drive view
+
+!!! note "Requires Conduit 3.0"
+    The drive view is part of Robots, which Conduit 3.0 adds. The Game Controller sensor above
+    works from Conduit 2.5.
+
+Conduit 3.0's [Robots](robots.md) drive view sends the same Joy layout at 50 Hz while it is
+open (reliable, KEEP_LAST 1), on the robot profile's Joy topic, which is **`/joy`** by default.
+For it, launch `conduit_teleop` with the default `joy_topic`:
+
+```bash
+ros2 launch conduit_teleop conduit_teleop.launch.py
+```
+
+The two Joy sources use different topics: the drive view publishes `/joy`, the Game Controller
+sensor `/conduit/joy`. Point `conduit_teleop` at one of them, not both: the default `joy_topic`
+to drive from the drive view, `joy_topic:=/conduit/joy` to drive with the Game Controller sensor.
+If you set a profile's Joy topic to the sensor's topic, Conduit pauses the sensor while that drive
+view is open.
+
+In the drive view, touching the on-screen stick (or holding Space on a Mac, or LB / L1 on a
+controller) holds `buttons[9]`, and **Slow / Fast** scales the stick on the phone: Fast sends it
+unscaled, so the parameter file's scales are the drive view's top speeds. The watchdog behaves
+the same for both sources.
+
+### Kachaka
+
+The [kachaka-api](https://github.com/pf-robotics/kachaka-api) ROS 2 bridge takes velocity on
+`/kachaka/manual_control/cmd_vel` while manual control is enabled. `kachaka.launch.py` starts
+`conduit_teleop` for it:
+
+```bash
+ros2 launch conduit_teleop kachaka.launch.py
+```
+
+- `cmd_vel_topic` is `<kachaka_namespace>/manual_control/cmd_vel`.
+- `params_file` is the package's `config/kachaka_teleop_twist_joy.yaml`, a full copy of
+  `teleop_twist_joy.yaml` (same axes, deadman and turbo off) with full-stick speeds of
+  **0.3 m/s** and **1.57 rad/s**. The bridge divides `cmd_vel` by exactly these maximums, so Fast reaches
+  Kachaka's top speed at full stick and Slow drives at up to 0.15 m/s. The default file's 0.5 m/s
+  would ask for more than Kachaka's top speed beyond 60 % of the stick.
+- Two seconds after start it calls `<kachaka_namespace>/manual_control/set_enabled` with `true`.
+
+| argument | default | meaning |
+| --- | --- | --- |
+| `joy_topic` | `/joy` | Joy input: the drive view's Joy topic. |
+| `kachaka_namespace` | `/kachaka` | Namespace of the kachaka-api ROS 2 bridge. |
+
 ## Troubleshooting
 
 - **Nothing on `/cmd_vel` while you hold LB, and `ros2 topic hz /conduit/joy` shows nothing.** No Joy reaches the host. Check the topic name (`ros2 topic list | grep joy`), the domain ID and the transport.
