@@ -13,13 +13,16 @@ network and shows them in a drive view:
   Conduit sends standard ROS 2 joystick messages; the robot's own software turns them into motion.
 - Robot arms: the iPhone arm view is landscape, over the robot's wrist camera. While the user
   holds the on-screen clutch (HOLD), Conduit converts the iPhone's motion (ARKit world tracking)
-  into velocity commands for MoveIt Servo. Pose buttons send the name of a saved arm pose; the
-  robot's own software moves the arm there. On iPad and Mac the arm view only shows the camera,
+  into velocity commands for MoveIt Servo. Pose buttons send the name of an arm pose that the
+  robot's MoveIt configuration defines; the robot's own software moves the arm there. On iPad and Mac the arm view only shows the camera,
   the joints and the arm's status.
 
+<!-- Keep the next paragraph out of the submission until the video is embedded at
+     https://conduit.youtalk.jp/robots/#demo-video (docs/robots.md, "Demo video"). -->
 A demo video of both, recorded with a Kachaka robot and the MoveIt Servo simulation of a
-Franka Panda arm, is at https://conduit.youtalk.jp/robots/#demo-video. On iPhone both drive views
-open in landscape.
+Franka Panda arm, is at https://conduit.youtalk.jp/robots/#demo-video.
+
+On iPhone both drive views open in landscape.
 
 Without a ROS 2 computer the Robots tab shows "No robots yet". In the profile editor, "Go online
 to discover topics" starts discovery, and topic names can also be typed by hand. All sensor

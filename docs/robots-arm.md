@@ -18,47 +18,47 @@ the overlay uses the `moveit_servo.` parameter namespace, which Humble's Servo p
 configures differently.
 
 1. **Servo overlay.** Load `conduit_teleop`'s Servo overlay after your robot's own Servo
-   parameters, so Servo takes speeds and keeps twists for 0.5 s. The
-   [Servo overlay](#servo-overlay) section below shows the file and how to load it.
+    parameters, so Servo takes speeds and keeps twists for 0.5 s. The
+    [Servo overlay](#servo-overlay) section below shows the file and how to load it.
 
 2. **Time sync.** Servo drops a twist whose stamp is older than `incoming_command_timeout` on its
-   own clock, and it keeps moving on the last twist until then. Conduit therefore stamps every
-   twist, moving or zero, on the robot's clock instead of the phone's. It measures that clock
-   from the profile's **Joint states** topic: the difference between each message's
-   `header.stamp` and the time it arrives, taking the lowest-latency sample over the last 10 s,
-   and it never stamps a twist ahead of the robot's real time. The 0.5 s stop when the link is
-   lost then holds even when the phone's clock differs from the host's, so neither chrony nor
-   **Set Automatically** is needed for it. The requirements on the Joint states topic:
+    own clock, and it keeps moving on the last twist until then. Conduit therefore stamps every
+    twist, moving or zero, on the robot's clock instead of the phone's. It measures that clock
+    from the profile's **Joint states** topic: the difference between each message's
+    `header.stamp` and the time it arrives, taking the lowest-latency sample over the last 10 s,
+    and it never stamps a twist ahead of the robot's real time. The 0.5 s stop when the link is
+    lost then holds even when the phone's clock differs from the host's, so neither chrony nor
+    **Set Automatically** is needed for it. The requirements on the Joint states topic:
 
-   - It must be stamped by the computer that runs Servo (the same clock Servo uses), and never
-     in the future. Joint states published by another computer, such as a robot controller
-     while Servo runs on a laptop, are measured as if they were Servo's clock, and Conduit
-     cannot tell.
-   - New arm profiles bind `/joint_states` by default. A namespaced topic, for example
-     `/arm/joint_states`, must be typed into the **Joint states** slot.
-   - The host must run on wall-clock time. With simulation time (`use_sim_time`), HOLD cannot
-     be used.
+    - It must be stamped by the computer that runs Servo (the same clock Servo uses), and never
+      in the future. Joint states published by another computer, such as a robot controller
+      while Servo runs on a laptop, are measured as if they were Servo's clock, and Conduit
+      cannot tell.
+    - New arm profiles bind `/joint_states` by default. A namespaced topic, for example
+      `/arm/joint_states`, must be typed into the **Joint states** slot.
+    - The host must run on wall-clock time. With simulation time (`use_sim_time`), HOLD cannot
+      be used.
 
-   HOLD is refused until the robot clock is known. The arm view says why:
+    HOLD is refused until the robot clock is known. The arm view says why:
 
-   | Message | Meaning |
-   | --- | --- |
-   | "Set Joint states in the profile. HOLD needs the robot clock." | No Joint states topic is bound. |
-   | "Reading the robot clock from Joint states" | Conduit is still collecting stamps (it needs ten Joint states messages). |
-   | "Robot and phone clocks are more than a day apart (simulation time?). HOLD is off." | The stamps are not wall-clock time: simulation time, unstamped messages, or a clock that was never set. |
+    | Message | Meaning |
+    | --- | --- |
+    | "Set Joint states in the profile. HOLD needs the robot clock." | No Joint states topic is bound. |
+    | "Reading the robot clock from Joint states" | Conduit is still collecting stamps (it needs ten Joint states messages). |
+    | "Robot and phone clocks are more than a day apart (simulation time?). HOLD is off." | The stamps are not wall-clock time: simulation time, unstamped messages, or a clock that was never set. |
 
-   If the robot clock becomes unusable while HOLD is held (a simulator starts, say), the arm
-   lets go and shows "Robot clock changed. Release and press again."
+    If the robot clock becomes unusable while HOLD is held (a simulator starts, say), the arm
+    lets go and shows "Robot clock changed. Release and press again."
 
 3. **Gripper (optional).** A `control_msgs/action/GripperCommand` server; the profile holds its
-   action name (**Gripper action**) and the open and closed positions in metres (**Gripper open
-   (m)**, **Gripper closed (m)**; the Franka Panda's fingers travel from 0.0 to 0.04). With
-   **Gripper joint** (optional) set to the finger joint in Joint states, the arm view shows the
-   opening the robot reports.
+    action name (**Gripper action**) and the open and closed positions in metres (**Gripper open
+    (m)**, **Gripper closed (m)**; the Franka Panda's fingers travel from 0.0 to 0.04). With
+    **Gripper joint** (optional) set to the finger joint in Joint states, the arm view shows the
+    opening the robot reports.
 
 4. **Named poses (optional).** `conduit_teleop`'s named-pose node next to `move_group`, and a
-   `move_group` that publishes the SRDF on `/robot_description_semantic`. See
-   [Named poses](#named-poses).
+    `move_group` that publishes the SRDF on `/robot_description_semantic`. See
+    [Named poses](#named-poses).
 
 When the arm view opens, Conduit calls the profile's **Servo command type** service
 (`/servo_node/switch_command_type` by default) to switch Servo to `TWIST`, and retries every few
@@ -70,11 +70,13 @@ has arrived for a second. The clutch stays disabled until Servo is ready.
 ## The arm view
 
 On iPhone the arm view is landscape, over the full-screen wrist camera. The screen turns to
-landscape before the view comes up, either side, and stays there until you close the view.
-Opening it pauses the camera sensors and Illuminance, which Conduit asks about first ("Opening
-<robot> pauses … while the arm view is open. Device Pose uses ARKit, which needs the camera to
-itself. Continue?"), and runs the Device Pose sensor. Closing it restarts what it paused and stops
-Device Pose if the view started it.
+landscape before the view comes up, either side, and stays there until you close the view;
+closing it turns the screen back to portrait. The view runs the Device Pose sensor, which uses
+ARKit and needs the camera to itself, so opening it pauses the enabled sensors that use the
+camera (the cameras, except the wide back camera while LiDAR is on, whose images already come
+from ARKit) and Illuminance. When any of them is enabled, Conduit asks first ("Opening <robot> pauses … while the
+arm view is open. Device Pose uses ARKit, which needs the camera to itself. Continue?"). Closing
+the view restarts what it paused and stops Device Pose if the view started it.
 
 - **Top left:** the status chip (Servo · motion tracking · camera latency, for example
   "TWIST · tracking ok · 42 ms"), a warning chip when the profile expects other connection
@@ -88,12 +90,12 @@ Device Pose if the view started it.
 - **Bottom corners:** the gripper under one thumb and **HOLD** under the other. The gripper starts
   under the left thumb; the gear's **Gripper** setting (**Left thumb** / **Right thumb**) moves
   it, and Conduit keeps that choice on the device for every arm. Without a Gripper action there
-  is no gripper.
+  is no gripper, and HOLD sits in the bottom right corner.
 
 The camera's captions (STALE, "No data", "No wrist camera topic", …) sit in the space between.
 When the top row runs out of room (a smaller iPhone, larger text), Joints shows only its symbol,
-then the pose buttons show their numbers (1 to 4) in place of their titles, and last Align shows
-only its symbol.
+then the pose buttons, widest first, show their numbers (1 to 4) in place of their titles, then
+the pose buttons and Align move right of the centre, and last Align shows only its symbol.
 
 The gear's panel holds the settings that change the motion:
 
@@ -115,16 +117,27 @@ The panel is off while HOLD is held.
    up" (the camera points more than 60° above the horizon), "Point the top of the screen toward
    the robot's front", "Wait for motion tracking, then Align" or "Release the clutch to Align".
    Align again after motion tracking restarts or fails ("Motion tracking restarted. Align again.").
-2. **Hold HOLD and move.** HOLD turns green and reads **HOLDING** while the arm follows.
-3. **Release to stop.** Conduit sends zero twists three times. Tracking loss, a covered camera or
-   a pose jump also stop the arm ("The pose jumped. Release and press again.", "Motion tracking
-   paused. Release and press again."); release and press again to resume.
+2. **Hold HOLD and move.** HOLD is dimmed until the link is up, Servo is ready, the robot clock
+   is known and you have tapped Align; the status line says which one is missing. A press also
+   needs normal motion tracking, and is refused with "Waiting for motion tracking" or "Motion
+   tracking is limited. Move the phone slowly." without it. HOLD turns green and reads
+   **HOLDING** while the arm follows.
+3. **Release to stop.** Releasing HOLD sends three zero twists at once. Tracking loss, a covered
+   camera, a pose jump or a lost link also stop the arm, with one zero twist ("The pose jumped.
+   Release and press again.", "Motion tracking paused. Release and press again."); release and
+   press again to resume.
 4. **Gripper.** With HOLD released, drag along the arc or tap **Open** / **Close**. The readout
    says "Gripper · 40 % open" (or "Moving · …" while a goal runs); the white handle is the opening
    asked for, and with a Gripper joint the teal stripe is the opening the robot reports. Until the
    opening is known the readout says "Opening unknown: tap Open or Close" and a drag sends
    nothing. The gripper is off while HOLD is held, and a HOLD press while your thumb is on the
    gripper is refused with "Lift your thumb off the gripper first".
+
+Without Conduit Plus, the status line shows the weekly free time's warnings for a few seconds
+("30 minutes of free time left this week", "5 minutes left — the session stops when this week's
+free time is used up"). When the free time is used up while you hold HOLD, the arm keeps
+following until you release it, for at most 5 more minutes. Then Conduit stops the arm, closes
+the arm view and shows the Conduit Plus paywall.
 
 **VoiceOver:** HOLD is the "Clutch" button: double-tap and hold to move the arm, and release to
 stop. The gripper is the adjustable "Gripper opening": swipe up or down to open or close it by
@@ -155,17 +168,30 @@ The arm view shows up to four pose buttons:
   (`fold` → "Fold"), and `ready` shows "Home". **Reorder poses** sets the button order. **Named
   pose command** and **Named pose state** change the two topics.
 - **The robot's SRDF.** With an empty list, the arm view shows the group states of the robot's arm
-  group, in SRDF order, once the named-pose node is running. The arm group is the `parent_group`
-  of the SRDF's end effector, so the gripper's own states (such as `open` and `closed`) are not
-  offered. When the robot has both `ready` and `home`, `ready` shows "Ready".
+  group, in SRDF order, once the named-pose node is up (Conduit sees a publisher on the **Named
+  pose state** topic). The arm group is the `parent_group`
+  of the SRDF's end effector (without one, the first group that is not an end effector's own
+  group), so the gripper's own states (such as `open` and `closed`) are not offered. Start the
+  named-pose node with that group as its `planning_group`.
 - **Both.** A profile list is used in its own order and with its own titles. Once the SRDF has
-  arrived, a pose that is not a state of the arm group is left out.
+  arrived, a pose that is not a state of the arm group is left out, and the names are matched
+  ignoring case and sent as the SRDF spells them. Without the SRDF, the names are sent as typed,
+  and the named-pose node matches them case-sensitively.
 
-Conduit reads the SRDF from `/robot_description_semantic`, which `move_group` publishes. A
-`move_group` in a namespace publishes it elsewhere, so it offers no poses; use the profile's list
-then. While the robot is online, the profile editor says which buttons the arm view will show
-("The arm view shows the robot's poses: Work, Fold, Ready, Home.") and lists the robot's states
-that are not in the list under **From the robot**, where a tap adds one.
+When two buttons would read the same, `ready` shows "Ready" instead of "Home" (a robot with both
+`ready` and `home`), and an untitled button that still repeats another's title gets its name in
+brackets, such as "Home (home)".
+
+Conduit reads the SRDF from `/robot_description_semantic` only, which `move_group` publishes. A
+`move_group` in a namespace publishes it under that namespace, so the arm view gets no states
+from it: use the profile's list, with the names spelled as in the SRDF, and start the named-pose
+node in the same namespace ([Teleoperation → Named poses](teleop.md#named-poses)).
+
+While the robot is online and its SRDF has arrived, the profile editor shows the buttons the list
+gives with the robot's states ("The arm view shows the robot's poses: Work, Fold, Ready, Home.")
+and lists the robot's states that are not in the list under **From the robot**, where a tap adds
+one. With an empty list, the arm view itself shows those buttons only once the named-pose node
+is up.
 
 ### What a tap does
 
@@ -174,17 +200,25 @@ that are not in the list under **From the robot**, where a tap adds one.
 - The button shows a spinner and the status line "Moving to Fold…" until the node reports the arm
   there; then the button turns teal with a checkmark. A tap on the pose that is already on its way
   sends nothing; a tap on another pose replaces the move.
-- The buttons take no tap while HOLD is pressed or held, or while the link is down. Buttons that
-  appear while the view is open (the SRDF or the node arrived late) wait a second before they
-  take a tap, so a tap meant for Align does not move the arm.
+- The buttons take no tap while HOLD is pressed or held, or while the link is down. When the set
+  of buttons changes while the view is open (the SRDF or the node arrived late, or a changed SRDF
+  dropped or reordered a pose), they wait a second before they take a tap, so a tap meant for
+  Align does not move the arm.
+- Servo publishes no status while it is paused, so during a move the status chip reads "Servo not
+  responding". It returns to `TWIST` when the move ends.
 - **Let a pose move finish before you hold HOLD.** Servo stays paused until the move ends, so the
-  arm does not follow the phone during it.
-- A pose move runs on the host. Releasing HOLD, closing the arm view or putting the app in the
-  background does not stop it; keep the arm's own emergency stop within reach.
+  arm does not follow the phone during it, even though HOLD turns green and the status line says
+  "Holding: the arm follows the phone".
+- A pose move runs on the host, and nothing Conduit does stops it. Holding HOLD, a lost link,
+  putting the app in the background and the 30 s limit below only end the spinner; releasing
+  HOLD or closing the arm view does nothing to it either. The node gives a move up after
+  `planning_time` + `max_move_duration` (65 s by default). Keep the arm's own emergency stop
+  within reach.
 - When nothing has ever arrived on the state topic 3 s after a tap, the status line says "No
   answer from the named-pose node on /conduit/teleop/named_pose_state" (with your state topic):
-  start the node, or check the topics. The arm view stops waiting for a pose after 30 s. "Named poses unavailable" in place of
-  the buttons means Conduit could not create the command publisher.
+  start the node, or check the topics. The arm view stops waiting for a pose after 30 s. "Named
+  poses unavailable" in place of the buttons means Conduit could not create the command
+  publisher.
 
 ### Host side
 

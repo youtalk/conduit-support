@@ -226,6 +226,12 @@ The launch arguments set the node's parameters of the same names. Without the la
 ros2 run conduit_teleop named_pose_node --ros-args -p planning_group:=arm -p velocity_scaling:=0.1
 ```
 
+The node reads `robot_description_semantic`, `robot_description`, `joint_states` and `move_action` by relative name, so with `move_group` in a namespace, run the node in that namespace too. The command and state topics and the Servo pause service are absolute names and stay as they are:
+
+```bash
+ros2 run conduit_teleop named_pose_node --ros-args -r __ns:=/arm -p planning_group:=arm
+```
+
 To try it without the phone:
 
 ```bash
@@ -238,9 +244,9 @@ The state turns `""` when the move starts and `ready` when the arm gets there.
 
 Troubleshooting:
 
-- **`Ignoring named pose: unknown group state`.** The name is not a group state of `planning_group`. The warning lists the names it knows. Check `planning_group` and the SRDF's `<group_state name="…" group="…">` entries.
+- **`Ignoring named pose: unknown group state`.** The name is not a group state of `planning_group`. The warning lists the names it knows. Names are case-sensitive. Check `planning_group` and the SRDF's `<group_state name="…" group="…">` entries.
 - **`no group states known for the planning group`.** No SRDF has arrived. Check that `ros2 topic echo --once /robot_description_semantic --qos-durability transient_local` prints it; if not, make `move_group` publish it (see above).
-- **`MoveGroup action move_action is not available`.** `move_group` is not running, or runs in another namespace; set `move_action`.
+- **`MoveGroup action move_action is not available`.** `move_group` is not running, or runs in another namespace; run the node in that namespace (see above).
 - **The state stays `""` after a move.** The arm stopped further than `tolerance` from the group state, for example because a controller stops short. Raise `tolerance`. Also check that `/joint_states` carries every joint of the group state (`ros2 topic echo --once /joint_states --field name`).
 - **`Move to 'ready' lost move_group`**, or **`got no answer from move_group`.** `move_group` died, restarted or hangs. Servo has been resumed; restart `move_group` and tap again.
 - **A move aborts with `MoveIt error code -27`** (`GOAL_STATE_INVALID`). The group state is in collision or outside the joint limits. Fix it in the SRDF.

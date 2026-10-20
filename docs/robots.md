@@ -19,8 +19,8 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
 ## What you need
 
 - A ROS 2 host (Humble, Jazzy, Kilted, Lyrical or Rolling) reachable over Zenoh or DDS with the
-  same settings Conduit already uses for publishing: **Settings → Transport, Domain,
-  Distribution**. One connection serves the whole app.
+  same settings Conduit already uses for publishing: **Transport**, **Domain ID** and
+  **Distribution** in Settings. One connection serves the whole app.
 - On the host: `conduit_teleop` for mobile robots; for arms, MoveIt Servo from Jazzy or later
   and the Servo overlay, plus `conduit_teleop`'s named-pose node if you want pose buttons.
 
@@ -62,9 +62,12 @@ recording is running offline, Open asks "Publish & Record?" before it goes onlin
 weekly free allowance is spent it shows the Conduit Plus paywall instead.
 
 On iPhone, both drive views are landscape. The screen turns to landscape first and the drive
-view comes up already turned; either landscape side works. If the app goes offline (you stop it
-with the floating button, or the first connection fails), the drive view closes. iPad and Mac do
-not rotate.
+view comes up already turned; either landscape side works. Closing the drive view turns the
+screen back to portrait. iPad and Mac do not rotate.
+
+If the app goes offline, the drive view closes: when you stop it with the floating button, when
+the first connection fails, when the app goes to the background with **Background Publishing**
+off, or when the week's free time runs out without Conduit Plus.
 
 ## Safety
 
@@ -82,8 +85,9 @@ not rotate.
   the robot's clock, which it reads from the profile's Joint states topic, so the stop does not
   depend on the phone's clock being right. HOLD stays off until that clock is known
   ([time sync](robots-arm.md#host-setup)). A [named-pose](robots-arm.md#named-poses) move is
-  planned and run by `move_group` on the host: releasing HOLD or closing the arm view does not
-  stop it. Keep the arm's own emergency stop within reach.
+  planned and run by `move_group` on the host, and nothing in Conduit stops it: not HOLD, not
+  closing the arm view, not a lost link. HOLD does not move the arm until the move has ended.
+  Keep the arm's own emergency stop within reach.
 
 ## When something is wrong
 
