@@ -116,7 +116,7 @@ When you drive a MoveIt arm from Conduit, Conduit streams velocity commands (`Tw
 
 ```text
 pose button ──► /conduit/teleop/named_pose ──► conduit_named_pose ──► move_group (MoveGroup action)
-                                                     │  ▲
+HOLD ─────────► /conduit/teleop/clutch ─────────────►│  ▲
                         pause / resume MoveIt Servo ◄┘  └── /joint_states, /robot_description_semantic
 Conduit ◄── /conduit/teleop/named_pose_state ◄───────┘
 ```
@@ -125,14 +125,18 @@ Conduit ◄── /conduit/teleop/named_pose_state ◄───────┘
 | --- | --- | --- | --- |
 | `/conduit/teleop/named_pose` | `std_msgs/msg/String` | Conduit → host | One message per tap. `data` is an SRDF `group_state` name of the planning group. |
 | `/conduit/teleop/named_pose_state` | `std_msgs/msg/String` | host → Conduit | The group state the arm is at, or `""` while it moves or when it is at none of them. Latched: Reliable, Transient Local, depth 1. |
+| `/conduit/teleop/clutch` | `std_msgs/msg/Bool` | Conduit → host | `true` while you hold HOLD, `false` when you let go. Conduit repeats it at 10 Hz as a heartbeat while the arm view is open. Reliable, Volatile. |
 
-Both topics are under Conduit's namespace (`conduit` by default, Settings → **Namespace**).
+All three topics are under Conduit's namespace (`conduit` by default, Settings → **Namespace**).
 
 What the node does:
 
 - It reads the group states from `/robot_description_semantic` (the SRDF that `move_group` publishes), the joint positions from `/joint_states`, and the continuous joints from `/robot_description` (the URDF).
 - **A known name:** it pauses Servo (`/servo_node/pause_servo`), publishes `""` on the state topic, and sends a `MoveGroup` goal that plans and executes a move to that state's joint positions. When the move ends, whether it succeeds, fails or is cancelled, it resumes Servo.
 - **A tap during a move:** it cancels the move and starts the new one once the cancel has finished. Servo stays paused across the change and is resumed when the last move ends. A second tap on the button of the move that is running is ignored, so a double tap does not stop and restart the arm.
+- **HOLD during a move:** a clutch `true` cancels the move, and a tap that waits for a cancel is dropped. The arm is to follow the phone now, so Servo is resumed as soon as the move has ended, and the state topic goes back to the group state the arm is at, or `""`. Conduit stops waiting for the pose when you press HOLD.
+- **The heartbeat stops during a move:** if clutch messages were arriving when the move started, the node cancels the move once none has arrived for `clutch_timeout` (0.5 s, about five missed heartbeats). Conduit stops the heartbeat when the link drops or when the app goes to the background or closes. A move started without clutch messages, for example from `ros2 topic pub`, does not depend on the heartbeat.
+- **A tap while HOLD is held** (the last clutch message was `true`, within `clutch_timeout`): the node logs a warning and ignores it. Conduit does not send one.
 - **An unknown name**, or a group state of another planning group: it logs a warning and does nothing else.
 - **The state topic:** while no move runs, the node compares `/joint_states` with each group state, in SRDF order, and publishes the first one that every joint matches within `tolerance`. A continuous joint matches its value plus any number of whole turns, as in MoveIt. It publishes only when the value changes.
 - **No Servo:** if the pause service does not appear or answer within `service_timeout`, the node logs a warning and moves the arm anyway.
@@ -162,12 +166,14 @@ ros2 launch conduit_teleop named_pose.launch.py planning_group:=arm
 | `state_topic` | `/conduit/teleop/named_pose_state` | Where the node reports the state; `/<namespace>/teleop/named_pose_state` if you changed the namespace. |
 | `move_action` | `move_action` | `move_group`'s `moveit_msgs/action/MoveGroup` action. |
 | `servo_pause_service` | `/servo_node/pause_servo` | MoveIt Servo's `std_srvs/srv/SetBool` pause service (ROS 2 Jazzy). Change it if your Servo node has another name. |
+| `clutch_topic` | `/conduit/teleop/clutch` | Conduit's HOLD clutch; `/<namespace>/teleop/clutch` if you changed the namespace. |
 | `velocity_scaling` | `0.2` | `max_velocity_scaling_factor` of each move, in (0, 1]. |
 | `acceleration_scaling` | `0.2` | `max_acceleration_scaling_factor` of each move, in (0, 1]. |
 | `tolerance` | `0.01` | Radians (meters for a prismatic joint). A joint within this of a group state's value counts as at it. Moves aim at a tenth of it. |
 | `planning_time` | `5.0` | Seconds the planner may take. |
 | `service_timeout` | `1.0` | Seconds to wait for the Servo pause service and the `MoveGroup` action server to appear, and for Servo to answer a pause request. |
 | `max_move_duration` | `60.0` | Seconds a move may execute after `planning_time` before the node gives it up. |
+| `clutch_timeout` | `0.5` | Seconds without a clutch message after which a move that started while clutch messages were arriving is cancelled. |
 
 The launch arguments set the node's parameters of the same names. Without the launch file:
 
@@ -183,7 +189,11 @@ ros2 topic echo /conduit/teleop/named_pose_state std_msgs/msg/String \
 ros2 topic pub --once /conduit/teleop/named_pose std_msgs/msg/String "{data: ready}"
 ```
 
-The state turns `""` when the move starts and `ready` when the arm gets there.
+The state turns `""` when the move starts and `ready` when the arm gets there. With no clutch messages, the move does not depend on the heartbeat. To stop it as HOLD would:
+
+```bash
+ros2 topic pub --once /conduit/teleop/clutch std_msgs/msg/Bool "{data: true}"
+```
 
 Troubleshooting:
 
@@ -191,6 +201,9 @@ Troubleshooting:
 - **`no group states known for the planning group`.** No SRDF has arrived. Check that `ros2 topic echo --once /robot_description_semantic --qos-durability transient_local` prints it; if not, make `move_group` publish it (see above).
 - **`MoveGroup action move_action is not available`.** `move_group` is not running, or runs in another namespace; set `move_action`.
 - **The state stays `""` after a move.** The arm stopped further than `tolerance` from the group state, for example because a controller stops short. Raise `tolerance`. Also check that `/joint_states` carries every joint of the group state (`ros2 topic echo --once /joint_states --field name`).
+- **`HOLD engaged: clutch true: stopping the move to 'ready'`.** You pressed HOLD during the move, so the node cancelled it. Release HOLD and tap the pose again.
+- **`clutch heartbeat lost: …: stopping the move to 'ready'`.** Conduit's clutch messages stopped during the move: the link dropped, or the app went to the background or closed. If it happens while the app is open and connected, check the link, or raise `clutch_timeout`.
+- **`Ignoring named pose: 'ready' arrived while HOLD is engaged`.** A pose name arrived while the last clutch message was `true`. Check that nothing else publishes on the clutch or pose topics.
 - **`Move to 'ready' lost move_group`**, or **`got no answer from move_group`.** `move_group` died, restarted or hangs. Servo has been resumed; restart `move_group` and tap again.
 - **A move aborts with `MoveIt error code -27`** (`GOAL_STATE_INVALID`). The group state is in collision or outside the joint limits. Fix it in the SRDF.
 
