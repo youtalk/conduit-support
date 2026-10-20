@@ -206,14 +206,19 @@ is up.
   Align does not move the arm.
 - Servo publishes no status while it is paused, so during a move the status chip reads "Servo not
   responding". It returns to `TWIST` when the move ends.
-- **Let a pose move finish before you hold HOLD.** Servo stays paused until the move ends, so the
-  arm does not follow the phone during it, even though HOLD turns green and the status line says
-  "Holding: the arm follows the phone".
-- A pose move runs on the host, and nothing Conduit does stops it. Holding HOLD, a lost link,
-  putting the app in the background and the 30 s limit below only end the spinner; releasing
-  HOLD or closing the arm view does nothing to it either. The node gives a move up after
-  `planning_time` + `max_move_duration` (65 s by default). Keep the arm's own emergency stop
-  within reach.
+- **HOLD stops a pose move.** Conduit sends the clutch on `<namespace>/teleop/clutch`
+  (`/conduit/teleop/clutch` by default) and repeats it at 10 Hz while the arm view is open. When
+  you press HOLD, the named-pose node cancels the move and resumes Servo as soon as `move_group`
+  has ended the cancel (usually well under a second; the node waits at most 5 s), so the arm
+  follows the phone again right away. Conduit ends the spinner when you press HOLD. The arm stops
+  where it is, so no pose is reported until it reaches one.
+- **A lost link, the background or closing the arm view stops it too.** In each case the clutch
+  messages stop, and the node cancels the move after `clutch_timeout` (0.5 s by default) without
+  one and resumes Servo. This works for a move that started while clutch messages were arriving,
+  as every tap from Conduit does.
+- The 30 s limit below only ends the spinner. The clutch messages keep coming then, so the node
+  goes on with the move until it ends or the node gives it up after `planning_time` +
+  `max_move_duration` (65 s by default). Keep the arm's own emergency stop within reach.
 - When nothing has ever arrived on the state topic 3 s after a tap, the status line says "No
   answer from the named-pose node on /conduit/teleop/named_pose_state" (with your state topic):
   start the node, or check the topics. The arm view stops waiting for a pose after 30 s. "Named

@@ -85,9 +85,11 @@ off, or when the week's free time runs out without Conduit Plus.
   the robot's clock, which it reads from the profile's Joint states topic, so the stop does not
   depend on the phone's clock being right. HOLD stays off until that clock is known
   ([time sync](robots-arm.md#host-setup)). A [named-pose](robots-arm.md#named-poses) move is
-  planned and run by `move_group` on the host, and nothing in Conduit stops it: not HOLD, not
-  closing the arm view, not a lost link. HOLD does not move the arm until the move has ended.
-  Keep the arm's own emergency stop within reach.
+  planned and run by `move_group` on the host. Pressing HOLD makes the named-pose node cancel the
+  move and resume Servo as soon as `move_group` has ended the cancel (usually well under a
+  second), so the arm follows the phone again. A lost link, the app going to
+  the background or closing the arm view stops the move the same way once the clutch messages
+  have stayed away for `clutch_timeout` (0.5 s by default). Keep the arm's own emergency stop within reach.
 
 ## When something is wrong
 
