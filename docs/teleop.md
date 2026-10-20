@@ -132,9 +132,9 @@ view is open.
 
 In the drive view, touching the on-screen joystick (or holding Space on a hardware keyboard, or LB / L1 on a
 controller) holds `buttons[9]`, and **Slow / Fast** scales the stick on the phone: Fast sends it
-unscaled, so the parameter file's scales are the drive view's top speeds. Slow is the default and
-halves both the forward and the turn rate. The watchdog behaves
-the same for both sources.
+unscaled, so the parameter file's scales are the drive view's top speeds. Slow, on which the
+drive view opens, sends the stick at 0.35 of its travel for both the forward and the turn rate.
+The watchdog behaves the same for both sources.
 
 ### Kachaka
 
@@ -151,8 +151,8 @@ ros2 launch conduit_teleop kachaka.launch.py
 - `params_file` is the package's `config/kachaka_teleop_twist_joy.yaml`, a full copy of
   `teleop_twist_joy.yaml` (same axes, deadman and turbo off) with full-stick speeds of
   **0.3 m/s** and **1.57 rad/s**. The bridge divides `cmd_vel` by exactly these maximums, so Fast reaches
-  Kachaka's top speed at full stick. With the default Slow setting the top is 0.15 m/s and
-  0.79 rad/s. The default file's 0.5 m/s
+  Kachaka's top speed at full stick. On Slow the top is 0.105 m/s and 0.55 rad/s. The default
+  file's 0.5 m/s
   would ask for more than Kachaka's top speed beyond 60 % of the stick.
 - Two seconds after start it calls `<kachaka_namespace>/manual_control/set_enabled` with `true`.
 

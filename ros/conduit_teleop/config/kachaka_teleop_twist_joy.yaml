@@ -5,7 +5,8 @@
 # the same Joy layout, deadman and turbo settings as teleop_twist_joy.yaml; only the
 # full-stick speeds differ. The bridge's manual_control node divides cmd_vel by its
 # maximums, 0.3 m/s and 1.57 rad/s, so full stick here is Kachaka's top speed: the
-# drive view's Fast reaches 0.3 m/s and 1.57 rad/s, Slow 0.15 m/s and 0.79 rad/s.
+# drive view's Fast reaches 0.3 m/s and 1.57 rad/s, Slow (0.35 of the stick) 0.105 m/s
+# and 0.55 rad/s.
 # teleop_twist_joy.yaml's 0.5 m/s would exceed the top speed beyond 60 % of the stick.
 teleop_twist_joy_node:
   ros__parameters:

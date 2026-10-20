@@ -10,6 +10,20 @@ KEEP_LAST 1, on the profile's **Joy output** topic (default `/joy`). The layout 
 ROS 2 `joy` package's `game_controller_node`, so `teleop_twist_joy` reads it as it reads a
 gamepad.
 
+## The drive view
+
+On iPhone the drive view is landscape, over the full-screen camera:
+
+- **Top:** chips for the battery, the speed, the camera (latency and frame rate) and the
+  diagnostics (tap it for the full list); the mini map (tap it for the full map with the
+  LaserScan); close.
+- **Bottom:** the joystick on the left, the status banner in the middle, and on the right the
+  **Slow / Fast** switch and **STOP**, with "STOP is not an emergency stop" under it.
+
+On iPad and Mac the camera takes two thirds of the width, next to a column of **Map**, **Status**
+and **Diagnostics** tiles; tap a tile to enlarge it. A connected hardware keyboard adds the hint
+"Space + arrows or WASD to drive · Shift = Fast".
+
 ## Host setup
 
 Install `conduit_teleop` as described in [Teleoperation → Host setup](teleop.md#host-setup-with-conduit_teleop)
@@ -29,9 +43,11 @@ until Joy resumes (it is also silent before the first Joy), so it does not fight
 | touching the stick, Space, or the left shoulder | `buttons[9]` | deadman (`enable_button`) |
 | right shoulder | `buttons[10]` | not used: turbo is off and masked unless the deadman is held |
 
-- **Slow / Fast** is set on the phone and starts on Slow. Slow halves both the forward and the
-  turn rate (also for a controller's sticks); Fast sends the stick unscaled. The parameter file
-  holds the full-speed scales.
+- **Slow / Fast** is a two-part switch on the phone; the one in force is filled white. The drive
+  view opens on Slow every time. Slow sends the stick at 0.35 of its travel, for the forward and
+  the turn rate alike (also a controller's left stick); Fast sends it unscaled. The parameter
+  file holds the full-speed scales, so with the shipped file Slow tops out at 0.175 m/s and
+  0.35 rad/s.
 - **On-screen joystick:** the virtual joystick is the touch input in every case. Touch it to
   drive and lift your finger to stop.
 - **Game controllers** (MFi and other GameController devices) drive with their own buttons: hold
@@ -41,7 +57,9 @@ until Joy resumes (it is also silent before the first Joy), so it does not fight
 - **VoiceOver:** the joystick takes direct touch. It is labelled "Drive joystick" with the hint
   "Drag to drive; lift your finger to stop". There are no separate direction buttons.
 - After STOP, a lost link or the app going to the background, nothing drives until you let go of
-  every input and press again.
+  every input and press again; the banner says "Release and touch again to drive". While the
+  link is down it says "Disconnected", and while Conduit is inactive "Paused while Conduit is
+  inactive".
 - The Game Controller sensor publishes `<namespace>/joy` (`/conduit/joy` by default); the drive
   view publishes the profile's Joy topic (`/joy` by default). Run `conduit_teleop` on one of them,
   not both. If the profile's Joy topic is the sensor's topic, Conduit asks before it opens the
