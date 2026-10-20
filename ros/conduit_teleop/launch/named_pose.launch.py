@@ -19,6 +19,8 @@ STRING_ARGUMENTS = [
     ('move_action', 'move_action', "move_group's MoveGroup action"),
     ('servo_pause_service', '/servo_node/pause_servo',
      "MoveIt Servo's std_srvs/SetBool pause service, called around each move"),
+    ('clutch_topic', '/conduit/teleop/clutch',
+     'std_msgs/Bool HOLD clutch; Conduit publishes /<namespace>/teleop/clutch. True stops a move'),
 ]
 
 # Typed explicitly, so that velocity_scaling:=1 is a float and planning_group:=1 a string.
@@ -29,6 +31,8 @@ FLOAT_ARGUMENTS = [
     ('planning_time', '5.0', 'Seconds the planner may take'),
     ('service_timeout', '1.0', 'Seconds to wait for the Servo pause service, its answer, and the MoveGroup action'),
     ('max_move_duration', '60.0', 'Seconds a move may execute after planning before the node gives it up'),
+    ('clutch_timeout', '0.5',
+     'Seconds without a clutch message before a move started under the clutch heartbeat stops'),
 ]
 
 

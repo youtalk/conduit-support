@@ -5,9 +5,9 @@ import math
 import pytest
 
 from conduit_teleop.named_pose_logic import (
-    ANSWER_TIMEOUT, CANCEL_THEN_MOVE, CANCELLING, DEFAULT_TOLERANCE, IGNORE, MOVE, REJECT, RUNNING, SENDING,
-    at_state, current_state, decide_command, joint_distance, move_watchdog, parse_continuous_joints,
-    parse_group_states, parse_parameters)
+    ANSWER_TIMEOUT, CANCEL_THEN_MOVE, CANCELLING, DEFAULT_CLUTCH_TIMEOUT, DEFAULT_TOLERANCE, IGNORE, MOVE, REJECT,
+    RUNNING, SENDING, ClutchWatch, at_state, current_state, decide_command, joint_distance, move_watchdog,
+    parse_continuous_joints, parse_group_states, parse_parameters)
 
 # The shape of the Maker Arm's SRDF: an arm group with ready / home and a gripper group
 # with open / closed.
@@ -294,6 +294,96 @@ def test_pending_state_dropped_from_a_new_srdf_is_rejected():
     assert decide_command('ready', {'home': HOME}).action == REJECT
 
 
+def test_tap_while_hold_is_engaged_is_rejected():
+    # Conduit never sends one: the arm follows the phone while HOLD is held.
+    action, reason = decide_command('ready', arm_states(), clutch_engaged=True)
+    assert action == REJECT
+    assert 'HOLD' in reason
+
+
+def test_tap_while_hold_is_engaged_is_rejected_during_a_move_being_cancelled():
+    # HOLD cancelled the move; a tap before the cancel finishes must not queue a new one.
+    assert decide_command('home', arm_states(), moving_to='ready', cancelling=True,
+                          clutch_engaged=True).action == REJECT
+
+
+# --- ClutchWatch ---
+
+T0 = 100.0
+
+
+def test_clutch_default_timeout_is_five_missed_heartbeats():
+    assert DEFAULT_CLUTCH_TIMEOUT == pytest.approx(5 * 0.1)
+    assert ClutchWatch().timeout == DEFAULT_CLUTCH_TIMEOUT
+
+
+def test_clutch_without_messages_is_neither_fresh_nor_engaged():
+    watch = ClutchWatch()
+    assert not watch.fresh(T0)
+    assert not watch.engaged(T0)
+    assert watch.stop_reason(False, T0) == ''
+
+
+def test_clutch_message_is_fresh_within_the_timeout():
+    watch = ClutchWatch(0.5)
+    watch.receive(False, T0)
+    assert watch.fresh(T0 + 0.5)
+    assert not watch.fresh(T0 + 0.51)
+
+
+def test_clutch_true_is_engaged_and_false_is_not():
+    watch = ClutchWatch(0.5)
+    watch.receive(True, T0)
+    assert watch.engaged(T0 + 0.1)
+    watch.receive(False, T0 + 0.1)
+    assert not watch.engaged(T0 + 0.1)
+
+
+def test_stale_clutch_true_is_not_engaged():
+    # The app went away with HOLD held: a later CLI tap must not be refused forever.
+    watch = ClutchWatch(0.5)
+    watch.receive(True, T0)
+    assert not watch.engaged(T0 + 0.6)
+
+
+@pytest.mark.parametrize('watching', [True, False])
+def test_hold_engaged_stops_any_move(watching):
+    watch = ClutchWatch(0.5)
+    watch.receive(True, T0)
+    assert 'HOLD' in watch.stop_reason(watching, T0)
+
+
+def test_heartbeat_keeps_a_watched_move_going():
+    watch = ClutchWatch(0.5)
+    for i in range(20):  # 2 s of 10 Hz clutch false
+        watch.receive(False, T0 + 0.1 * i)
+        assert watch.stop_reason(True, T0 + 0.1 * i + 0.05) == ''
+
+
+def test_lost_heartbeat_stops_a_watched_move_after_the_timeout():
+    watch = ClutchWatch(0.5)
+    watch.receive(False, T0)
+    assert watch.stop_reason(True, T0 + 0.5) == ''
+    reason = watch.stop_reason(True, T0 + 0.6)
+    assert 'heartbeat' in reason
+    assert '0.5 s' in reason
+
+
+def test_lost_heartbeat_does_not_stop_an_unwatched_move():
+    # A move started from the CLI, with no clutch traffic then.
+    watch = ClutchWatch(0.5)
+    assert watch.stop_reason(False, T0 + 10.0) == ''
+    watch.receive(False, T0)
+    assert watch.stop_reason(False, T0 + 10.0) == ''
+
+
+def test_stale_true_on_a_watched_move_is_a_lost_heartbeat():
+    watch = ClutchWatch(0.5)
+    watch.receive(True, T0)
+    assert 'heartbeat' in watch.stop_reason(True, T0 + 0.6)
+    assert watch.stop_reason(False, T0 + 0.6) == ''
+
+
 # --- move_watchdog ---
 
 RUN_TIMEOUT = 65.0
@@ -329,19 +419,22 @@ def test_watchdog_gives_up_a_cancel_that_never_ends():
 # --- parse_parameters ---
 
 def test_default_parameters_are_valid():
-    parse_parameters(0.2, 0.2, 0.01, 5.0, 1.0, 60.0)
+    parse_parameters(0.2, 0.2, 0.01, 5.0, 1.0, 60.0, 0.5)
 
 
-@pytest.mark.parametrize('velocity, acceleration, tolerance, planning_time, service_timeout, max_move_duration', [
-    (0.0, 0.2, 0.01, 5.0, 1.0, 60.0),
-    (1.5, 0.2, 0.01, 5.0, 1.0, 60.0),
-    (0.2, -0.1, 0.01, 5.0, 1.0, 60.0),
-    (0.2, 0.2, 0.0, 5.0, 1.0, 60.0),
-    (0.2, 0.2, 0.01, 0.0, 1.0, 60.0),
-    (0.2, 0.2, 0.01, 5.0, 0.0, 60.0),
-    (0.2, 0.2, 0.01, 5.0, 1.0, -1.0),
-])
+@pytest.mark.parametrize(
+    'velocity, acceleration, tolerance, planning_time, service_timeout, max_move_duration, clutch_timeout', [
+        (0.0, 0.2, 0.01, 5.0, 1.0, 60.0, 0.5),
+        (1.5, 0.2, 0.01, 5.0, 1.0, 60.0, 0.5),
+        (0.2, -0.1, 0.01, 5.0, 1.0, 60.0, 0.5),
+        (0.2, 0.2, 0.0, 5.0, 1.0, 60.0, 0.5),
+        (0.2, 0.2, 0.01, 0.0, 1.0, 60.0, 0.5),
+        (0.2, 0.2, 0.01, 5.0, 0.0, 60.0, 0.5),
+        (0.2, 0.2, 0.01, 5.0, 1.0, -1.0, 0.5),
+        (0.2, 0.2, 0.01, 5.0, 1.0, 60.0, 0.0),
+    ])
 def test_out_of_range_parameters_raise(velocity, acceleration, tolerance, planning_time, service_timeout,
-                                       max_move_duration):
+                                       max_move_duration, clutch_timeout):
     with pytest.raises(ValueError):
-        parse_parameters(velocity, acceleration, tolerance, planning_time, service_timeout, max_move_duration)
+        parse_parameters(velocity, acceleration, tolerance, planning_time, service_timeout, max_move_duration,
+                         clutch_timeout)
