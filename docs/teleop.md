@@ -110,6 +110,84 @@ Keep the rest of the copy as it is, including the `teleop_twist_joy_node:` key. 
 !!! danger "Not an emergency stop"
     Neither Conduit nor `conduit_teleop` is a safety system. Keep the robot's own emergency stop within reach.
 
+## Named poses
+
+When you drive a MoveIt arm from Conduit, Conduit streams velocity commands (`TwistStamped`) to [MoveIt Servo](https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html) while you hold the clutch (**HOLD**). Conduit also has pose buttons. Each tap sends the name of a **group state** from the robot's SRDF, such as `ready` or `home`. Conduit sends a tap only while the clutch is released. The host node **`conduit_named_pose`** (executable `named_pose_node` in `conduit_teleop`) receives the name and moves the arm there through `move_group`.
+
+```text
+pose button ──► /conduit/teleop/named_pose ──► conduit_named_pose ──► move_group (MoveGroup action)
+                                                     │  ▲
+                        pause / resume MoveIt Servo ◄┘  └── /joint_states, /robot_description_semantic
+Conduit ◄── /conduit/teleop/named_pose_state ◄───────┘
+```
+
+| topic | type | direction | meaning |
+| --- | --- | --- | --- |
+| `/conduit/teleop/named_pose` | `std_msgs/msg/String` | Conduit → host | One message per tap. `data` is an SRDF `group_state` name of the planning group. |
+| `/conduit/teleop/named_pose_state` | `std_msgs/msg/String` | host → Conduit | The group state the arm is at, or `""` while it moves or when it is at none of them. Latched: Reliable, Transient Local, depth 1. |
+
+Both topics are under Conduit's namespace (`conduit` by default, Settings → **Namespace**).
+
+What the node does:
+
+- It reads the group states from `/robot_description_semantic` (the SRDF that `move_group` publishes) and the joint positions from `/joint_states`.
+- **A known name:** it pauses Servo (`/servo_node/pause_servo`), publishes `""` on the state topic, and sends a `MoveGroup` goal that plans and executes a move to that state's joint positions. When the move ends, whether it succeeds, fails or is cancelled, it resumes Servo.
+- **A tap during a move:** it cancels the move and starts the new one once the cancel has finished. Servo stays paused across the change and is resumed when the last move ends.
+- **An unknown name**, or a group state of another planning group: it logs a warning and does nothing else.
+- **The state topic:** while no move runs, the node compares `/joint_states` with each group state, in SRDF order, and publishes the first one that every joint matches within `tolerance`. It publishes only when the value changes.
+- **No Servo:** if the pause service does not answer within `service_timeout`, the node logs a warning and moves the arm anyway.
+- **Shutdown** (Ctrl-C): it cancels the running move and resumes Servo.
+
+### Run next to `move_group` and Servo
+
+The node needs a running `move_group` with the robot's MoveIt configuration, and that `move_group` must publish the SRDF on `/robot_description_semantic`. The `move_group` launch that the MoveIt Setup Assistant generates does that. If you build your own launch with `MoveItConfigsBuilder`, add `.planning_scene_monitor(publish_robot_description_semantic=True)`. Servo is optional.
+
+Build `conduit_teleop` as in [Install](#install-ros-2-jazzy) (it also needs `moveit_msgs`, which comes with MoveIt), start your robot's `move_group` and Servo, then:
+
+```bash
+ros2 launch conduit_teleop named_pose.launch.py planning_group:=arm
+```
+
+| argument | default | meaning |
+| --- | --- | --- |
+| `planning_group` | `arm` | The MoveIt planning group. Its SRDF group states are the names the buttons send. |
+| `command_topic` | `/conduit/teleop/named_pose` | Where Conduit sends the names; `/<namespace>/teleop/named_pose` if you changed the namespace. |
+| `state_topic` | `/conduit/teleop/named_pose_state` | Where the node reports the state; `/<namespace>/teleop/named_pose_state` if you changed the namespace. |
+| `move_action` | `move_action` | `move_group`'s `moveit_msgs/action/MoveGroup` action. |
+| `servo_pause_service` | `/servo_node/pause_servo` | MoveIt Servo's `std_srvs/srv/SetBool` pause service (ROS 2 Jazzy). Change it if your Servo node has another name. |
+
+The node has further parameters. To set them, run the node directly:
+
+```bash
+ros2 run conduit_teleop named_pose_node --ros-args -p planning_group:=arm -p velocity_scaling:=0.1
+```
+
+| parameter | default | meaning |
+| --- | --- | --- |
+| `velocity_scaling` | `0.2` | `max_velocity_scaling_factor` of each move, in (0, 1]. |
+| `acceleration_scaling` | `0.2` | `max_acceleration_scaling_factor` of each move, in (0, 1]. |
+| `tolerance` | `0.01` | Radians (meters for a prismatic joint). A joint within this of a group state's value counts as at it. Moves aim at a tenth of it. |
+| `planning_time` | `5.0` | Seconds the planner may take. |
+| `service_timeout` | `1.0` | Seconds to wait for the Servo pause service and the `MoveGroup` action server. |
+
+To try it without the phone:
+
+```bash
+ros2 topic echo /conduit/teleop/named_pose_state std_msgs/msg/String \
+  --qos-durability transient_local --qos-reliability reliable
+ros2 topic pub --once /conduit/teleop/named_pose std_msgs/msg/String "{data: ready}"
+```
+
+The state turns `""` when the move starts and `ready` when the arm gets there.
+
+Troubleshooting:
+
+- **`Ignoring named pose: unknown group state`.** The name is not a group state of `planning_group`. The warning lists the names it knows. Check `planning_group` and the SRDF's `<group_state name="…" group="…">` entries.
+- **`no group states known for the planning group`.** No SRDF has arrived. Check that `ros2 topic echo --once /robot_description_semantic --qos-durability transient_local` prints it; if not, make `move_group` publish it (see above).
+- **`MoveGroup action move_action is not available`.** `move_group` is not running, or runs in another namespace; set `move_action`.
+- **The state stays `""` after a move.** The arm stopped further than `tolerance` from the group state, for example because a controller stops short. Raise `tolerance`.
+- **A move aborts with `MoveIt error code -27`** (`GOAL_STATE_INVALID`). The group state is in collision or outside the joint limits. Fix it in the SRDF.
+
 ## Troubleshooting
 
 - **Nothing on `/cmd_vel` while you hold LB, and `ros2 topic hz /conduit/joy` shows nothing.** No Joy reaches the host. Check the topic name (`ros2 topic list | grep joy`), the domain ID and the transport.
