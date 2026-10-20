@@ -199,10 +199,11 @@ class ClutchWatch:
     def stop_reason(self, watching_heartbeat: bool, now: float) -> str:
         """Why the clutch stops a move, or '' while the move may go on.
 
-        HOLD engaged stops any move. watching_heartbeat is fresh() at the start of the
-        move: Conduit was driving then, so losing its heartbeat (the link dropped, or
-        the app went to the background or closed) stops the move too. A move started
-        without clutch traffic (a CLI publish) never stops for a missing heartbeat.
+        HOLD engaged stops any move. watching_heartbeat is True once Conduit was seen
+        driving during the move (a fresh message at its start, or one since), so losing
+        its heartbeat (the link dropped, or the app went to the background or closed)
+        stops the move too. A move that has seen no clutch message (a CLI publish)
+        never stops for a missing heartbeat.
         """
         if self.engaged(now):
             return 'HOLD engaged: clutch true'

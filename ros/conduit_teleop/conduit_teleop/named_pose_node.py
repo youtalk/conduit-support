@@ -15,9 +15,9 @@ whether it succeeded, failed, was cancelled or lost move_group.
 Conduit's clutch (std_msgs/Bool, ``/conduit/teleop/clutch``) is true while HOLD is
 held and is repeated at 10 Hz while the arm view is open. A clutch true stops the
 move (and drops a tap that waits for a cancel), because the arm is to follow the
-phone. When clutch messages were arriving as the move started, the move also stops
-once they stay away for clutch_timeout: the app lost the link, went to the
-background or closed. A tap while HOLD is held is ignored.
+phone. Once clutch messages have been arriving during a move (as it started, or
+since), the move also stops when they stay away for clutch_timeout: the app lost the
+link, went to the background or closed. A tap while HOLD is held is ignored.
 
 Everything runs on one single-threaded executor, so the callbacks never race, and
 no callback blocks: a 10 Hz tick drives each move through its phases, waits for
@@ -79,7 +79,7 @@ class Move:
         self.goal_handle = None  # set once move_group accepts the goal
         self.cancel_future = None  # set once the goal's cancel is requested
         self.cancel_requested = False
-        self.watch_heartbeat = False  # clutch messages were arriving when the move started
+        self.watch_heartbeat = False  # clutch messages were arriving at the start of the move or since
         self.stop_reason = ''  # why the clutch stopped the move
 
     def enter(self, phase: str) -> None:
@@ -184,6 +184,9 @@ class NamedPoseNode(Node):
     def _on_clutch(self, msg: Bool) -> None:
         self._clutch.receive(msg.data, time.monotonic())
         if self._move is not None:
+            # Conduit is driving now, so a move that started without its heartbeat
+            # (a CLI tap, or one before the arm view's first message) stops when it goes.
+            self._move.watch_heartbeat = True
             self._check_clutch(self._move)
 
     # --- state topic ---
@@ -222,10 +225,18 @@ class NamedPoseNode(Node):
             self._advance(self._move)
 
     def _check_clutch(self, move: Move) -> None:
-        """Stop move (and drop the tap that waits for its cancel) when the clutch says so."""
+        """Stop move when the clutch says so, and drop the tap that waits for its cancel.
+
+        A tap that arrives after an earlier HOLD stop (HOLD released, tap, HOLD again
+        before move_group ended the cancel) is dropped by the second HOLD too.
+        """
+        now = time.monotonic()
         if move.stop_reason:
+            if self._pending is not None and self._clutch.engaged(now):
+                self.get_logger().warning(f"HOLD engaged: dropping the waiting '{self._pending}'")
+                self._pending = None
             return  # already stopping for the clutch
-        reason = self._clutch.stop_reason(move.watch_heartbeat, time.monotonic())
+        reason = self._clutch.stop_reason(move.watch_heartbeat, now)
         if not reason:
             return
         move.stop_reason = reason

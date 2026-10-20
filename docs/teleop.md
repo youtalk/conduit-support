@@ -134,8 +134,8 @@ What the node does:
 - It reads the group states from `/robot_description_semantic` (the SRDF that `move_group` publishes), the joint positions from `/joint_states`, and the continuous joints from `/robot_description` (the URDF).
 - **A known name:** it pauses Servo (`/servo_node/pause_servo`), publishes `""` on the state topic, and sends a `MoveGroup` goal that plans and executes a move to that state's joint positions. When the move ends, whether it succeeds, fails or is cancelled, it resumes Servo.
 - **A tap during a move:** it cancels the move and starts the new one once the cancel has finished. Servo stays paused across the change and is resumed when the last move ends. A second tap on the button of the move that is running is ignored, so a double tap does not stop and restart the arm.
-- **HOLD during a move:** a clutch `true` cancels the move, and a tap that waits for a cancel is dropped. The arm is to follow the phone now, so Servo is resumed as soon as the move has ended, and the state topic goes back to the group state the arm is at, or `""`. Conduit stops waiting for the pose when you press HOLD.
-- **The heartbeat stops during a move:** if clutch messages were arriving when the move started, the node cancels the move once none has arrived for `clutch_timeout` (0.5 s, about five missed heartbeats). Conduit stops the heartbeat when the link drops or when the app goes to the background or closes. A move started without clutch messages, for example from `ros2 topic pub`, does not depend on the heartbeat.
+- **HOLD during a move:** a clutch `true` cancels the move, and a tap that waits for a cancel is dropped, including one that arrives after an earlier HOLD stop and is followed by another HOLD before the cancel ends. The arm is to follow the phone now, so Servo is resumed as soon as the move has ended, and the state topic goes back to the group state the arm is at, or `""`. Conduit stops waiting for the pose when you press HOLD.
+- **The heartbeat stops during a move:** once clutch messages have arrived during a move (as it started, or since), the node cancels the move when none has arrived for `clutch_timeout` (0.5 s, about five missed heartbeats). Conduit stops the heartbeat when the link drops or when the app goes to the background or closes. A move that has seen no clutch message, for example one started from `ros2 topic pub`, does not depend on the heartbeat.
 - **A tap while HOLD is held** (the last clutch message was `true`, within `clutch_timeout`): the node logs a warning and ignores it. Conduit does not send one.
 - **An unknown name**, or a group state of another planning group: it logs a warning and does nothing else.
 - **The state topic:** while no move runs, the node compares `/joint_states` with each group state, in SRDF order, and publishes the first one that every joint matches within `tolerance`. A continuous joint matches its value plus any number of whole turns, as in MoveIt. It publishes only when the value changes.
@@ -173,7 +173,7 @@ ros2 launch conduit_teleop named_pose.launch.py planning_group:=arm
 | `planning_time` | `5.0` | Seconds the planner may take. |
 | `service_timeout` | `1.0` | Seconds to wait for the Servo pause service and the `MoveGroup` action server to appear, and for Servo to answer a pause request. |
 | `max_move_duration` | `60.0` | Seconds a move may execute after `planning_time` before the node gives it up. |
-| `clutch_timeout` | `0.5` | Seconds without a clutch message after which a move that started while clutch messages were arriving is cancelled. |
+| `clutch_timeout` | `0.5` | Seconds without a clutch message after which a move that has seen clutch messages is cancelled. |
 
 The launch arguments set the node's parameters of the same names. Without the launch file:
 
