@@ -12,6 +12,13 @@ finished (the newest tap wins); a repeat of the running move's name is ignored.
 Servo stays paused across the hand-over and is resumed when the last move ends,
 whether it succeeded, failed, was cancelled or lost move_group.
 
+Conduit's clutch (std_msgs/Bool, ``/conduit/teleop/clutch``) is true while HOLD is
+held and is repeated at 10 Hz while the arm view is open. A clutch true stops the
+move (and drops a tap that waits for a cancel), because the arm is to follow the
+phone. When clutch messages were arriving as the move started, the move also stops
+once they stay away for clutch_timeout: the app lost the link, went to the
+background or closed. A tap while HOLD is held is ignored.
+
 Everything runs on one single-threaded executor, so the callbacks never race, and
 no callback blocks: a 10 Hz tick drives each move through its phases, waits for
 Servo and move_group without sleeping, and gives up a move whose move_group has
@@ -33,14 +40,16 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 from rclpy.signals import SignalHandlerOptions
 from sensor_msgs.msg import JointState
-from std_msgs.msg import String
+from std_msgs.msg import Bool, String
 from std_srvs.srv import SetBool
 
 from conduit_teleop.named_pose_logic import (
-    CANCEL_THEN_MOVE, CANCELLING, IGNORE, MOVE, REJECT, RUNNING, SENDING, current_state, decide_command,
-    move_watchdog, parse_continuous_joints, parse_group_states, parse_parameters)
+    CANCEL_THEN_MOVE, CANCELLING, IGNORE, MOVE, REJECT, RUNNING, SENDING, ClutchWatch, current_state,
+    decide_command, move_watchdog, parse_continuous_joints, parse_group_states, parse_parameters)
 
 LATCHED = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+# Conduit publishes the clutch Reliable and Volatile (KEEP_LAST 1), as `ros2 topic pub` does by default.
+CLUTCH_QOS = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE, durability=DurabilityPolicy.VOLATILE)
 
 TICK_PERIOD = 0.1  # s
 
@@ -70,6 +79,8 @@ class Move:
         self.goal_handle = None  # set once move_group accepts the goal
         self.cancel_future = None  # set once the goal's cancel is requested
         self.cancel_requested = False
+        self.watch_heartbeat = False  # clutch messages were arriving when the move started
+        self.stop_reason = ''  # why the clutch stopped the move
 
     def enter(self, phase: str) -> None:
         self.phase = phase
@@ -85,6 +96,7 @@ class NamedPoseNode(Node):
         state_topic = self.declare_parameter('state_topic', '/conduit/teleop/named_pose_state').value
         move_action = self.declare_parameter('move_action', 'move_action').value
         servo_pause_service = self.declare_parameter('servo_pause_service', '/servo_node/pause_servo').value
+        clutch_topic = self.declare_parameter('clutch_topic', '/conduit/teleop/clutch').value
         self._velocity_scaling = self.declare_parameter('velocity_scaling', 0.2).value
         self._acceleration_scaling = self.declare_parameter('acceleration_scaling', 0.2).value
         self._tolerance = self.declare_parameter('tolerance', 0.01).value
@@ -94,8 +106,10 @@ class NamedPoseNode(Node):
         self._service_timeout = self.declare_parameter('service_timeout', 1.0).value
         # How long a move may execute after planning before the node gives it up.
         self._max_move_duration = self.declare_parameter('max_move_duration', 60.0).value
+        # How long the clutch heartbeat may stay away before a move started under it stops.
+        clutch_timeout = self.declare_parameter('clutch_timeout', 0.5).value
         parse_parameters(self._velocity_scaling, self._acceleration_scaling, self._tolerance, self._planning_time,
-                         self._service_timeout, self._max_move_duration)
+                         self._service_timeout, self._max_move_duration, clutch_timeout)
 
         self._states = {}  # group states of the planning group, SRDF order
         self._continuous = frozenset()  # continuous joints of the URDF, compared modulo a turn
@@ -104,6 +118,7 @@ class NamedPoseNode(Node):
         self._pending: Optional[str] = None  # the tap that waits for the running move's cancel
         self._servo_paused = False  # True while this node holds Servo paused
         self._published_state: Optional[str] = None
+        self._clutch = ClutchWatch(clutch_timeout)
 
         self._state_pub = self.create_publisher(String, state_topic, LATCHED)
         self._move_action = move_action
@@ -114,11 +129,13 @@ class NamedPoseNode(Node):
         # Best Effort matches both Reliable and Best Effort joint state publishers.
         self.create_subscription(JointState, 'joint_states', self._on_joint_states, qos_profile_sensor_data)
         self.create_subscription(String, command_topic, self._on_command, 10)
+        self.create_subscription(Bool, clutch_topic, self._on_clutch, CLUTCH_QOS)
         # A steady clock keeps the tick going when /clock stops.
         self.create_timer(TICK_PERIOD, self._tick, clock=Clock(clock_type=ClockType.STEADY_TIME))
         self._publish_state('')
         self.get_logger().info(
-            f"Waiting for '{self._group}' group states on {command_topic}; state on {state_topic}")
+            f"Waiting for '{self._group}' group states on {command_topic}; state on {state_topic}; "
+            f'clutch on {clutch_topic}')
 
     # --- inputs ---
 
@@ -149,7 +166,8 @@ class NamedPoseNode(Node):
         name = msg.data
         move = self._move
         decision = decide_command(name, self._states, move.name if move else None,
-                                  move is not None and move.cancel_requested)
+                                  move is not None and move.cancel_requested,
+                                  self._clutch.engaged(time.monotonic()))
         if decision.action == REJECT:
             self.get_logger().warning(f'Ignoring named pose: {decision.reason}')
             return
@@ -162,6 +180,11 @@ class NamedPoseNode(Node):
             self._cancel(move)
             return
         self._start_move(name)
+
+    def _on_clutch(self, msg: Bool) -> None:
+        self._clutch.receive(msg.data, time.monotonic())
+        if self._move is not None:
+            self._check_clutch(self._move)
 
     # --- state topic ---
 
@@ -180,9 +203,11 @@ class NamedPoseNode(Node):
 
     def _start_move(self, name: str) -> None:
         move = Move(name, dict(self._states[name]))
+        move.watch_heartbeat = self._clutch.fresh(time.monotonic())
         self._move = move
         self._publish_state('')
-        self.get_logger().info(f"Moving '{self._group}' to '{name}'")
+        self.get_logger().info(f"Moving '{self._group}' to '{name}'"
+                               + (' (stops if the clutch heartbeat is lost)' if move.watch_heartbeat else ''))
         # Servo stays paused when this move follows a cancelled one.
         self._enter(move, WAIT_SERVER if self._servo_paused else WAIT_SERVO)
 
@@ -192,7 +217,22 @@ class NamedPoseNode(Node):
 
     def _tick(self) -> None:
         if self._move is not None:
+            self._check_clutch(self._move)
+        if self._move is not None:
             self._advance(self._move)
+
+    def _check_clutch(self, move: Move) -> None:
+        """Stop move (and drop the tap that waits for its cancel) when the clutch says so."""
+        if move.stop_reason:
+            return  # already stopping for the clutch
+        reason = self._clutch.stop_reason(move.watch_heartbeat, time.monotonic())
+        if not reason:
+            return
+        move.stop_reason = reason
+        dropped = f" and dropping the waiting '{self._pending}'" if self._pending is not None else ''
+        self.get_logger().warning(f"{reason}: stopping the move to '{move.name}'{dropped}")
+        self._pending = None
+        self._cancel(move)
 
     def _advance(self, move: Move) -> None:
         """Take move as far as it can go now; the tick calls this again until the move ends."""
@@ -296,7 +336,7 @@ class NamedPoseNode(Node):
         self._end_move(move, outcome)
 
     def _cancel(self, move: Move) -> None:
-        """Cancel move for the pending tap; the pending tap starts when the move ends."""
+        """Cancel move; the pending tap, if any, starts when the move ends."""
         if move.cancel_requested:
             return
         move.cancel_requested = True
@@ -317,6 +357,8 @@ class NamedPoseNode(Node):
         if self._move is not move:
             return
         self._move = None
+        if move.stop_reason:
+            outcome += f' ({move.stop_reason})'
         # rclpy refuses one call site logging at two severities, so these are two calls.
         if outcome == 'succeeded':
             self.get_logger().info(f"Move to '{move.name}' succeeded")
@@ -325,7 +367,7 @@ class NamedPoseNode(Node):
         if self._pending is not None:
             name, self._pending = self._pending, None
             # The SRDF may have changed since the tap.
-            decision = decide_command(name, self._states)
+            decision = decide_command(name, self._states, clutch_engaged=self._clutch.engaged(time.monotonic()))
             if decision.action == MOVE:
                 self._start_move(name)  # Servo stays paused for the next move
                 return
