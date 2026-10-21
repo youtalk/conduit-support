@@ -112,10 +112,10 @@ Keep the rest of the copy as it is, including the `teleop_twist_joy_node:` key. 
 
 ## Named poses
 
-When you drive a MoveIt arm from Conduit, Conduit streams velocity commands (`TwistStamped`) to [MoveIt Servo](https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html) while you hold the clutch (**HOLD**). Conduit also has pose buttons. Each tap sends the name of a **group state** from the robot's SRDF, such as `ready` or `home`. Conduit sends a tap only while the clutch is released. The host node **`conduit_named_pose`** (executable `named_pose_node` in `conduit_teleop`) receives the name and moves the arm there through `move_group`.
+When you drive a MoveIt arm from Conduit, Conduit streams velocity commands (`TwistStamped`) to [MoveIt Servo](https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html) while you hold the clutch (**HOLD**). Conduit also has a pose menu in the arm view. It lists the group states of the robot's arm group, and each pick sends the name of one **group state** from the robot's SRDF, such as `stand` or `home`, exactly as the SRDF writes it. Conduit sends a pick only while the clutch is released. The host node **`conduit_named_pose`** (executable `named_pose_node` in `conduit_teleop`) receives the name and moves the arm there through `move_group`.
 
 ```text
-pose button ──► /conduit/teleop/named_pose ──► conduit_named_pose ──► move_group (MoveGroup action)
+pose menu ──► /conduit/teleop/named_pose ──► conduit_named_pose ──► move_group (MoveGroup action)
 HOLD ─────────► /conduit/teleop/clutch ─────────────►│  ▲
                         pause / resume MoveIt Servo ◄┘  └── /joint_states, /robot_description_semantic
 Conduit ◄── /conduit/teleop/named_pose_state ◄───────┘
@@ -133,14 +133,14 @@ What the node does:
 
 - It reads the group states from `/robot_description_semantic` (the SRDF that `move_group` publishes), the joint positions from `/joint_states`, and the continuous joints from `/robot_description` (the URDF).
 - **A known name:** it pauses Servo (`/servo_node/pause_servo`), publishes `""` on the state topic, and sends a `MoveGroup` goal that plans and executes a move to that state's joint positions. When the move ends, whether it succeeds, fails or is cancelled, it resumes Servo.
-- **A tap during a move:** it cancels the move and starts the new one once the cancel has finished. Servo stays paused across the change and is resumed when the last move ends. A second tap on the button of the move that is running is ignored, so a double tap does not stop and restart the arm.
-- **HOLD during a move:** a clutch `true` cancels the move, and a tap that waits for a cancel is dropped, including one that arrives after an earlier HOLD stop and is followed by another HOLD before the cancel ends. The arm is to follow the phone now, so Servo is resumed as soon as the move has ended, and the state topic goes back to the group state the arm is at, or `""`. Conduit stops waiting for the pose when you press HOLD.
+- **A pick during a move:** it cancels the move and starts the new one once the cancel has finished. Servo stays paused across the change and is resumed when the last move ends. A second pick of the move that is running is ignored (Conduit does not send one either), so picking the same pose twice does not stop and restart the arm.
+- **HOLD during a move:** a clutch `true` cancels the move, and a pick that waits for a cancel is dropped, including one that arrives after an earlier HOLD stop and is followed by another HOLD before the cancel ends. The arm is to follow the phone now, so Servo is resumed as soon as the move has ended, and the state topic goes back to the group state the arm is at, or `""`. Conduit stops waiting for the pose when you press HOLD.
 - **The heartbeat stops during a move:** once clutch messages have arrived during a move (as it started, or since), the node cancels the move when none has arrived for `clutch_timeout` (0.5 s, about five missed heartbeats). Conduit stops the heartbeat when the link drops or when the app goes to the background or closes. A move that has seen no clutch message, for example one started from `ros2 topic pub`, does not depend on the heartbeat.
-- **A tap while HOLD is held** (the last clutch message was `true`, within `clutch_timeout`): the node logs a warning and ignores it. Conduit does not send one.
+- **A pick while HOLD is held** (the last clutch message was `true`, within `clutch_timeout`): the node logs a warning and ignores it. Conduit does not send one.
 - **An unknown name**, or a group state of another planning group: it logs a warning and does nothing else.
 - **The state topic:** while no move runs, the node compares `/joint_states` with each group state, in SRDF order, and publishes the first one that every joint matches within `tolerance`. A continuous joint matches its value plus any number of whole turns, as in MoveIt. It publishes only when the value changes.
 - **No Servo:** if the pause service does not appear or answer within `service_timeout`, the node logs a warning and moves the arm anyway.
-- **`move_group` stops answering:** the node gives a move up and resumes Servo if the `MoveGroup` action server goes away during the move, if `move_group` does not accept the goal or finish a cancel within 5 s, or if the move takes longer than `planning_time` + `max_move_duration`. It also sends a cancel, in case `move_group` is still there. When `move_group` crashes, the middleware can take up to about 20 s to notice that the server is gone; a tap in that time gives the move up after 5 s.
+- **`move_group` stops answering:** the node gives a move up and resumes Servo if the `MoveGroup` action server goes away during the move, if `move_group` does not accept the goal or finish a cancel within 5 s, or if the move takes longer than `planning_time` + `max_move_duration`. It also sends a cancel, in case `move_group` is still there. When `move_group` crashes, the middleware can take up to about 20 s to notice that the server is gone; a pick in that time gives the move up after 5 s.
 - **Shutdown** (Ctrl-C or SIGTERM): it cancels the running move, including one that `move_group` has not accepted yet, and resumes Servo.
 
 ### Run next to `move_group` and Servo

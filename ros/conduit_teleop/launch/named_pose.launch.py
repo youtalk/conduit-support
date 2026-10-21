@@ -1,4 +1,4 @@
-"""conduit_named_pose: move a MoveIt arm to the SRDF group state Conduit's pose buttons name.
+"""conduit_named_pose: move a MoveIt arm to the SRDF group state picked in Conduit's pose menu.
 
 Run it next to move_group (which must publish /robot_description_semantic) and,
 optionally, MoveIt Servo.

@@ -1,6 +1,6 @@
 """named_pose_node: move a MoveIt arm to an SRDF group state when Conduit asks for it.
 
-Conduit's pose buttons publish the name of an SRDF ``group_state`` (std_msgs/String,
+Conduit's pose menu publishes the name of an SRDF ``group_state`` (std_msgs/String,
 ``/conduit/teleop/named_pose`` by default). This node plans and executes a move to
 that state through move_group's MoveGroup action, pausing MoveIt Servo for the
 move so the two never command the arm at once. It reports where the arm is on a
