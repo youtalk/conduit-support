@@ -240,7 +240,7 @@ def test_known_state_during_a_move_cancels_then_moves():
 
 
 def test_repeat_of_the_running_move_is_ignored():
-    # A double tap must not stop the arm mid-trajectory and replan.
+    # Picking the same pose twice must not stop the arm mid-trajectory and replan.
     action, reason = decide_command('ready', arm_states(), moving_to='ready')
     assert action == IGNORE
     assert "'ready'" in reason

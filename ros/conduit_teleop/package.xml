@@ -3,7 +3,7 @@
 <package format="3">
   <name>conduit_teleop</name>
   <version>0.1.0</version>
-  <description>Drive a ROS 2 robot from Conduit's sensor_msgs/Joy: teleop_twist_joy configured for the ROS 2 joy layout, followed by a watchdog that publishes zero cmd_vel when the Joy stream goes stale, and a node that moves a MoveIt arm to the SRDF group state Conduit's pose buttons name.</description>
+  <description>Drive a ROS 2 robot from Conduit's sensor_msgs/Joy: teleop_twist_joy configured for the ROS 2 joy layout, followed by a watchdog that publishes zero cmd_vel when the Joy stream goes stale, and a node that moves a MoveIt arm to the SRDF group state picked in Conduit's pose menu.</description>
   <maintainer email="yutaka.kondo@youtalk.jp">Yutaka Kondo</maintainer>
   <license>Apache-2.0</license>
 

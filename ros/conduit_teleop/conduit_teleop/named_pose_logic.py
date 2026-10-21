@@ -1,7 +1,7 @@
 """Decision logic of named_pose_node, free of rclpy so plain pytest can test it.
 
 A named pose is an SRDF ``group_state``: a name and a position for each joint of
-one planning group. Conduit's pose buttons send that name.
+one planning group. Conduit's pose menu sends that name.
 """
 
 from collections import namedtuple
@@ -126,7 +126,7 @@ def decide_command(name: str, states_of_group: Mapping[str, Mapping[str, float]]
 
     REJECT (with a reason) a tap while HOLD is held (Conduit never sends one; the arm
     follows the phone then) and a name the planning group does not define. With no move
-    running, MOVE. A repeat of the running move's name is IGNOREd, so a double tap
+    running, MOVE. A repeat of the running move's name is IGNOREd, so picking the same pose twice
     does not stop and restart the arm; once that move is being cancelled, the repeat
     is a new tap like any other. Any other name during a move is CANCEL_THEN_MOVE
     (the newest tap wins).
