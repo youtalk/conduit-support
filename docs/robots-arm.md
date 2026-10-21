@@ -174,10 +174,11 @@ the SRDF has them and with the names exactly as the SRDF writes them (`work`, `s
   pose does nothing, and so does picking the pose the arm is already moving to. Picking another
   pose while the arm moves replaces the move.
 - **The menu is off** (the button is dimmed and does not open) while HOLD is pressed or held, while
-  the link is down, and for 1 s after the set of poses changes (the SRDF or the named-pose node
-  arrived late, or a changed SRDF dropped or reordered a pose). The pause keeps a tap meant for
-  Align from moving the arm. VoiceOver says why: "Off while HOLD is held.", "Off while the robot
-  link is down.", "The pose list just changed.".
+  the link is down, after the session stopped or the view failed to set up, and for 1 s after the
+  set of poses changes (the SRDF or the named-pose node arrived late, or a changed SRDF dropped or
+  reordered a pose). The pause keeps a tap meant for Align from moving the arm. VoiceOver says why:
+  "Off while HOLD is held.", "Off while the robot link is down.", "Off: the session stopped.",
+  "The pose list just changed.".
 - **No menu** appears without an SRDF that has states for the arm group, or until Conduit sees the
   named-pose node (a publisher on the **named_pose_state** topic). A MoveIt arm without the node
   therefore shows no poses that nothing would answer. The iPad and Mac views have no menu.
