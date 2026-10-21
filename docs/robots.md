@@ -13,7 +13,7 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
   diagnostics; drive with the on-screen joystick, a game controller or a hardware keyboard. Conduit
   sends `sensor_msgs/Joy`; [`conduit_teleop`](robots-mobile.md) turns it into `cmd_vel`.
 - **Robot arms** — hold the clutch and move the iPhone: a [MoveIt Servo](robots-arm.md) arm
-  follows, while the screen shows the wrist camera, the gripper, the joints and buttons that move
+  follows, while the screen shows the wrist camera, the gripper, the joints and a menu that moves
   the arm to named poses.
 
 ## What you need
@@ -22,7 +22,7 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
   same settings Conduit already uses for publishing: **Transport**, **Domain ID** and
   **Distribution** in Settings. One connection serves the whole app.
 - On the host: `conduit_teleop` for mobile robots; for arms, MoveIt Servo from Jazzy or later
-  and the Servo overlay, plus `conduit_teleop`'s named-pose node if you want pose buttons.
+  and the Servo overlay, plus `conduit_teleop`'s named-pose node if you want the pose menu.
 
 ## Where to find it
 
@@ -42,8 +42,9 @@ status line.
 3. If nothing is discovered, type the topic names. Check that the Distribution matches the host
    (Humble vs Jazzy and later), the domain ID, and the DDS unicast peers.
 4. Check the frames (**Map frame** and **Base frame** for a mobile robot, **Base frame** and the
-   gripper positions for an arm). For an arm, **Named poses** lists the pose buttons; see
-   [Named poses](robots-arm.md#named-poses). Tap **Save**.
+   gripper positions for an arm). Tap **Save**. An arm's named poses are not part of the profile:
+   the arm view's pose menu lists the group states of the robot's SRDF; see
+   [Named poses](robots-arm.md#named-poses).
 
 A profile remembers the connection it was made with. If the app uses a different transport or
 domain, or Humble where the profile was made for a later distribution (or the reverse), the

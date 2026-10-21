@@ -8,7 +8,7 @@ description: Move a MoveIt Servo arm with your iPhone's motion, and send it to n
 Hold the iPhone in landscape with both hands. While one thumb holds **HOLD**, the arm's end
 effector follows the phone's motion: Conduit turns ARKit's pose of the phone into
 `geometry_msgs/TwistStamped` for MoveIt Servo (`/servo_node/delta_twist_cmds`). The other thumb
-works the gripper, and pose buttons send the arm to named poses through MoveIt. iPad and Mac open
+works the gripper, and a pose menu sends the arm to a named pose through MoveIt. iPad and Mac open
 the arm view [read-only](#ipad-and-mac).
 
 ## Host setup
@@ -57,8 +57,8 @@ configures differently.
     opening the robot reports.
 
 4. **Named poses (optional).** `conduit_teleop`'s named-pose node next to `move_group`, and a
-    `move_group` that publishes the SRDF on `/robot_description_semantic`. See
-    [Named poses](#named-poses).
+    `move_group` that publishes the SRDF on `/robot_description_semantic`. The profile needs
+    nothing for them. See [Named poses](#named-poses).
 
 When the arm view opens, Conduit calls the profile's **Servo command type** service
 (`/servo_node/switch_command_type` by default) to switch Servo to `TWIST`, and retries every few
@@ -83,7 +83,7 @@ the view restarts what it paused and stops Device Pose if the view started it.
   settings, and under them the status line. The status line says what to do next ("Point the
   phone at the robot's front, then tap Align", "Hold HOLD to move the arm", "Holding: the arm
   follows the phone") or what is wrong.
-- **Top centre:** the [pose buttons](#named-poses), then **Align**.
+- **Top centre:** the [pose menu](#named-poses), then **Align**. Without a pose menu, only **Align**.
 - **Top right:** **Joints**, which shows each joint's angle as a bar from −π to +π (the joint names
   shortened to their last part, "panda_joint4" → "joint4"); the gear, which opens the arm
   settings; and close.
@@ -94,8 +94,9 @@ the view restarts what it paused and stops Device Pose if the view started it.
 
 The camera's captions (STALE, "No data", "No wrist camera topic", …) sit in the space between.
 When the top row runs out of room (a smaller iPhone, larger text), Joints shows only its symbol,
-then the pose buttons, widest first, show their numbers (1 to 4) in place of their titles, then
-the pose buttons and Align move right of the centre, and last Align shows only its symbol.
+then the pose menu's button narrows (a long pose name is cut at its end) down to the width of
+"Poses", then shows only its symbol, then the pose menu and Align move right of the centre, and
+last Align shows only its symbol.
 
 The gear's panel holds the settings that change the motion:
 
@@ -151,59 +152,55 @@ arm view is open.
 
 ## Named poses
 
-A pose button moves the arm to a **group state** of the robot's SRDF, such as `ready` or `home`,
-through MoveIt. A tap sends the state's name once, as `std_msgs/String`, on
+The pose menu moves the arm to a **group state** of the robot's SRDF, such as `stand` or `home`,
+through MoveIt. Picking a pose sends the state's name once, as `std_msgs/String`, on
 `<namespace>/teleop/named_pose` (`/conduit/teleop/named_pose` by default). On the robot computer,
 `conduit_teleop`'s named-pose node plans and runs the move with `move_group` and reports the pose
-the arm is at on `<namespace>/teleop/named_pose_state`. Its setup, parameters and troubleshooting
+the arm is at on `<namespace>/teleop/named_pose_state`. Those two topics are fixed: the robot
+profile has no pose settings, and a pose list saved by an earlier build is ignored. The namespace
+is `conduit` unless you changed it in Settings. The node's setup, parameters and troubleshooting
 are in [Teleoperation → Named poses](teleop.md#named-poses).
 
-### Which buttons the arm view shows
+### The pose menu
 
-The arm view shows up to four pose buttons:
+The menu sits next to **Align** and lists every group state of the robot's arm group, in the order
+the SRDF has them and with the names exactly as the SRDF writes them (`work`, `stand`, `ready`,
+`home`, not "Work"). The pose the arm is at is checked.
 
-- **The profile's list.** The arm profile's **Named poses** section takes up to four poses. Each has
-  the group state's name (letters, digits and underscores, as in the SRDF) and an optional button
-  title. Without a title the button shows the name capitalized, with spaces for underscores
-  (`fold` → "Fold"), and `ready` shows "Home". **Reorder poses** sets the button order. **Named
-  pose command** and **Named pose state** change the two topics.
-- **The robot's SRDF.** With an empty list, the arm view shows the group states of the robot's arm
-  group, in SRDF order, once the named-pose node is up (Conduit sees a publisher on the **Named
-  pose state** topic). The arm group is the `parent_group`
-  of the SRDF's end effector (without one, the first group that is not an end effector's own
-  group), so the gripper's own states (such as `open` and `closed`) are not offered. Start the
-  named-pose node with that group as its `planning_group`.
-- **Both.** A profile list is used in its own order and with its own titles. Once the SRDF has
-  arrived, a pose that is not a state of the arm group is left out, and the names are matched
-  ignoring case and sent as the SRDF spells them. Without the SRDF, the names are sent as typed,
-  and the named-pose node matches them case-sensitively.
+- **The button** reads the name of the pose the arm is at, or "Poses" when it is at none of them.
+  At a pose it is teal with a checkmark. While the arm moves to a pose, it shows a spinner and the
+  name of the pose you picked. A name longer than the button is cut at its end.
+- **Picking a pose** moves the arm there at once; there is no confirmation. Picking the checked
+  pose does nothing, and so does picking the pose the arm is already moving to. Picking another
+  pose while the arm moves replaces the move.
+- **The menu is off** (the button is dimmed and does not open) while HOLD is pressed or held, while
+  the link is down, and for 1 s after the set of poses changes (the SRDF or the named-pose node
+  arrived late, or a changed SRDF dropped or reordered a pose). The pause keeps a tap meant for
+  Align from moving the arm. VoiceOver says why: "Off while HOLD is held.", "Off while the robot
+  link is down.", "The pose list just changed.".
+- **No menu** appears without an SRDF that has states for the arm group, or until Conduit sees the
+  named-pose node (a publisher on the **named_pose_state** topic). A MoveIt arm without the node
+  therefore shows no poses that nothing would answer. The iPad and Mac views have no menu.
+- **"Named poses unavailable"** takes the menu's place (or a warning symbol, where the row is
+  tight) when Conduit could not create the pose command publisher.
 
-When two buttons would read the same, `ready` shows "Ready" instead of "Home" (a robot with both
-`ready` and `home`), and an untitled button that still repeats another's title gets its name in
-brackets, such as "Home (home)".
+The arm group is the `parent_group` of the SRDF's end effector. When several end effectors name
+a parent group, the first whose group has states counts. Without an end effector, it is the first
+group that is not an end effector's own group. The gripper's own states (such as `open` and
+`closed`) are therefore not offered. Start the named-pose node with that group as its
+`planning_group`. A state name that an SRDF repeats exactly is listed once; two names that differ
+only in case are two poses.
 
 Conduit reads the SRDF from `/robot_description_semantic` only, which `move_group` publishes. A
-`move_group` in a namespace publishes it under that namespace, so the arm view gets no states
-from it: use the profile's list, with the names spelled as in the SRDF, and start the named-pose
-node in the same namespace ([Teleoperation → Named poses](teleop.md#named-poses)).
+`move_group` in a namespace publishes it under that namespace, so the arm view finds no poses
+and shows no menu.
 
-While the robot is online and its SRDF has arrived, the profile editor shows the buttons the list
-gives with the robot's states ("The arm view shows the robot's poses: Work, Fold, Ready, Home.")
-and lists the robot's states that are not in the list under **From the robot**, where a tap adds
-one. With an empty list, the arm view itself shows those buttons only once the named-pose node
-is up.
-
-### What a tap does
+### What a pick does
 
 - The node pauses MoveIt Servo, moves the arm with `move_group`, and resumes Servo when the move
   ends, whether it succeeds, fails or is cancelled.
-- The button shows a spinner and the status line "Moving to Fold…" until the node reports the arm
-  there; then the button turns teal with a checkmark. A tap on the pose that is already on its way
-  sends nothing; a tap on another pose replaces the move.
-- The buttons take no tap while HOLD is pressed or held, or while the link is down. When the set
-  of buttons changes while the view is open (the SRDF or the node arrived late, or a changed SRDF
-  dropped or reordered a pose), they wait a second before they take a tap, so a tap meant for
-  Align does not move the arm.
+- The status line reads "Moving to stand…" until the node reports the arm there; then the button
+  turns teal with the checkmark.
 - Servo publishes no status while it is paused, so during a move the status chip reads "Servo not
   responding". It returns to `TWIST` when the move ends.
 - **HOLD stops a pose move.** Conduit sends the clutch on `<namespace>/teleop/clutch`
@@ -211,19 +208,17 @@ is up.
   you press HOLD, the named-pose node cancels the move and resumes Servo as soon as `move_group`
   has ended the cancel (usually well under a second; the node waits at most 5 s), so the arm
   follows the phone again right away. Conduit ends the spinner when you press HOLD. The arm stops
-  where it is, so no pose is reported until it reaches one.
+  where it is, so the button reads "Poses" until the arm reaches a pose.
 - **A lost link, the background or closing the arm view stops it too.** In each case the clutch
   messages stop, and the node cancels the move after `clutch_timeout` (0.5 s by default) without
   one and resumes Servo. This works for a move that started while clutch messages were arriving,
-  as every tap from Conduit does.
+  as every pick from Conduit does.
 - The 30 s limit below only ends the spinner. The clutch messages keep coming then, so the node
   goes on with the move until it ends or the node gives it up after `planning_time` +
   `max_move_duration` (65 s by default). Keep the arm's own emergency stop within reach.
-- When nothing has ever arrived on the state topic 3 s after a tap, the status line says "No
+- When nothing has ever arrived on the state topic 3 s after a pick, the status line says "No
   answer from the named-pose node on /conduit/teleop/named_pose_state" (with your state topic):
-  start the node, or check the topics. The arm view stops waiting for a pose after 30 s. "Named
-  poses unavailable" in place of the buttons means Conduit could not create the command
-  publisher.
+  check the node and the topics. The arm view stops waiting for a pose after 30 s.
 
 ### Host side
 
@@ -237,8 +232,6 @@ is up.
     ros2 param get /move_group publish_robot_description_semantic   # Boolean value is: True
     ```
 
-    The node reads the group states from this topic for a profile's list too.
-
 2. Start the named-pose node with the arm's planning group:
 
     ```bash
@@ -249,10 +242,11 @@ is up.
 
 Servo stops at a singularity ("Halted: singularity" on the status chip) and near the joint limits
 ("Halted: joint bound"). An arm's `ready` or `home` state can be singular, and then HOLD does
-not move the arm after a tap on that button. On the six-joint desk arm below, both are. Give the
-arm group states away from singularities and joint limits, and list them first so they become
-the first buttons. On that arm, two such states, `work` and `fold`, sit before `ready` and
-`home`:
+not move the arm after a pick of it. On the six-joint desk arm below (the Maker Arm), both are:
+the Jacobian condition number at the gripper is 35.7 at `ready` and 42.2 at `home`, above Servo's
+`hard_stop_singularity_threshold` of 30. Give the arm group states away from singularities and
+joint limits, and list them first, so they are the first entries of the menu. On that arm, two
+such states, `work` and `stand`, sit before `ready` and `home`:
 
 ```xml
 <group_state name="work" group="arm">
@@ -263,27 +257,29 @@ the first buttons. On that arm, two such states, `work` and `fold`, sit before `
     <joint name="link_006_joint" value="-0.1"/>
     <joint name="link_007_joint" value="0"/>
 </group_state>
-<group_state name="fold" group="arm">
+<group_state name="stand" group="arm">
     <joint name="link_002_joint" value="0"/>
     <joint name="link_003_joint" value="-1.6"/>
     <joint name="link_004_joint" value="1.6"/>
     <joint name="link_005_joint" value="-1.25"/>
-    <joint name="link_006_joint" value="-0.3"/>
+    <joint name="link_006_joint" value="0"/>
     <joint name="link_007_joint" value="0"/>
 </group_state>
 ```
 
-With an empty pose list, that arm's buttons read **Work**, **Fold**, **Ready** and **Home**. To
-check a state, tap its button, wait for the checkmark, hold HOLD and move the phone along each
-axis: the status chip should say `TWIST` or "Slowing: …", not "Halted: …". The values are the
-desk arm's; find your arm's with the arm in place, its joints well inside their limits plus
-Servo's `joint_limit_margins`.
+That arm's menu lists `work`, `stand`, `ready` and `home`, in that order. The condition number is
+25.4 at `work` and 21.7 at `stand`: between Servo's `lower_singularity_threshold` (17) and the
+hard stop, so Servo moves along every axis and slows down near them. To check a state, pick it,
+wait for the checkmark, hold HOLD and move the phone along each axis: the status chip should say
+`TWIST` or "Slowing: …", not "Halted: …". The values are the desk arm's, measured in simulation;
+find your arm's with the arm in place, its joints well inside their limits plus Servo's
+`joint_limit_margins`.
 
 ## iPad and Mac
 
 iPad and Mac show the arm view read-only: the wrist camera, the Servo status from the profile's
 Servo status topic, and the joints, with "Arm control needs an iPhone. This view shows the wrist
-camera, the joints and the Servo status." There is no HOLD, gripper, Align or pose button, and the
+camera, the joints and the Servo status." There is no HOLD, gripper, Align or pose menu, and the
 view pauses no sensors and does not start Device Pose.
 
 ## Servo overlay

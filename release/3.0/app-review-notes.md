@@ -13,9 +13,11 @@ network and shows them in a drive view:
   Conduit sends standard ROS 2 joystick messages; the robot's own software turns them into motion.
 - Robot arms: the iPhone arm view is landscape, over the robot's wrist camera. While the user
   holds the on-screen clutch (HOLD), Conduit converts the iPhone's motion (ARKit world tracking)
-  into velocity commands for MoveIt Servo. Pose buttons send the name of an arm pose that the
-  robot's MoveIt configuration defines; the robot's own software moves the arm there. On iPad and Mac the arm view only shows the camera,
-  the joints and the arm's status.
+  into velocity commands for MoveIt Servo. A pose menu lists the arm poses that the robot's MoveIt
+  configuration defines (the group states of its SRDF); picking one sends its name, and the robot's
+  own software moves the arm there. The menu appears only when the robot publishes its SRDF and runs
+  the host-side pose node. On iPad and Mac the arm view only shows the camera, the joints and the
+  arm's status.
 
 <!-- Keep the next paragraph out of the submission until the video is embedded at
      https://conduit.youtalk.jp/robots/#demo-video (docs/robots.md, "Demo video"). -->
