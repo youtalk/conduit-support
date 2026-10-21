@@ -244,7 +244,7 @@ and shows no menu.
 Servo stops at a singularity ("Halted: singularity" on the status chip) and near the joint limits
 ("Halted: joint bound"). An arm's `ready` or `home` state can be singular, and then HOLD does
 not move the arm after a pick of it. On the six-joint desk arm below (the Maker Arm), both are:
-the Jacobian condition number at the gripper is 35.7 at `ready` and 42.2 at `home`, above Servo's
+the Jacobian condition number at the gripper is 35.2 at `ready` and 42.2 at `home`, above Servo's
 `hard_stop_singularity_threshold` of 30. Give the arm group states away from singularities and
 joint limits, and list them first, so they are the first entries of the menu. On that arm, two
 such states, `work` and `stand`, sit before `ready` and `home`:
