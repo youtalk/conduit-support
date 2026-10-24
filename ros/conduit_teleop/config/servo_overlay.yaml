@@ -9,8 +9,8 @@
 #
 # incoming_command_timeout: Servo drops a twist whose header.stamp is older
 #   than this on the host clock. The phone's twists cross Wi-Fi and are stamped
-#   with the phone's clock; 0.5 s keeps them while a lost link still stops the
-#   arm quickly. Sync the host clock (chrony) as well.
+#   with the robot's clock (read from the Joint states topic); 0.5 s keeps them
+#   while a lost link still stops the arm quickly.
 # command_in_type: Conduit sends velocities in m/s and rad/s.
 /**:
   ros__parameters:
