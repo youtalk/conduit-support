@@ -256,12 +256,26 @@ The status line says what happened, until the next pick or HOLD press:
 | "move_group not found on /move_action" | `move_group` is not running, or runs in a namespace. |
 | "move_group refused the move to stand" | `move_group` rejected the goal; check the `move_group` log on the host. |
 | "move_group did not answer the move to stand" | `move_group` did not accept the goal, or end a cancel, within 5 s: it hangs or restarted. |
-| "The move to stand failed" | Planning or execution failed. Check the `move_group` log on the host: for example, error code -27 (`GOAL_STATE_INVALID`) means the group state is in collision or outside the joint limits; fix it in the SRDF. |
-| "move_group stopped the move to stand" | `move_group` cancelled the goal itself, for example because another client sent it a goal. |
+| "The move to stand failed: …" | Planning or execution failed; the rest is MoveIt's error code (see below) and, when `move_group` sends one, its own message after "MoveIt:". Without either, the line reads "The move to stand failed": check the `move_group` log on the host. |
+| "move_group stopped the move to stand" | `move_group` cancelled the goal itself, for example because another client sent it a goal ("…: preempted (-7)"). |
 | "The move to stand took over 30 s and was stopped" | The 30 s limit. A slow arm needs states closer together. |
 | "stand is no longer in the SRDF" | A pick waited for a cancel while a new SRDF dropped that state. |
 | "stand has no joint values in the SRDF" | The state names no joint with one number as its value. |
 | "Waiting for the move to stand to end…" | The link dropped during the move (see above). |
+
+The most useful MoveIt error codes, as the status line shows them after "The move to stand
+failed:":
+
+| Text | Code | What to do |
+| --- | --- | --- |
+| "planning failed (-1)" | `PLANNING_FAILED` | No path to the state within 5 s. Move the arm closer with HOLD, or check obstacles in the planning scene. |
+| "the pose is in collision or outside the joint limits (-27)" | `GOAL_STATE_INVALID` | The group state itself is invalid. Fix it in the SRDF. |
+| "the arm starts in collision (-10)" | `START_STATE_IN_COLLISION` | The arm is in collision where it is. Jog it clear with HOLD, then pick again. |
+| "the controller failed (-4)" | `CONTROL_FAILED` | The trajectory controllers on the host refused or aborted the trajectory. Check that they are active (`ros2 control list_controllers`). |
+| "timed out (-6)" | `TIMED_OUT` | Execution took longer than the controllers allow. Check the host's controllers. |
+| "unknown planning group (-15)" | `INVALID_GROUP_NAME` | `move_group` has no group of the name the SRDF's arm group has: its MoveIt configuration is not the SRDF it publishes. |
+
+Other codes read as their short text with the number, or "MoveIt error <code>".
 
 If the checkmark does not appear after a move, the arm stopped further than 0.01 rad from the
 state, or `/joint_states` does not carry every joint of the state
