@@ -24,6 +24,6 @@ Captions in English; no music under the voice-over.
 Recording setup: Kachaka with `ros2 launch conduit_teleop kachaka.launch.py` on the host that
 drives it; the Panda from the robot harness (`docker/compose-robot-harness.yml --profile arm`)
 shown in RViz full screen on the desktop host. The harness does not start `move_group`, so for
-shot 12 also run a `move_group` for the Panda that publishes the SRDF (`/robot_description_semantic`), and
-`ros2 launch conduit_teleop named_pose.launch.py planning_group:=panda_arm`. The pose menu appears once both are up and lists the group states of the Panda's arm group, spelled as in its SRDF. Upload the result to the site under
+shot 12 also run a `move_group` for the Panda that publishes the SRDF (`/robot_description_semantic`) and
+serves `/move_action`, next to the harness's Servo. The pose menu appears once the SRDF arrives and lists the group states of the Panda's arm group, spelled as in its SRDF. Upload the result to the site under
 `docs/robots.md` → "Demo video" in the same form as the existing demo videos.

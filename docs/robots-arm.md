@@ -1,6 +1,6 @@
 ---
 title: Teleoperate a robot arm
-description: Move a MoveIt Servo arm with your iPhone's motion, and send it to named poses.
+description: Move a MoveIt Servo arm with your iPhone's motion, and send it to named poses through move_group.
 ---
 
 # Teleoperate a robot arm
@@ -56,9 +56,10 @@ configures differently.
     **Gripper joint** (optional) set to the finger joint in Joint states, the arm view shows the
     opening the robot reports.
 
-4. **Named poses (optional).** `conduit_teleop`'s named-pose node next to `move_group`, and a
-    `move_group` that publishes the SRDF on `/robot_description_semantic`. The profile needs
-    nothing for them. See [Named poses](#named-poses).
+4. **Named poses (optional).** A `move_group` that publishes the SRDF on
+    `/robot_description_semantic` and serves `/move_action`, and Servo's pause service. Conduit
+    sends the moves itself, so there is nothing to install for them, and the profile needs nothing.
+    See [Named poses](#named-poses).
 
 When the arm view opens, Conduit calls the profile's **Servo command type** service
 (`/servo_node/switch_command_type` by default) to switch Servo to `TWIST`, and retries every few
@@ -153,13 +154,11 @@ arm view is open.
 ## Named poses
 
 The pose menu moves the arm to a **group state** of the robot's SRDF, such as `stand` or `home`,
-through MoveIt. Picking a pose sends the state's name once, as `std_msgs/String`, on
-`<namespace>/teleop/named_pose` (`/conduit/teleop/named_pose` by default). On the robot computer,
-`conduit_teleop`'s named-pose node plans and runs the move with `move_group` and reports the pose
-the arm is at on `<namespace>/teleop/named_pose_state`. Those two topics are fixed: the robot
-profile has no pose settings, and a pose list saved by an earlier build is ignored. The namespace
-is `conduit` unless you changed it in Settings. The node's setup, parameters and troubleshooting
-are in [Teleoperation → Named poses](teleop.md#named-poses).
+through MoveIt. Conduit talks to `move_group` itself: a pick sends a `moveit_msgs/action/MoveGroup`
+goal to `/move_action`, and Conduit pauses MoveIt Servo for the move. The host needs no extra node
+and nothing to install for poses. The robot profile has no pose settings, and a pose list saved by
+an earlier build is ignored. Named poses work on Jazzy and later; on Lyrical, Conduit sends
+Lyrical's form of the goal.
 
 ### The pose menu
 
@@ -170,56 +169,64 @@ the SRDF has them and with the names exactly as the SRDF writes them (`work`, `s
 - **The button** reads the name of the pose the arm is at, or "Poses" when it is at none of them.
   At a pose it is teal with a checkmark. While the arm moves to a pose, it shows a spinner and the
   name of the pose you picked. A name longer than the button is cut at its end.
-- **Picking a pose** moves the arm there at once; there is no confirmation. Picking the checked
-  pose does nothing, and so does picking the pose the arm is already moving to. Picking another
-  pose while the arm moves replaces the move.
+- **Picking a pose** moves the arm there at once; there is no confirmation. Picking the pose the
+  arm is already moving to does nothing. Picking another pose while the arm moves cancels that move
+  and starts the new one once the cancel has ended.
 - **The menu is off** (the button is dimmed and does not open) while HOLD is pressed or held, while
   the link is down, after the session stopped or the view failed to set up, and for 1 s after the
-  set of poses changes (the SRDF or the named-pose node arrived late, or a changed SRDF dropped or
-  reordered a pose). The pause keeps a tap meant for Align from moving the arm. VoiceOver says why:
-  "Off while HOLD is held.", "Off while the robot link is down.", "Off: the session stopped.",
-  "The pose list just changed.".
-- **No menu** appears without an SRDF that has states for the arm group, or until Conduit sees the
-  named-pose node (a publisher on the **named_pose_state** topic). A MoveIt arm without the node
-  therefore shows no poses that nothing would answer. The iPad and Mac views have no menu.
-- **"Named poses unavailable"** takes the menu's place (or a warning symbol, where the row is
-  tight) when Conduit could not create the pose command publisher.
+  set of poses changes (the SRDF arrived late, or a changed SRDF dropped or reordered a pose). The
+  pause keeps a tap meant for Align from moving the arm. VoiceOver says why: "Off while HOLD is
+  held.", "Off while the robot link is down.", "Off: the session stopped.", "The pose list just
+  changed.".
+- **No menu** appears without an SRDF that has states for the arm group. The menu appears as soon
+  as the SRDF arrives. The iPad and Mac views have no menu.
 
 The arm group is the `parent_group` of the SRDF's end effector. When several end effectors name
 a parent group, the first whose group has states counts. Without an end effector, it is the first
 group that is not an end effector's own group. The gripper's own states (such as `open` and
-`closed`) are therefore not offered. Start the named-pose node with that group as its
-`planning_group`. A state name that an SRDF repeats exactly is listed once; two names that differ
-only in case are two poses.
+`closed`) are therefore not offered. The goals plan for that group. A state name that an SRDF
+repeats is listed once and moves to the last state of that name, as in MoveIt; two names that
+differ only in case are two poses.
 
-Conduit reads the SRDF from `/robot_description_semantic` only, which `move_group` publishes. A
-`move_group` in a namespace publishes it under that namespace, so the arm view finds no poses
-and shows no menu.
+Conduit reads the SRDF from `/robot_description_semantic` and sends goals to `/move_action`, both
+absolute names. A `move_group` in a namespace publishes and serves them under that namespace, so the
+arm view finds no poses and shows no menu.
 
 ### What a pick does
 
-- The node pauses MoveIt Servo, moves the arm with `move_group`, and resumes Servo when the move
-  ends, whether it succeeds, fails or is cancelled.
-- The status line reads "Moving to stand…" until the node reports the arm there; then the button
-  turns teal with the checkmark.
-- Servo publishes no status while it is paused, so during a move the status chip reads "Servo not
-  responding". It returns to `TWIST` when the move ends.
-- **HOLD stops a pose move.** Conduit sends the clutch on `<namespace>/teleop/clutch`
-  (`/conduit/teleop/clutch` by default) and repeats it at 10 Hz while the arm view is open. When
-  you press HOLD, the named-pose node cancels the move and resumes Servo as soon as `move_group`
-  has ended the cancel (usually well under a second; the node waits at most 5 s), so the arm
-  follows the phone again right away. Conduit ends the spinner when you press HOLD. The arm stops
-  where it is, so the button reads "Poses" until the arm reaches a pose.
-- **A lost link, the background or closing the arm view stops it too.** In each case the clutch
-  messages stop, and the node cancels the move after `clutch_timeout` (0.5 s by default) without
-  one and resumes Servo. This works for a move that started while clutch messages were arriving,
-  as every pick from Conduit does.
-- The 30 s limit below only ends the spinner. The clutch messages keep coming then, so the node
-  goes on with the move until it ends or the node gives it up after `planning_time` +
-  `max_move_duration` (65 s by default). Keep the arm's own emergency stop within reach.
-- When nothing has ever arrived on the state topic 3 s after a pick, the status line says "No
-  answer from the named-pose node on /conduit/teleop/named_pose_state" (with your state topic):
-  check the node and the topics. The arm view stops waiting for a pose after 30 s.
+- **The goal** plans and executes a move of the arm group to the state's joint positions, read
+  from the newest SRDF when the move starts: one joint constraint per joint of the state, at
+  ±0.001 rad, from the arm's current state, with one planning attempt, 5 s planning time, and
+  velocity and acceleration scaled to 0.2.
+- **Servo** is paused before the goal and resumed when the move ends, whether it succeeds, fails or
+  is cancelled. Conduit uses Servo's `std_srvs/srv/SetBool` pause service next to the profile's
+  **Servo command type** service: `/servo_node/pause_servo` by default. While the move runs, the
+  status chip reads "Servo paused for the pose move". Without the pause service, the move still
+  runs. When the arm view connects, Conduit also resumes Servo, in case an earlier session left
+  it paused.
+- **The status line** reads "Moving to stand…" while the move runs. The checkmark comes from
+  `/joint_states`: the arm is at a pose when every joint of the state is within 0.01 rad (metres
+  for a prismatic joint) of it. Joints compare modulo a full turn, so a joint exactly one turn
+  away from the SRDF value also counts as at the pose.
+- **HOLD stops a pose move.** Pressing HOLD cancels the move ("Stopping the move to stand…") and is
+  refused with "Stopping the pose move. Press HOLD again." Press HOLD again once the move has
+  ended and Servo is resumed, usually well under a second later. The arm stops where it is, so
+  the button reads "Poses" until the arm reaches a pose.
+- **The background, closing the arm view and the free-time stop** cancel the move too, and resume
+  Servo.
+- **30 s after the pick** a move that has not ended is cancelled. When `move_group` does not end a
+  cancel within 5 s, the arm view stops waiting for it.
+
+!!! warning "Cancels need the link"
+    Conduit cancels a move by sending the cancel to `move_group`, which only works while the link
+    is up. A move running when Wi-Fi drops completes on the host. After the reconnect, the status
+    line reads "Waiting for the move to stand to end…": HOLD stays off and Servo stays paused until
+    `/joint_states` show the arm still for a second (counted from 6 s after the pick, while
+    `move_group` may still be planning), or 30 s after the pick. Then Conduit resumes Servo.
+
+    If the app is killed and opened again while its move still runs, the new arm view knows
+    nothing about that move: it resumes Servo when it connects and allows HOLD while the arm may
+    still be moving. Keep the arm's own emergency stop within reach.
 
 ### Host side
 
@@ -233,11 +240,32 @@ and shows no menu.
     ros2 param get /move_group publish_robot_description_semantic   # Boolean value is: True
     ```
 
-2. Start the named-pose node with the arm's planning group:
+2. Check that `move_group` serves the `MoveGroup` action and that Servo has its pause service:
 
     ```bash
-    ros2 launch conduit_teleop named_pose.launch.py planning_group:=arm
+    ros2 action list | grep move_action           # /move_action
+    ros2 service type /servo_node/pause_servo     # std_srvs/srv/SetBool
     ```
+
+### When a pose move fails
+
+The status line says what happened, until the next pick or HOLD press:
+
+| Message | What to check |
+| --- | --- |
+| "move_group not found on /move_action" | `move_group` is not running, or runs in a namespace. |
+| "move_group refused the move to stand" | `move_group` rejected the goal; check the `move_group` log on the host. |
+| "move_group did not answer the move to stand" | `move_group` did not accept the goal, or end a cancel, within 5 s: it hangs or restarted. |
+| "The move to stand failed" | Planning or execution failed. Check the `move_group` log on the host: for example, error code -27 (`GOAL_STATE_INVALID`) means the group state is in collision or outside the joint limits; fix it in the SRDF. |
+| "move_group stopped the move to stand" | `move_group` cancelled the goal itself, for example because another client sent it a goal. |
+| "The move to stand took over 30 s and was stopped" | The 30 s limit. A slow arm needs states closer together. |
+| "stand is no longer in the SRDF" | A pick waited for a cancel while a new SRDF dropped that state. |
+| "stand has no joint values in the SRDF" | The state names no joint with one number as its value. |
+| "Waiting for the move to stand to end…" | The link dropped during the move (see above). |
+
+If the checkmark does not appear after a move, the arm stopped further than 0.01 rad from the
+state, or `/joint_states` does not carry every joint of the state
+(`ros2 topic echo --once /joint_states --field name`).
 
 ### Example: poses that Servo can move from
 

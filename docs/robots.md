@@ -22,7 +22,7 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
   same settings Conduit already uses for publishing: **Transport**, **Domain ID** and
   **Distribution** in Settings. One connection serves the whole app.
 - On the host: `conduit_teleop` for mobile robots; for arms, MoveIt Servo from Jazzy or later
-  and the Servo overlay, plus `conduit_teleop`'s named-pose node if you want the pose menu.
+  and the Servo overlay, plus a `move_group` that publishes the SRDF if you want the pose menu.
 
 ## Where to find it
 
@@ -86,11 +86,12 @@ off, or when the week's free time runs out without Conduit Plus.
   the robot's clock, which it reads from the profile's Joint states topic, so the stop does not
   depend on the phone's clock being right. HOLD stays off until that clock is known
   ([time sync](robots-arm.md#host-setup)). A [named-pose](robots-arm.md#named-poses) move is
-  planned and run by `move_group` on the host. Pressing HOLD makes the named-pose node cancel the
-  move and resume Servo as soon as `move_group` has ended the cancel (usually well under a
-  second), so the arm follows the phone again. A lost link, the app going to
-  the background or closing the arm view stops the move the same way once the clutch messages
-  have stayed away for `clutch_timeout` (0.5 s by default). Keep the arm's own emergency stop within reach.
+  planned and run by `move_group` on the host. Pressing HOLD cancels it, and HOLD takes a second
+  press once the move has ended (usually well under a second). The app going to the background,
+  closing the arm view and the free-time stop cancel it too. A cancel needs the link: a move
+  running when Wi-Fi drops completes on the host, and after the reconnect Conduit keeps HOLD off
+  until the arm has stopped, or for at most 30 s from the pick. Keep the arm's own emergency stop
+  within reach.
 
 ## When something is wrong
 
