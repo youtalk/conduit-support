@@ -1,0 +1,24 @@
+# teleop_twist_joy parameters for driving a Kachaka (kachaka-api ROS 2 bridge) from
+# Conduit, passed by kachaka.launch.py as conduit_teleop.launch.py's params_file.
+# params_file replaces teleop_twist_joy.yaml (a key left out here falls back to
+# teleop_twist_joy's own default, whose deadman is button 5), so this is a full copy:
+# the same Joy layout, deadman and turbo settings as teleop_twist_joy.yaml; only the
+# full-stick speeds differ. The bridge's manual_control node divides cmd_vel by its
+# maximums, 0.3 m/s and 1.57 rad/s, so full stick here is Kachaka's top speed: the
+# drive view's Max speed 100 % reaches 0.3 m/s and 1.57 rad/s, its default 50 %
+# 0.15 m/s and 0.79 rad/s.
+# teleop_twist_joy.yaml's 0.5 m/s would exceed the top speed beyond 60 % of the stick.
+teleop_twist_joy_node:
+  ros__parameters:
+    require_enable_button: true
+    enable_button: 9
+    enable_turbo_button: -1
+    axis_linear:
+      x: 1
+    scale_linear:
+      x: 0.3
+    axis_angular:
+      yaw: 0
+    scale_angular:
+      yaw: 1.57
+    publish_stamped_twist: false
