@@ -225,9 +225,10 @@ arm view finds no poses and shows no menu.
   0.01 rad (metres for a prismatic joint) of it. Joints compare modulo a full turn, so a joint exactly one turn
   away from the SRDF value also counts as at the pose.
 - **HOLD stops a pose move.** Pressing HOLD cancels the move ("Stopping the move to stand…"), and
-  the press does not engage. Press HOLD again once the move has ended and Servo is resumed,
-  usually well under a second later. The arm stops where it is, so the button reads "Poses"
-  until the arm reaches a pose.
+  the press does not engage, even if you keep your finger down. Once the move has ended and
+  Servo is resumed, usually well under a second later, the status line reads "Pose move
+  stopped. Press HOLD again.": press HOLD again to move the arm. The arm stops where it is, so
+  the button reads "Poses" until the arm reaches a pose.
 - **The background, opening the diagnostics, closing the arm view and the free-time stop** cancel
   the move too, and resume Servo.
 - **30 s after the pick** a move that has not ended is cancelled. When `move_group` does not end a
