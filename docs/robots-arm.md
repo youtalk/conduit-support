@@ -1,15 +1,15 @@
 ---
 title: Teleoperate a robot arm
-description: Move a MoveIt Servo arm with your iPhone's motion, and send it to named poses through move_group.
+description: Move a MoveIt Servo arm with the motion of your iPhone or iPad, and send it to named poses through move_group.
 ---
 
 # Teleoperate a robot arm
 
-Hold the iPhone in landscape with both hands. While one thumb holds **HOLD**, the arm's end
-effector follows the phone's motion: Conduit turns ARKit's pose of the phone into
-`geometry_msgs/TwistStamped` for MoveIt Servo (`/servo_node/delta_twist_cmds`). The other thumb
-works the gripper, and a pose menu sends the arm to a named pose through MoveIt. iPad and Mac open
-the arm view [read-only](#ipad-and-mac).
+While you hold **HOLD**, the arm's end effector follows the motion of your iPhone or iPad:
+Conduit turns ARKit's pose of the device into `geometry_msgs/TwistStamped` for MoveIt Servo
+(`/servo_node/delta_twist_cmds` by default). A gripper arc works the gripper, and a pose menu
+sends the arm to a named pose through MoveIt. On a Mac the arm view is
+[view-only](#ipad-and-mac).
 
 ## Host setup
 
@@ -23,38 +23,38 @@ configures differently.
 
 2. **Time sync.** Servo drops a twist whose stamp is older than `incoming_command_timeout` on its
     own clock, and it keeps moving on the last twist until then. Conduit therefore stamps every
-    twist, moving or zero, on the robot's clock instead of the phone's. It measures that clock
+    twist, moving or zero, on the robot's clock instead of the device's. It measures that clock
     from the profile's **Joint states** topic: the difference between each message's
     `header.stamp` and the time it arrives, taking the lowest-latency sample over the last 10 s,
     and it never stamps a twist ahead of the robot's real time. The 0.5 s stop when the link is
-    lost then holds even when the phone's clock differs from the host's, so neither chrony nor
+    lost then holds even when the device's clock differs from the host's, so neither chrony nor
     **Set Automatically** is needed for it. The requirements on the Joint states topic:
 
     - It must be stamped by the computer that runs Servo (the same clock Servo uses), and never
       in the future. Joint states published by another computer, such as a robot controller
       while Servo runs on a laptop, are measured as if they were Servo's clock, and Conduit
       cannot tell.
-    - New arm profiles bind `/joint_states` by default. A namespaced topic, for example
-      `/arm/joint_states`, must be typed into the **Joint states** slot.
+    - An empty **Joint states** field is saved as `/joint_states`. A namespaced topic, for
+      example `/arm/joint_states`, must be in the field.
     - The host must run on wall-clock time. With simulation time (`use_sim_time`), HOLD cannot
       be used.
 
-    HOLD is refused until the robot clock is known. The arm view says why:
+    HOLD is refused until the robot clock is known. The status line says why:
 
     | Message | Meaning |
     | --- | --- |
-    | "Set Joint states in the profile. HOLD needs the robot clock." | No Joint states topic is bound. |
     | "Reading the robot clock from Joint states" | Conduit is still collecting stamps (it needs ten Joint states messages). |
-    | "Robot and phone clocks are more than a day apart (simulation time?). HOLD is off." | The stamps are not wall-clock time: simulation time, unstamped messages, or a clock that was never set. |
+    | "Robot and device clocks are more than a day apart (simulation time?). HOLD is off." | The stamps are not wall-clock time: simulation time, unstamped messages, or a clock that was never set. |
+    | "Set Joint states in the profile. HOLD needs the robot clock." | The profile has no Joint states topic. |
 
     If the robot clock becomes unusable while HOLD is held (a simulator starts, say), the arm
     lets go and shows "Robot clock changed. Release and press again."
 
-3. **Gripper (optional).** A `control_msgs/action/GripperCommand` server; the profile holds its
-    action name (**Gripper action**) and the open and closed positions in metres (**Gripper open
-    (m)**, **Gripper closed (m)**; the Franka Panda's fingers travel from 0.0 to 0.04). With
-    **Gripper joint** (optional) set to the finger joint in Joint states, the arm view shows the
-    opening the robot reports.
+3. **Gripper (optional).** A `control_msgs/action/GripperCommand` server. The profile holds its
+    action name (**Gripper action**) and, in its **Gripper** section, the open and closed
+    positions in metres (**Open (m)**, **Closed (m)**; the Franka Panda's fingers travel from 0.0
+    to 0.04). With **Gripper joint** set to the finger joint in Joint states, the arm view shows
+    the opening the robot reports.
 
 4. **Named poses (optional).** A `move_group` that publishes the SRDF on
     `/robot_description_semantic` and serves `/move_action`, and Servo's pause service. Conduit
@@ -63,87 +63,104 @@ configures differently.
 
 When the arm view opens, Conduit calls the profile's **Servo command type** service
 (`/servo_node/switch_command_type` by default) to switch Servo to `TWIST`, and retries every few
-seconds while Servo is missing or refuses. The status chip shows the result: "Connecting to
+seconds while Servo is missing or refuses. The Servo chip shows the result: "Connecting to
 Servo", "Servo not found", "Servo refused TWIST", then `TWIST`, or what Servo reports ("Slowing:
 near singularity", "Halted: joint bound", …), and "Servo not responding" when no Servo status
-has arrived for a second. The clutch stays disabled until Servo is ready.
+has arrived for a second. HOLD stays off until Servo is ready.
 
 ## The arm view
 
-On iPhone the arm view is landscape, over the full-screen wrist camera. The screen turns to
-landscape before the view comes up, either side, and stays there until you close the view;
-closing it turns the screen back to portrait. The view runs the Device Pose sensor, which uses
-ARKit and needs the camera to itself, so opening it pauses the enabled sensors that use the
-camera (the cameras, except the wide back camera while LiDAR is on, whose images already come
-from ARKit) and Illuminance. When any of them is enabled, Conduit asks first ("Opening <robot> pauses … while the
-arm view is open. Device Pose uses ARKit, which needs the camera to itself. Continue?"). Closing
-the view restarts what it paused and stops Device Pose if the view started it.
+The arm view runs the Device Pose sensor, which uses ARKit and needs the camera to itself, so
+opening it pauses the enabled sensors that use the camera (the cameras, except the wide back
+camera while LiDAR is on, whose images already come from ARKit) and Illuminance. When any of them
+is enabled, Conduit asks first ("Opening <robot> pauses … while the arm view is open. Device Pose
+uses ARKit, which needs the camera to itself. Continue?"). Closing the view restarts what it
+paused and stops Device Pose if the view started it.
 
-- **Top left:** the status chip (Servo · motion tracking · camera latency, for example
-  "TWIST · tracking ok · 42 ms"), a warning chip when the profile expects other connection
-  settings, and under them the status line. The status line says what to do next ("Point the
-  phone at the robot's front, then tap Align", "Hold HOLD to move the arm", "Holding: the arm
-  follows the phone") or what is wrong.
-- **Top centre:** the [pose menu](#named-poses), then **Align**. Without a pose menu, only **Align**.
-- **Top right:** **Joints**, which shows each joint's angle as a bar from −π to +π (the joint names
-  shortened to their last part, "panda_joint4" → "joint4"); the gear, which opens the arm
-  settings; and close.
-- **Bottom corners:** the gripper under one thumb and **HOLD** under the other. The gripper starts
-  under the left thumb; the gear's **Gripper** setting (**Left thumb** / **Right thumb**) moves
-  it, and Conduit keeps that choice on the device for every arm. Without a Gripper action there
-  is no gripper, and HOLD sits in the bottom right corner.
+The wrist camera fills the screen behind the controls. Pinch it to scale between the whole image
+and filling the screen, and drag to pan where the image is larger than the screen. Each layout
+keeps its own zoom.
 
-The camera's captions (STALE, "No data", "No wrist camera topic", …) sit in the space between.
-When the top row runs out of room (a smaller iPhone, larger text), Joints shows only its symbol,
-then the pose menu's button narrows (a long pose name is cut at its end) down to the width of
-"Poses", then shows only its symbol, then the pose menu and Align move right of the centre, and
-last Align shows only its symbol.
+On iPhone the layout follows how you hold the phone; with the rotation lock on, it stays as it
+is. Turning the phone releases HOLD and stops a gripper drag, and keeps the alignment. Closing the
+view returns the app to portrait.
+
+- **Landscape, two hands.** Along the top: the status chips and the status line, the
+  [pose menu](#named-poses) and **Align**, then the gear and close. In the bottom corners, the
+  gripper arc under one thumb and **HOLD** under the other. Without a Gripper action there is no
+  arc, and HOLD sits in the bottom right corner. An iPad always uses this layout, in any
+  orientation.
+- **Upright, one hand.** Along the top: the status chips, the gear and close; under them the pose
+  menu and **Align**. The status line sits above the bottom controls. HOLD is in the bottom corner
+  under the thumb of the hand that holds the phone, with the gripper arc around it.
+
+The status chips: Servo, motion tracking (only while it is not normal, for example "tracking
+limited (excessive motion)" or "no tracking"), the wrist camera's latency and frame rate ("42 ms ·
+30 fps") and, when the profile has a Diagnostics topic, the diagnostics. Tap the diagnostics chip
+to open the diagnostics; this releases HOLD, stops a gripper drag and cancels a pose move.
+The status line appears only when something needs saying: a fault, a refusal, why HOLD is off,
+a pose move, or the free-time notice. The camera's captions (STALE, "No data", "No wrist camera
+topic", …) and the warning that the profile expects other connection settings sit in the space
+between the controls.
+
+When the top row runs out of room (a smaller iPhone, larger text), the pose menu narrows (a long
+pose name is cut at its end) down to the width of "Poses", then shows only its symbol, and last
+Align shows only its symbol.
 
 The gear's panel holds the settings that change the motion:
 
 | setting | values | what it does |
 | --- | --- | --- |
-| **Scale** | **0.5×**, **1×** (default), **2×** | Scales translation. At 1× the end effector moves at up to 0.25 m/s. |
+| **Max speed** | **0.5×**, **1×** (default), **2×** | Scales translation. At 1× the end effector moves at up to 0.25 m/s. |
+| **Translation** | on (default) / off | Off sends no translation, so the end effector turns without moving. |
 | **Rotation** | on (default) / off | Off sends no rotation. Rotation goes up to 1 rad/s. |
-| **Gripper** | **Left thumb** (default) / **Right thumb** | Which bottom corner has the gripper; HOLD takes the other. Shown only with a Gripper action. |
+| **Gripper** | **Left thumb** (default) / **Right thumb** | Landscape, with a Gripper action: which bottom corner has the gripper arc; HOLD takes the other. |
+| **Hand** | **Left hand** / **Right hand** (default) | Upright: the hand that holds the phone, which gets HOLD and the arc. |
 
-The panel is off while HOLD is held.
+Gripper and Hand are one choice: the hand that holds the phone upright is the one whose thumb has
+HOLD in landscape. Conduit keeps it per robot on the device. Max speed, Translation and Rotation
+start at their defaults each time the view opens. The panel is off while HOLD is held.
 
 ## Using it
 
 1. **Align.** Stand behind the robot's base and face the way its base frame's +x axis points,
-   which is the robot's forward direction. Point the back camera that way, or tilt the phone down
+   which is the robot's forward direction. Point the back camera that way, or tilt the device down
    to watch the screen, down to lying flat with the top of the screen pointing that way, and tap
    **Align**: that heading becomes the base frame's +x. If you face the robot instead, the motion
-   is mirrored. Align says why when it refuses: "Tilt the phone down: the camera points too far
+   is mirrored. Align says why when it refuses: "Tilt the device down: the camera points too far
    up" (the camera points more than 60° above the horizon), "Point the top of the screen toward
-   the robot's front", "Wait for motion tracking, then Align" or "Release the clutch to Align".
-   Align again after motion tracking restarts or fails ("Motion tracking restarted. Align again.").
+   the robot's front" or "Wait for motion tracking, then Align". Align again after motion tracking
+   restarts or fails ("Motion tracking restarted. Align again.", "Motion tracking failed. Align
+   again.").
 2. **Hold HOLD and move.** HOLD is dimmed until the link is up, Servo is ready, the robot clock
-   is known and you have tapped Align; the status line says which one is missing. A press also
-   needs normal motion tracking, and is refused with "Waiting for motion tracking" or "Motion
-   tracking is limited. Move the phone slowly." without it. HOLD turns green and reads
-   **HOLDING** while the arm follows.
+   is known and you have tapped Align. The status line says what it waits for ("Connecting…", a
+   Servo problem, the robot clock, "Starting…"). A press when only Align is
+   missing opens a "Tap Align first" dialog. A press also needs normal motion tracking, and is
+   refused with "Waiting for motion tracking" or "Motion tracking is limited. Move the device
+   slowly." without it. HOLD turns green and reads **HOLDING** while the arm follows.
 3. **Release to stop.** Releasing HOLD sends three zero twists at once. Tracking loss, a covered
    camera, a pose jump or a lost link also stop the arm, with one zero twist ("The pose jumped.
    Release and press again.", "Motion tracking paused. Release and press again."); release and
    press again to resume.
-4. **Gripper.** With HOLD released, drag along the arc or tap **Open** / **Close**. The readout
-   says "Gripper · 40 % open" (or "Moving · …" while a goal runs); the white handle is the opening
-   asked for, and with a Gripper joint the teal stripe is the opening the robot reports. Until the
-   opening is known the readout says "Opening unknown: tap Open or Close" and a drag sends
-   nothing. The gripper is off while HOLD is held, and a HOLD press while your thumb is on the
-   gripper is refused with "Lift your thumb off the gripper first".
+4. **Gripper.** With HOLD released, tap the arc to open or close the gripper, or drag along it to
+   set an opening. The readout along the arc says "40 % open" ("Moving · 40 % open" while a goal
+   runs). The white handle is the opening asked for, and with a Gripper joint the track fills
+   teal up to the opening the robot reports. Until the opening is known the readout says
+   "Unknown: tap the arc": a drag sends nothing, and a tap opens. The gripper is off while HOLD
+   is held ("Off while HOLD is held"), and a HOLD press while your thumb is on the gripper is
+   refused with "Lift your thumb off the gripper first".
 
 Without Conduit Plus, the status line shows the weekly free time's warnings for a few seconds
 ("30 minutes of free time left this week", "5 minutes left — the session stops when this week's
-free time is used up"). When the free time is used up while you hold HOLD, the arm keeps
-following until you release it, for at most 5 more minutes. Then Conduit stops the arm, closes
-the arm view and shows the Conduit Plus paywall.
+free time is used up"). When the free time is used up while you hold HOLD or a pose move runs,
+the arm keeps going until you release HOLD and the move ends, for at most 5 more minutes. Then
+Conduit stops the arm and shows the Conduit Plus paywall over the arm view; closing the paywall
+closes the arm view.
 
 **VoiceOver:** HOLD is the "Clutch" button: double-tap and hold to move the arm, and release to
-stop. The gripper is the adjustable "Gripper opening": swipe up or down to open or close it by
-10 %, with Open and Close as actions.
+stop. The gripper is the adjustable "Gripper opening": double-tap to open or close it, swipe up
+or down to open or close it by 10 %, with Open and Close as actions. The wrist camera has "Show
+whole image" and "Fill screen" actions.
 
 Conduit also publishes the raw pose (`<namespace>/pose`, `/tf`) and `<namespace>/teleop/clutch`
 (`std_msgs/Bool`, true while the clutch is held, false on any pose discontinuity), so a custom
@@ -156,9 +173,8 @@ arm view is open.
 The pose menu moves the arm to a **group state** of the robot's SRDF, such as `stand` or `home`,
 through MoveIt. Conduit talks to `move_group` itself: a pick sends a `moveit_msgs/action/MoveGroup`
 goal to `/move_action`, and Conduit pauses MoveIt Servo for the move. The host needs no extra node
-and nothing to install for poses. The robot profile has no pose settings, and a pose list saved by
-an earlier build is ignored. Named poses work on Jazzy and later; on Lyrical, Conduit sends
-Lyrical's form of the goal.
+and nothing to install for poses, and the robot profile has no pose settings. Named poses work on
+Jazzy and later.
 
 ### The pose menu
 
@@ -179,7 +195,7 @@ the SRDF has them and with the names exactly as the SRDF writes them (`work`, `s
   held.", "Off while the robot link is down.", "Off: the session stopped.", "The pose list just
   changed.".
 - **No menu** appears without an SRDF that has states for the arm group. The menu appears as soon
-  as the SRDF arrives. The iPad and Mac views have no menu.
+  as the SRDF arrives. The Mac's view-only arm view has no menu.
 
 The arm group is the `parent_group` of the SRDF's end effector. When several end effectors name
 a parent group, the first whose group has states counts. Without an end effector, it is the first
@@ -201,19 +217,19 @@ arm view finds no poses and shows no menu.
 - **Servo** is paused before the goal and resumed when the move ends, whether it succeeds, fails or
   is cancelled. Conduit uses Servo's `std_srvs/srv/SetBool` pause service next to the profile's
   **Servo command type** service: `/servo_node/pause_servo` by default. While the move runs, the
-  status chip reads "Servo paused for the pose move". Without the pause service, the move still
+  Servo chip reads "Servo paused for the pose move". Without the pause service, the move still
   runs. When the arm view connects, Conduit also resumes Servo, in case an earlier session left
   it paused.
 - **The status line** reads "Moving to stand…" while the move runs. The checkmark comes from
-  `/joint_states`: the arm is at a pose when every joint of the state is within 0.01 rad (metres
-  for a prismatic joint) of it. Joints compare modulo a full turn, so a joint exactly one turn
+  the profile's Joint states topic: the arm is at a pose when every joint of the state is within
+  0.01 rad (metres for a prismatic joint) of it. Joints compare modulo a full turn, so a joint exactly one turn
   away from the SRDF value also counts as at the pose.
-- **HOLD stops a pose move.** Pressing HOLD cancels the move ("Stopping the move to stand…") and is
-  refused with "Stopping the pose move. Press HOLD again." Press HOLD again once the move has
-  ended and Servo is resumed, usually well under a second later. The arm stops where it is, so
-  the button reads "Poses" until the arm reaches a pose.
-- **The background, closing the arm view and the free-time stop** cancel the move too, and resume
-  Servo.
+- **HOLD stops a pose move.** Pressing HOLD cancels the move ("Stopping the move to stand…"), and
+  the press does not engage. Press HOLD again once the move has ended and Servo is resumed,
+  usually well under a second later. The arm stops where it is, so the button reads "Poses"
+  until the arm reaches a pose.
+- **The background, opening the diagnostics, closing the arm view and the free-time stop** cancel
+  the move too, and resume Servo.
 - **30 s after the pick** a move that has not ended is cancelled. When `move_group` does not end a
   cancel within 5 s, the arm view stops waiting for it.
 
@@ -221,7 +237,7 @@ arm view finds no poses and shows no menu.
     Conduit cancels a move by sending the cancel to `move_group`, which only works while the link
     is up. A move running when Wi-Fi drops completes on the host. After the reconnect, the status
     line reads "Waiting for the move to stand to end…": HOLD stays off and Servo stays paused until
-    `/joint_states` show the arm still for a second (counted from 6 s after the pick, while
+    the joint states show the arm still for a second (counted from 6 s after the pick, while
     `move_group` may still be planning), or 30 s after the pick. Then Conduit resumes Servo.
 
     If the app is killed and opened again while its move still runs, the new arm view knows
@@ -261,6 +277,7 @@ The status line says what happened, until the next pick or HOLD press:
 | "The move to stand took over 30 s and was stopped" | The 30 s limit. A slow arm needs states closer together. |
 | "stand is no longer in the SRDF" | A pick waited for a cancel while a new SRDF dropped that state. |
 | "stand has no joint values in the SRDF" | The state names no joint with one number as its value. |
+| "The move to stand was not sent: …" | Conduit could not send the goal, for example "Not connected to the robot". |
 | "Waiting for the move to stand to end…" | The link dropped during the move (see above). |
 
 The most useful MoveIt error codes, as the status line shows them after "The move to stand
@@ -278,12 +295,12 @@ failed:":
 Other codes read as their short text with the number, or "MoveIt error <code>".
 
 If the checkmark does not appear after a move, the arm stopped further than 0.01 rad from the
-state, or `/joint_states` does not carry every joint of the state
+state, or the Joint states topic does not carry every joint of the state
 (`ros2 topic echo --once /joint_states --field name`).
 
 ### Example: poses that Servo can move from
 
-Servo stops at a singularity ("Halted: singularity" on the status chip) and near the joint limits
+Servo stops at a singularity ("Halted: singularity" on the Servo chip) and near the joint limits
 ("Halted: joint bound"). An arm's `ready` or `home` state can be singular, and then HOLD does
 not move the arm after a pick of it. On the six-joint desk arm below (the Maker Arm), both are:
 the Jacobian condition number at the gripper is 35.2 at `ready` and 42.2 at `home`, above Servo's
@@ -313,17 +330,23 @@ such states, `work` and `stand`, sit before `ready` and `home`:
 That arm's menu lists `work`, `stand`, `ready` and `home`, in that order. The condition number is
 25.4 at `work` and 21.7 at `stand`: between Servo's `lower_singularity_threshold` (17) and the
 hard stop, so Servo moves along every axis and slows down near them. To check a state, pick it,
-wait for the checkmark, hold HOLD and move the phone along each axis: the status chip should say
+wait for the checkmark, hold HOLD and move the device along each axis: the Servo chip should say
 `TWIST` or "Slowing: …", not "Halted: …". The values are the desk arm's, measured in simulation;
 find your arm's with the arm in place, its joints well inside their limits plus Servo's
 `joint_limit_margins`.
 
 ## iPad and Mac
 
-iPad and Mac show the arm view read-only: the wrist camera, the Servo status from the profile's
-Servo status topic, and the joints, with "Arm control needs an iPhone. This view shows the wrist
-camera, the joints and the Servo status." There is no HOLD, gripper, Align or pose menu, and the
-view pauses no sensors and does not start Device Pose.
+An iPad drives the arm like an iPhone, always in the two-handed layout. iPadOS pauses ARKit while
+Conduit shares the screen with other apps (Split View or a window); the tracking chip then reads
+"Camera paused: use Conduit full screen", and HOLD stops working until Conduit is full screen
+again. The diagnostics open in a sheet.
+
+A Mac has no ARKit world tracking, so its arm view is view-only: the wrist camera (pinch and drag
+work, and it opens on the whole image), the Servo status from the profile's **Servo status**
+topic, and the diagnostics, with "Arm control needs an iPhone or iPad. This view shows the wrist
+camera, Servo and diagnostics." There is no HOLD, gripper, Align or pose menu, and the view
+pauses no sensors and does not start Device Pose.
 
 ## Servo overlay
 

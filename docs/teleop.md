@@ -117,7 +117,7 @@ Keep the rest of the copy as it is, including the `teleop_twist_joy_node:` key. 
     works from Conduit 2.5.
 
 Conduit 3.0's [Robots](robots.md) drive view sends the same Joy layout at 50 Hz while it is
-open (reliable, KEEP_LAST 1), on the robot profile's Joy topic, which is **`/joy`** by default.
+open (reliable, KEEP_LAST 1), on the robot profile's **Joy output** topic, which is **`/joy`** by default.
 For it, launch `conduit_teleop` with the default `joy_topic`:
 
 ```bash
@@ -127,14 +127,15 @@ ros2 launch conduit_teleop conduit_teleop.launch.py
 The two Joy sources use different topics: the drive view publishes `/joy`, the Game Controller
 sensor `/conduit/joy`. Point `conduit_teleop` at one of them, not both: the default `joy_topic`
 to drive from the drive view, `joy_topic:=/conduit/joy` to drive with the Game Controller sensor.
-If you set a profile's Joy topic to the sensor's topic, Conduit pauses the sensor while that drive
-view is open.
+If you set a profile's Joy output to the sensor's topic, Conduit asks before it opens the drive
+view and pauses the sensor while the drive view is open.
 
-In the drive view, touching the on-screen joystick (or holding Space on a hardware keyboard, or LB / L1 on a
-controller) holds `buttons[9]`, and **Slow / Fast** scales the stick on the phone: Fast sends it
-unscaled, so the parameter file's scales are the drive view's top speeds. Slow, on which the
-drive view opens, sends the stick at 0.35 of its travel for both the forward and the turn rate.
-The watchdog behaves the same for both sources.
+In the drive view, touching the on-screen joystick (or holding Space on a hardware keyboard, or
+LB / L1 on a controller) holds `buttons[9]`. The gear panel's **Max speed** (25%, 50%, 75% or
+100%) scales the stick on the phone, for both the forward and the turn rate. At 100% the parameter
+file's scales are the top speeds; every drive view opens at 50%, half of them. The watchdog
+behaves the same for both sources. See [Drive a mobile robot](robots-mobile.md) for the drive
+view itself.
 
 ### Kachaka
 
@@ -150,10 +151,10 @@ ros2 launch conduit_teleop kachaka.launch.py
 - `cmd_vel_topic` is `<kachaka_namespace>/manual_control/cmd_vel`.
 - `params_file` is the package's `config/kachaka_teleop_twist_joy.yaml`, a full copy of
   `teleop_twist_joy.yaml` (same axes, deadman and turbo off) with full-stick speeds of
-  **0.3 m/s** and **1.57 rad/s**. The bridge divides `cmd_vel` by exactly these maximums, so Fast reaches
-  Kachaka's top speed at full stick. On Slow the top is 0.105 m/s and 0.55 rad/s. The default
-  file's 0.5 m/s
-  would ask for more than Kachaka's top speed beyond 60 % of the stick.
+  **0.3 m/s** and **1.57 rad/s**. The bridge divides `cmd_vel` by exactly these maximums, so at
+  Max speed 100% full stick is Kachaka's top speed. At the default 50% the top is 0.15 m/s and
+  0.79 rad/s. The default file's 0.5 m/s would ask for more than Kachaka's top speed beyond 60 %
+  of the stick.
 - Two seconds after start it calls `<kachaka_namespace>/manual_control/set_enabled` with `true`.
 
 | argument | default | meaning |
