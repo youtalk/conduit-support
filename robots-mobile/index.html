@@ -1,0 +1,1354 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+  
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Drive a ROS 2 mobile robot from Conduit with teleop_twist_joy and a watchdog, and send it navigation goals from the map.">
+      
+      
+      
+        <link rel="canonical" href="https://conduit.youtalk.jp/robots-mobile/">
+      
+      
+        <link rel="prev" href="../robots/">
+      
+      
+        <link rel="next" href="../robots-arm/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/img/app_icon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+
+  
+  <meta name="theme-color" content="#007AFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B0B0F" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Conduit">
+  <meta property="og:title" content="Drive a mobile robot">
+  <meta property="og:description" content="Drive a ROS 2 mobile robot from Conduit with teleop_twist_joy and a watchdog, and send it navigation goals from the map.">
+  <meta property="og:url" content="https://conduit.youtalk.jp/robots-mobile/">
+  <meta property="og:image" content="https://conduit.youtalk.jp/assets/img/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Conduit — Apple-native ROS 2 sensor publisher">
+  <meta property="og:locale" content="en_US">
+
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Drive a mobile robot">
+  <meta name="twitter:description" content="Drive a ROS 2 mobile robot from Conduit with teleop_twist_joy and a watchdog, and send it navigation goals from the map.">
+  <meta name="twitter:image" content="https://conduit.youtalk.jp/assets/img/og-card.png">
+  <meta name="twitter:image:alt" content="Conduit — Apple-native ROS 2 sensor publisher">
+
+  
+
+    
+      
+        <title>Drive a mobile robot - Conduit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/conduit.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#drive-a-mobile-robot" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Conduit" class="md-header__button md-logo" aria-label="Conduit" data-md-component="logo">
+      
+  <img src="../assets/img/app_icon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Conduit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Drive a mobile robot
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/youtalk/conduit-support" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    youtalk/conduit-support
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../platform-notes/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Platform notes
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../transports/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Transports (Zenoh / DDS)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../robots/" class="md-tabs__link">
+          
+  
+  
+  Robots
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../on-demand-capture/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  On-demand capture
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../teleop/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Teleoperation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../known-issues/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Known issues
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../privacy/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Privacy policy
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Conduit" class="md-nav__button md-logo" aria-label="Conduit" data-md-component="logo">
+      
+  <img src="../assets/img/app_icon.png" alt="logo">
+
+    </a>
+    Conduit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/youtalk/conduit-support" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    youtalk/conduit-support
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../platform-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Platform notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transports (Zenoh / DDS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Robots
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Robots
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../robots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mobile robots
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mobile robots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-drive-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The drive view
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The drive view">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iphone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iPhone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ipad-and-mac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iPad and Mac
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gear-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gear panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#map-and-navigation-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Map and navigation goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#host-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kachaka" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kachaka
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../robots-arm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Robot arms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../on-demand-capture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On-demand capture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../teleop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Teleoperation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../known-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-drive-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The drive view
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The drive view">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iphone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iPhone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ipad-and-mac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iPad and Mac
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gear-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gear panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#map-and-navigation-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Map and navigation goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#host-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kachaka" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kachaka
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="drive-a-mobile-robot">Drive a mobile robot</h1>
+<p>Conduit sends <code>sensor_msgs/Joy</code> at 50 Hz while the drive view is open and the robot link is up,
+reliable with KEEP_LAST 1, on the profile's <strong>Joy output</strong> topic (default <code>/joy</code>). The layout is
+that of the ROS 2 <code>joy</code> package's <code>game_controller_node</code>, so <code>teleop_twist_joy</code> reads it as it
+reads a gamepad.</p>
+<h2 id="the-drive-view">The drive view</h2>
+<h3 id="iphone">iPhone</h3>
+<p>The drive view follows how you hold the phone: landscape for two hands, upright for one. Turn
+the phone to switch; with the system's rotation lock on, it stays upright. A turn lets go of
+every input, so press again to drive.</p>
+<ul>
+<li><strong>Landscape:</strong> status chips at the top left, the gear and close at the top right. At the
+  bottom, the joystick is under one thumb (the left one unless you change it in the gear panel),
+  the mini map is in the other corner, and the status banner is between them.</li>
+<li><strong>Upright:</strong> the same top row, the status banner above the bottom row, the joystick in the
+  bottom corner of the hand that holds the phone (the right hand unless you change it), and the
+  mini map in the other corner.</li>
+</ul>
+<p>The chips show the battery, the speed from the odometry, the camera's latency and frame rate
+(the frame rate only when the robot's and the phone's clocks disagree; "No video" before the
+first frame; red while the camera is STALE) and the diagnostics (tap it for the full list). The
+battery, speed and diagnostics chips appear once they have a value.
+Pinch the camera to scale it between the whole image and filling the screen, and drag to pan
+it; Conduit keeps the zoom for each orientation. The mini map shows when the profile has a Map
+or LaserScan topic; tap it for the full-screen map.</p>
+<h3 id="ipad-and-mac">iPad and Mac</h3>
+<p>The camera fills two thirds of the width, next to a column of <strong>Map</strong>, <strong>Status</strong> and
+<strong>Diagnostics</strong> tiles. Drag the divider between them to resize (the camera keeps at least 40 %
+of the width); double-tap it to restore the default. Tap a tile to open it in a sheet. Pinch and
+drag the camera to zoom it within its tile. With a hardware keyboard connected, the hint "Space +
+arrows or WASD to drive" shows above the banner. In a narrow iPad window the drive view uses the
+iPhone's landscape layout.</p>
+<h3 id="gear-panel">Gear panel</h3>
+<ul>
+<li><strong>Max speed:</strong> 25%, 50%, 75% or 100% of the stick's full travel, for the forward speed and the
+  turn rate alike. It applies to the on-screen joystick, the keyboard and a game controller's left
+  stick. Every drive view opens at 50%. Changing it while you drive releases every input until you
+  press again, so the robot never jumps to the new speed.</li>
+<li><strong>Stick</strong> (iPhone, landscape): <strong>Left thumb</strong> or <strong>Right thumb</strong> for the joystick.</li>
+<li><strong>Hand</strong> (iPhone, upright): <strong>Left hand</strong> or <strong>Right hand</strong>, the hand that holds the phone.</li>
+</ul>
+<p>Conduit keeps the Stick and Hand choices per robot on this device. The robot keeps driving while
+the gear panel is open.</p>
+<h3 id="map-and-navigation-goals">Map and navigation goals</h3>
+<p>The full-screen map (a sheet on iPad and Mac) pinch-zooms between 0.5× and 20×, pans with a drag,
+and resets with a double tap. Nothing drives while the map, Status or Diagnostics is open; the
+banner says "Paused while a panel is open", and after you close it every input needs a fresh
+press.</p>
+<p>To send a navigation goal, set the profile's <strong>Goal pose</strong> topic (<code>/goal_pose</code> for Nav2). The
+profile also needs a Map topic. Then, on the full-screen map:</p>
+<ol>
+<li>Tap <strong>Set goal</strong>.</li>
+<li>Touch the goal and drag toward the heading the robot should face. A tap without a drag points
+   the goal away from the robot.</li>
+</ol>
+<p>Conduit sends one <code>geometry_msgs/PoseStamped</code> in the profile's <strong>Map frame</strong>, with a zero stamp
+(the latest transform), like RViz's <strong>2D Goal Pose</strong> tool, and then returns to panning. It waits
+up to 2 s for a subscriber and then sends anyway. The map says "Goal sent on <code>&lt;topic&gt;</code>", or "Goal
+sent, but nothing subscribes to <code>&lt;topic&gt;</code>" when no subscriber matched. The goal stays on the map
+until you close the drive view.</p>
+<p>Conduit cannot cancel a goal. Releasing the joystick, closing the map or closing the drive view
+does not stop the robot driving to it.</p>
+<h2 id="inputs">Inputs</h2>
+<table>
+<thead>
+<tr>
+<th>input</th>
+<th>Joy field</th>
+<th>role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>stick up / down</td>
+<td><code>axes[1]</code> (up +)</td>
+<td><code>linear.x</code></td>
+</tr>
+<tr>
+<td>stick left / right</td>
+<td><code>axes[0]</code> (left +)</td>
+<td><code>angular.z</code></td>
+</tr>
+<tr>
+<td>touching the stick, Space, or the left shoulder</td>
+<td><code>buttons[9]</code></td>
+<td>deadman (<code>enable_button</code>)</td>
+</tr>
+<tr>
+<td>right shoulder</td>
+<td><code>buttons[10]</code></td>
+<td>not used: turbo is off, and Conduit masks it unless the deadman is held</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../teleop/#joy-layout">Joy layout</a> for every axis and button.</p>
+<ul>
+<li><strong>On-screen joystick:</strong> the touch input in every case, also with VoiceOver and with a game
+  controller connected. Touch it to drive and lift your finger to stop.</li>
+<li><strong>Game controllers</strong> (MFi and other GameController devices): hold LB / L1 and use the left
+  stick. The "Game controller" chip next to the joystick shows that one is connected; you can use
+  either.</li>
+<li><strong>Hardware keyboard</strong> (Mac, or an iPad with a keyboard): hold Space and use the arrows or WASD.
+  The keys drive at the max speed.</li>
+<li><strong>VoiceOver:</strong> the joystick takes direct touch. It is labelled "Drive joystick" with the hint
+  "Drag to drive; lift your finger to stop", and VoiceOver announces "Driving" and "Stopped".</li>
+<li>After a lost link, the app going to the background, a closed panel, a turn of the phone or a max
+  speed change, nothing drives until you let go of every input and press again; while you still
+  hold one, the banner says "Release and touch again to drive". While the link is down it says
+  "Disconnected", and while Conduit is inactive "Paused while Conduit is inactive".</li>
+<li>Without Conduit Plus, a chip over the camera shows the week's free-time notices; tap it to
+  dismiss it. When the free time runs out, the robot stops and the drive view stays behind the
+  Conduit Plus paywall until you close it.</li>
+<li>The Game Controller sensor publishes <code>&lt;namespace&gt;/joy</code> (<code>/conduit/joy</code> by default); the drive
+  view publishes the profile's Joy output topic (<code>/joy</code> by default). Run <code>conduit_teleop</code> on one of
+  them, not both. If the profile's Joy output is the sensor's topic and the sensor is enabled,
+  Conduit asks before it opens the drive view and pauses the sensor while the drive view is open.</li>
+</ul>
+<h2 id="host-setup">Host setup</h2>
+<p>Install <code>conduit_teleop</code> as described in <a href="../teleop/#host-setup-with-conduit_teleop">Teleoperation → Host setup</a>
+and run it with its default <code>joy_topic</code> (<code>/joy</code>) as described in
+<a href="../teleop/#drive-view">Teleoperation → Drive view</a>.</p>
+<p><code>conduit_teleop</code> runs <code>teleop_twist_joy</code> with Conduit's parameter file and a watchdog. With the
+shipped file, full stick is 0.5 m/s and 1.0 rad/s, so the default max speed of 50% tops out at
+0.25 m/s and 0.5 rad/s. The watchdog forwards <code>teleop_twist_joy</code>'s <code>Twist</code> to <code>cmd_vel</code> while the
+newest Joy is younger than 0.5 s. When the Joy goes stale it publishes zero twists at 10 Hz for
+1 s and then stays silent until Joy resumes (it is also silent before the first Joy), so it does
+not fight Nav2 or another <code>cmd_vel</code> publisher.</p>
+<h2 id="kachaka">Kachaka</h2>
+<p>The <a href="https://github.com/pf-robotics/kachaka-api">kachaka-api</a> ROS 2 bridge takes velocity on
+<code>/kachaka/manual_control/cmd_vel</code> once manual control is enabled. On the host, run
+<code>conduit_teleop</code>'s Kachaka launch file, which sets both up and drives at Kachaka's own speeds
+(<a href="../teleop/#kachaka">Teleoperation → Kachaka</a>). It starts <code>conduit_teleop</code> itself, so use it
+instead of <code>conduit_teleop.launch.py</code>, not together with it:</p>
+<div class="highlight"><pre><span></span><code>ros2<span class="w"> </span>launch<span class="w"> </span>conduit_teleop<span class="w"> </span>kachaka.launch.py
+</code></pre></div>
+<p>Profile: Camera <code>/kachaka/front_camera/image_raw/compressed</code>, Map <code>/kachaka/mapping/map</code>, Map
+frame <code>map</code>, Base frame <code>base_footprint</code>, Goal pose <code>/kachaka/goal_pose</code>, the LaserScan,
+Odometry and Battery topics the bridge lists, Joy output <code>/joy</code>.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
