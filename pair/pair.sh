@@ -153,6 +153,108 @@ check_environment() {
   check_domain
 }
 
+# stdin: `ip route get 1.1.1.1` output. Echoes "src dev".
+parse_route_get() {
+  awk '{
+    for (i = 1; i < NF; i++) {
+      if ($i == "src") src = $(i + 1)
+      if ($i == "dev") dev = $(i + 1)
+    }
+    if (src != "" && dev != "") { print src, dev; exit }
+  }'
+}
+
+# stdin: `ip -4 -o addr show scope global` output. Echoes "iface ip" lines.
+parse_addr_show() {
+  awk '{
+    for (i = 1; i < NF; i++) {
+      if ($i == "inet") {
+        split($(i + 1), a, "/")
+        iface = $2
+        sub(/:$/, "", iface)
+        print iface, a[1]
+        break
+      }
+    }
+  }'
+}
+
+# Interfaces that never carry the LAN address the iPhone can reach.
+is_ignored_iface() {
+  case "$1" in
+    lo | docker0 | br-* | veth* | virbr* | cni* | flannel* | tailscale0) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Echoes "iface ip" lines, the default-route address first.
+lan_candidates() {
+  local src="" dev="" iface ip
+  read -r src dev < <(ip route get 1.1.1.1 2> /dev/null | parse_route_get || true) || true
+  if [[ -n "$src" ]] && ! is_ignored_iface "$dev"; then
+    say "$dev $src"
+  fi
+  while read -r iface ip; do
+    [[ -n "$iface" ]] || continue
+    if is_ignored_iface "$iface" || [[ "$ip" == "$src" ]]; then
+      continue
+    fi
+    say "$iface $ip"
+  done < <(ip -4 -o addr show scope global 2> /dev/null | parse_addr_show || true)
+}
+
+# Echoes the Tailscale IPv4 address, or nothing.
+tailscale_address() {
+  local addr=""
+  if command -v tailscale > /dev/null 2>&1; then
+    addr="$(tailscale ip -4 2> /dev/null | head -n1 || true)"
+  fi
+  if [[ -z "$addr" ]]; then
+    addr="$(ip -4 -o addr show scope global 2> /dev/null | parse_addr_show | awk '$1 == "tailscale0" {print $2; exit}' || true)"
+  fi
+  if [[ -n "$addr" ]]; then
+    say "$addr"
+  fi
+}
+
+# Sets PAIR_HOST and PAIR_VIA (lan|tailscale). PAIR_FORCE_VIA is lan,
+# tailscale or empty (set by main from --lan / --tailscale).
+pick_address() {
+  local lan ts n idx options=() addrs=() vias=() line
+  lan="$(lan_candidates)"
+  ts="$(tailscale_address)"
+
+  if [[ "${PAIR_FORCE_VIA:-}" == tailscale ]]; then
+    [[ -n "$ts" ]] || die 1 "--tailscale was given but no Tailscale address was found. Start Tailscale (tailscale up) and try again."
+    lan=""
+  elif [[ "${PAIR_FORCE_VIA:-}" == lan ]]; then
+    ts=""
+  fi
+
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    options+=("${line#* } (${line%% *}, LAN)")
+    addrs+=("${line#* }")
+    vias+=(lan)
+  done <<< "$lan"
+  if [[ -n "$ts" ]]; then
+    options+=("$ts (Tailscale)")
+    addrs+=("$ts")
+    vias+=(tailscale)
+  fi
+
+  n=${#addrs[@]}
+  if ((n == 0)); then
+    die 1 "No usable network address was found. Connect this PC to the same Wi-Fi as the iPhone, or start Tailscale."
+  fi
+  idx=1
+  if ((n > 1)); then
+    idx="$(choose "Which address should the iPhone use?" 1 "${options[@]}")"
+  fi
+  PAIR_HOST="${addrs[idx - 1]}"
+  PAIR_VIA="${vias[idx - 1]}"
+}
+
 main() {
   check_environment
 }
