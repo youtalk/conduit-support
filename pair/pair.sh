@@ -9,8 +9,6 @@
 # The whole body lives in functions and the last line calls main, so bash has
 # read the entire script from the pipe before anything runs. Prompts read from
 # /dev/tty because stdin is the script itself.
-# PAIR_* variables are consumed by functions added in later tasks.
-# shellcheck disable=SC2034
 set -euo pipefail
 
 readonly PAIR_INSTALL_URL="https://docs.ros.org/en/lyrical/Get-Started/Installation.html"
@@ -738,14 +736,17 @@ if __name__ == "__main__":
 PY
 
 # start_checkin TOKEN PORT: run the listener as the CHECKIN coprocess and set
-# PAIR_CHECKIN_PORT to the port it bound.
+# PAIR_CHECKIN_PORT to the port it bound. Its output is read through a copy of
+# the coprocess fd (PAIR_CHECKIN_FD): bash closes CHECKIN[0] once the
+# listener exits, and the copy keeps what it wrote before that readable.
 start_checkin() {
   local token="$1" port="$2" line
-  command -v python3 > /dev/null 2>&1 || die "python3 is required to receive the iPhone's check-in."
+  command -v python3 > /dev/null 2>&1 || die 1 "python3 is required to receive the iPhone's check-in."
   coproc CHECKIN { exec python3 -u -c "$CHECKIN_PY" "$token" "$port"; }
+  exec {PAIR_CHECKIN_FD}<&"${CHECKIN[0]}"
   trap stop_checkin EXIT
-  read -r line <&"${CHECKIN[0]}" || die "The check-in listener did not start."
-  [[ "$line" =~ ^PORT=([0-9]+)$ ]] || die "The check-in listener did not report a port."
+  read -r line <&"$PAIR_CHECKIN_FD" || die 1 "The check-in listener did not start."
+  [[ "$line" =~ ^PORT=([0-9]+)$ ]] || die 1 "The check-in listener did not report a port."
   PAIR_CHECKIN_PORT="${BASH_REMATCH[1]}"
 }
 
@@ -757,16 +758,38 @@ stop_checkin() {
   fi
 }
 
-# wait_checkin: block until a valid check-in. Sets PAIR_PHONE_IP, PAIR_NODE,
-# PAIR_NAMESPACE and PAIR_DEVICE; prints the no-check-in causes on HINT.
+# parse_checkin LINE: read "CHECKIN key=value ..." from the listener. Values may
+# hold spaces but never "=" (the listener replaces it), so each value runs up to
+# the next " key=". Sets PAIR_PHONE_IP, PAIR_NODE, PAIR_NAMESPACE and
+# PAIR_DEVICE; returns 1 unless the address and the node are present.
+parse_checkin() {
+  local rest phone="" node="" ns="" device=""
+  [[ "$1" == "CHECKIN "* ]] || return 1
+  rest="${1#CHECKIN }"
+  while [[ "$rest" =~ ^([a-z_]+)=([^=]*)(\ [a-z_]+=.*)?$ ]]; do
+    case "${BASH_REMATCH[1]}" in
+      phone_ip) phone="${BASH_REMATCH[2]}" ;;
+      node) node="${BASH_REMATCH[2]}" ;;
+      namespace) ns="${BASH_REMATCH[2]}" ;;
+      device) device="${BASH_REMATCH[2]}" ;;
+      *) ;;
+    esac
+    rest="${BASH_REMATCH[3]# }"
+    [[ -n "$rest" ]] || break
+  done
+  [[ -n "$phone" && -n "$node" ]] || return 1
+  PAIR_PHONE_IP="$phone"
+  PAIR_NODE="$node"
+  PAIR_NAMESPACE="$ns"
+  PAIR_DEVICE="${device:-the iPhone}"
+}
+
+# wait_checkin: block until a valid check-in (see parse_checkin); prints the
+# no-check-in causes on HINT. Returns 1 if the listener goes away first.
 wait_checkin() {
   local line
-  while read -r line <&"${CHECKIN[0]}"; do
-    if [[ "$line" =~ ^CHECKIN\ phone_ip=([^\ ]*)\ node=([^\ ]*)\ namespace=([^\ ]*)\ device=(.*)\ app_version=([^\ ]*)$ ]]; then
-      PAIR_PHONE_IP="${BASH_REMATCH[1]}"
-      PAIR_NODE="${BASH_REMATCH[2]}"
-      PAIR_NAMESPACE="${BASH_REMATCH[3]}"
-      PAIR_DEVICE="${BASH_REMATCH[4]}"
+  while read -r line <&"$PAIR_CHECKIN_FD"; do
+    if parse_checkin "$line"; then
       return 0
     elif [[ "$line" == "HINT no_checkin" ]]; then
       if declare -F causes > /dev/null; then causes no_checkin; fi
@@ -804,6 +827,12 @@ tailscale_needs_zenoh() {
   say "Then run this script again in that shell."
 }
 
+# export_line NAME VALUE: a single-quoted export line that survives any value.
+export_line() {
+  local q="'" esc="'\\''"
+  printf "export %s='%s'\n" "$1" "${2//"$q"/"$esc"}"
+}
+
 # host_peer_config PHONE_IP: write the peer files under ~/.config/conduit and
 # print export lines on stdout; notes for the user go to stderr.
 host_peer_config() {
@@ -813,11 +842,11 @@ host_peer_config() {
       mkdir -p "$dir"
       f="$dir/cyclonedds-peer.xml"
       printf '%s\n' "<CycloneDDS><Domain id=\"any\"><Discovery><Peers><Peer address=\"$phone\"/></Peers></Discovery></Domain></CycloneDDS>" > "$f"
-      printf "export CYCLONEDDS_URI='%s'\n" "${CYCLONEDDS_URI:+$CYCLONEDDS_URI,}file://$f"
+      export_line CYCLONEDDS_URI "${CYCLONEDDS_URI:+$CYCLONEDDS_URI,}file://$f"
       ;;
     fastdds)
       if [[ "$PAIR_DISTRO" != humble ]]; then
-        printf "export ROS_STATIC_PEERS='%s'\n" "${ROS_STATIC_PEERS:+$ROS_STATIC_PEERS;}$phone"
+        export_line ROS_STATIC_PEERS "${ROS_STATIC_PEERS:+$ROS_STATIC_PEERS;}$phone"
       elif [[ -n "${FASTRTPS_DEFAULT_PROFILES_FILE:-}" ]]; then
         warn "FASTRTPS_DEFAULT_PROFILES_FILE is already set to $FASTRTPS_DEFAULT_PROFILES_FILE."
         warn "Add these initial peers to its default participant profile by hand:"
@@ -841,7 +870,7 @@ host_peer_config() {
   </participant>
 </profiles>
 XML
-        printf "export FASTRTPS_DEFAULT_PROFILES_FILE='%s'\n" "$f"
+        export_line FASTRTPS_DEFAULT_PROFILES_FILE "$f"
       fi
       ;;
     *) ;;
@@ -849,8 +878,14 @@ XML
 }
 
 # bashrc_with_block FILE EXPORT_LINES: replace or append the pairing block.
+# A begin marker without its end marker leaves FILE untouched and returns 1.
 bashrc_with_block() {
   local file="$1" lines="$2" begin="# >>> conduit pairing >>>" end="# <<< conduit pairing <<<" tmp
+  if [[ -f "$file" ]] &&
+    ! awk -v b="$begin" -v e="$end" '$0 == b { open = 1 } $0 == e { open = 0 } END { exit open }' "$file"; then
+    warn "$file has '$begin' without '$end'; it was left unchanged. Fix or remove that block and run this script again."
+    return 1
+  fi
   tmp="$(mktemp)"
   if [[ -f "$file" ]]; then
     awk -v b="$begin" -v e="$end" '$0 == b { skip = 1 } !skip { print } $0 == e { skip = 0 }' "$file" > "$tmp"
@@ -860,8 +895,244 @@ bashrc_with_block() {
   rm -f "$tmp"
 }
 
+# wait_for_node NODE NAMESPACE TIMEOUT: 0 once /NAMESPACE/NODE is in the graph.
+wait_for_node() {
+  local node="$1" ns="$2" timeout="$3" want deadline nodes spin_time=1
+  ns="${ns#/}"
+  ns="${ns%/}"
+  want="/${ns:+$ns/}$node"
+  if ! ros2 node list --help 2> /dev/null | grep -q -- '--spin-time'; then
+    # Older CLIs: ask the daemon, after a restart so it sees the new peers.
+    spin_time=0
+    ros2 daemon stop > /dev/null 2>&1 || true
+  fi
+  say "Tap Start in Conduit."
+  deadline=$((SECONDS + timeout))
+  while ((SECONDS < deadline)); do
+    if ((spin_time)); then
+      nodes="$(ros2 node list --no-daemon --spin-time 3 2> /dev/null || true)"
+    else
+      nodes="$(ros2 node list 2> /dev/null || true)"
+    fi
+    if grep -qxF -- "$want" <<< "$nodes"; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+
+# wait_for_data TIMEOUT: 0 once Conduit's latched /tf_static arrives.
+wait_for_data() {
+  local status=()
+  {
+    timeout "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
+      /tf_static tf2_msgs/msg/TFMessage 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link'
+    status=("${PIPESTATUS[@]}")
+  } || true
+  return "${status[1]}"
+}
+
+ufw_enabled() {
+  grep -Eq '^[[:space:]]*ENABLED[[:space:]]*=[[:space:]]*yes' "$(env_root)/etc/ufw/ufw.conf" 2> /dev/null
+}
+
+# causes STAGE (no_checkin|no_node|no_data): what to check, firewall first.
+causes() {
+  local stage="$1" dds_port=$((7400 + 250 * PAIR_DOMAIN))
+  case "$stage" in
+    no_checkin) say "No check-in from the iPhone yet. Things to check:" ;;
+    no_node) say "Conduit did not appear in the ROS 2 graph. Things to check:" ;;
+    no_data) say "Conduit is in the ROS 2 graph, but no message arrived on /tf_static. Things to check:" ;;
+    *) ;;
+  esac
+  if ufw_enabled; then
+    say "- The firewall (ufw) is on. Allow Conduit's ports:"
+    if [[ "$stage" == no_checkin ]]; then
+      say "    sudo ufw allow ${PAIR_CHECKIN_PORT:-$PAIR_DEFAULT_CHECKIN_PORT}/tcp"
+    fi
+    if [[ "$PAIR_RMW" == zenoh ]]; then
+      say "    sudo ufw allow 7447/tcp"
+    else
+      say "    sudo ufw allow $dds_port:$((dds_port + 249))/udp"
+    fi
+  fi
+  case "$stage" in
+    no_checkin)
+      if [[ "${PAIR_VIA:-lan}" == tailscale ]]; then
+        say "- Open the Tailscale app on the iPhone and connect it to the same tailnet as this PC."
+      else
+        say "- The iPhone must be on the same Wi-Fi as this PC."
+        say "- Guest and office Wi-Fi often isolate clients from each other (client isolation); try another network or a hotspot."
+        say "- Allow Local Network access for Conduit: iPhone Settings > Privacy & Security > Local Network."
+      fi
+      say "- Scan the QR again if Conduit did not open from it."
+      ;;
+    no_node)
+      say "- Did you tap Start in Conduit?"
+      if [[ "$PAIR_RMW" == zenoh ]]; then
+        say "- The Zenoh router must keep running: ros2 run rmw_zenoh_cpp rmw_zenohd"
+      fi
+      say "- If the iPhone's address changed, run this script again."
+      ;;
+    no_data)
+      if [[ "$PAIR_RMW" != zenoh ]]; then
+        say "- Shells that run ROS 2 nodes need the export line printed above (or a new shell after adding it to ~/.bashrc)."
+      fi
+      if [[ "$PAIR_RMW" == fastdds ]]; then
+        say "- Fast DDS may drop Conduit's messages over Wi-Fi. Switch to CycloneDDS:"
+        say "    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+      fi
+      say "- If the iPhone's address changed, run this script again."
+      ;;
+    *) ;;
+  esac
+}
+
+usage() {
+  cat << 'USAGE'
+Usage: pair.sh [options]
+  (or: curl -fsSL https://conduit.youtalk.jp/pair.sh | bash -s -- [options])
+
+Pairs an iPhone running Conduit with this ROS 2 PC: shows a QR code, waits for
+Conduit to check in, prepares this PC and checks that messages arrive.
+
+Options:
+  --lan                 Pair over the local network (skip Tailscale).
+  --tailscale           Pair over Tailscale (Zenoh only).
+  --checkin-port N      TCP port for the iPhone's check-in (default 7449).
+  --link-style S        https (default) or custom (conduit://pair links).
+  --no-qr               Print the link only, without the QR code.
+  -h, --help            Show this help.
+
+Exit status: 0 connected, 1 not supported or declined, 2 not connected,
+130 interrupted.
+USAGE
+}
+
+# Prompts read the terminal because stdin is the script itself.
+check_terminal() {
+  if ! { : < "${PAIR_TTY:-/dev/tty}"; } 2> /dev/null; then
+    die 1 "This script needs a terminal for its questions; run it in an interactive shell."
+  fi
+}
+
+new_token() {
+  head -c 9 /dev/urandom | base64 | tr '+/' '-_'
+}
+
+# DDS: add the iPhone as a discovery peer here and print what other shells need.
+apply_host_peers() {
+  local required exports
+  case "$PAIR_RMW" in
+    cyclonedds) required="$HOST_PEERS_REQUIRED_CYCLONEDDS" ;;
+    fastdds) required="$HOST_PEERS_REQUIRED_FASTDDS" ;;
+    *) return 0 ;;
+  esac
+  if [[ "$required" != true ]] &&
+    ! ask_yes_no "Add the iPhone ($PAIR_PHONE_IP) as a discovery peer on this PC?" n; then
+    return 0
+  fi
+  exports="$(host_peer_config "$PAIR_PHONE_IP")"
+  if [[ -n "$exports" ]]; then
+    # The lines are built by export_line, so they are safe to evaluate here.
+    eval "$exports"
+    say "Shells that run ROS 2 nodes with the iPhone need:"
+    say "$exports"
+    if ask_yes_no "Add this to ~/.bashrc?" n; then
+      if bashrc_with_block "$HOME/.bashrc" "$exports"; then
+        say "Added to ~/.bashrc."
+      fi
+    fi
+  fi
+  say "$RESTART_NOTE"
+}
+
 main() {
+  local link_style=https no_qr=0 checkin_port="$PAIR_DEFAULT_CHECKIN_PORT"
+  local transport=dds port="" token link
+  PAIR_FORCE_VIA=""
+  while (($#)); do
+    case "$1" in
+      --lan) PAIR_FORCE_VIA=lan ;;
+      --tailscale) PAIR_FORCE_VIA=tailscale ;;
+      --checkin-port)
+        if [[ ! "${2:-}" =~ ^[0-9]{1,5}$ ]] || ((10#$2 < 1 || 10#$2 > 65535)); then
+          die 1 "--checkin-port needs a port number (1-65535)."
+        fi
+        checkin_port=$((10#$2))
+        shift
+        ;;
+      --link-style)
+        case "${2:-}" in
+          https | custom) link_style="$2" ;;
+          *) die 1 "--link-style must be https or custom." ;;
+        esac
+        shift
+        ;;
+      --no-qr) no_qr=1 ;;
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        usage >&2
+        die 1 "Unknown option: $1"
+        ;;
+    esac
+    shift
+  done
+  trap 'exit 130' INT
+
   check_environment
+  check_terminal
+  pick_address
+
+  if [[ "$PAIR_VIA" == tailscale && "$PAIR_RMW" != zenoh ]]; then
+    tailscale_needs_zenoh
+    exit 1
+  fi
+  case "$PAIR_RMW" in
+    zenoh)
+      transport=zenoh
+      port=7447
+      if ! zenoh_router_listening "$port"; then
+        say "The Zenoh router is not running. Start it in another terminal:"
+        say "  ros2 run rmw_zenoh_cpp rmw_zenohd"
+        say "Waiting for it on port $port..."
+        until zenoh_router_listening "$port"; do sleep 1; done
+      fi
+      ;;
+    fastdds)
+      fastdds_warning
+      ask_yes_no "Continue with Fast DDS?" y || exit 1
+      ;;
+    *) ;;
+  esac
+
+  token="$(new_token)"
+  start_checkin "$token" "$checkin_port"
+  link="$(build_link "$link_style" "$transport" "$PAIR_DISTRO" "$PAIR_DOMAIN" "$PAIR_HOST" "$port" \
+    "$PAIR_HOST:$PAIR_CHECKIN_PORT" "$token" "$(hostname)")"
+  show_link "$link" "$no_qr"
+  say "Scan the QR with the iPhone's Camera app. Waiting for Conduit to check in..."
+  wait_checkin || die 2 "The check-in listener stopped before the iPhone checked in."
+  say "$PAIR_DEVICE checked in from $PAIR_PHONE_IP."
+
+  if [[ "$transport" == dds ]]; then
+    apply_host_peers
+  fi
+
+  if ! wait_for_node "$PAIR_NODE" "$PAIR_NAMESPACE" 300; then
+    causes no_node
+    exit 2
+  fi
+  if ! wait_for_data 20; then
+    causes no_data
+    exit 2
+  fi
+  say "Connected to $PAIR_DEVICE."
+  exit 0
 }
 
 [[ "${CONDUIT_PAIR_SOURCED:-0}" == 1 ]] || main "$@"

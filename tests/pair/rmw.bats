@@ -118,3 +118,30 @@ setup() {
   grep -q 'alias a=b' "$f"
   grep -q 'alias c=d' "$f"
 }
+
+@test "single quotes in export values are escaped" {
+  PAIR_RMW=fastdds PAIR_DISTRO=jazzy
+  ROS_STATIC_PEERS="it's" run --separate-stderr host_peer_config 192.168.1.50
+  [ "$output" = "export ROS_STATIC_PEERS='it'\\''s;192.168.1.50'" ]
+  eval "$output"
+  [ "$ROS_STATIC_PEERS" = "it's;192.168.1.50" ]
+}
+
+@test "quote in HOME is escaped in the CycloneDDS export" {
+  PAIR_RMW=cyclonedds PAIR_DISTRO=jazzy
+  HOME="$BATS_TEST_TMPDIR/o'home"
+  mkdir -p "$HOME"
+  run --separate-stderr host_peer_config 192.168.1.50
+  eval "$output"
+  [ "$CYCLONEDDS_URI" = "file://$HOME/.config/conduit/cyclonedds-peer.xml" ]
+}
+
+@test "bashrc with a begin marker but no end marker is left untouched" {
+  f="$BATS_TEST_TMPDIR/bashrc"
+  printf '%s\n' 'alias a=b' '# >>> conduit pairing >>>' "export X='1'" 'alias c=d' > "$f"
+  cp "$f" "$BATS_TEST_TMPDIR/before"
+  run --separate-stderr bashrc_with_block "$f" "export X='2'"
+  [ "$status" -ne 0 ]
+  [[ "$stderr" == *"$f"* ]]
+  cmp "$f" "$BATS_TEST_TMPDIR/before"
+}
