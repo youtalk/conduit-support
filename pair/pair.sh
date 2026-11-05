@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Conduit pairing script: connects an iPhone running Conduit to this ROS 2 PC.
 #
-#   curl -fsSL https://conduit.youtalk.jp/pair.sh | bash
-#   curl -fsSL https://conduit.youtalk.jp/pair.sh | bash -s -- --tailscale
+#   curl -fsSL https://conduit.direct/pair.sh | bash
+#   curl -fsSL https://conduit.direct/pair.sh | bash -s -- --tailscale
 #
-# Site: https://conduit.youtalk.jp
+# Site: https://conduit.direct
 #
 # The whole body lives in functions and the last line calls main, so bash has
 # read the entire script from the pipe before anything runs. Prompts read from
@@ -315,7 +315,7 @@ build_link() {
   if [[ "$style" == custom ]]; then
     base="conduit://pair"
   else
-    base="https://conduit.youtalk.jp/pair"
+    base="https://conduit.direct/pair"
   fi
   frag="v=1&transport=$(urlencode "$transport")&distro=$(urlencode "$distro")"
   frag+="&domain=$(urlencode "$domain")&host=$(urlencode "$host")"
@@ -1054,7 +1054,7 @@ causes() {
 usage() {
   cat << 'USAGE'
 Usage: pair.sh [options]
-  (or: curl -fsSL https://conduit.youtalk.jp/pair.sh | bash -s -- [options])
+  (or: curl -fsSL https://conduit.direct/pair.sh | bash -s -- [options])
 
 Pairs an iPhone running Conduit with this ROS 2 PC: shows a QR code, waits for
 Conduit to check in, prepares this PC and checks that messages arrive.

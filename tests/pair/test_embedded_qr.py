@@ -7,11 +7,11 @@ import pytest
 SCRIPT = pathlib.Path(__file__).resolve().parents[2] / "pair" / "pair.sh"
 
 DDS = (
-    "https://conduit.youtalk.jp/pair#v=1&transport=dds&distro=jazzy&domain=123"
+    "https://conduit.direct/pair#v=1&transport=dds&distro=jazzy&domain=123"
     "&host=192.168.1.85&checkin=192.168.1.85%3A7449&token=Zk3q9cA1bT0x&name=youtalk-desktop"
 )
 ZENOH = (
-    "https://conduit.youtalk.jp/pair#v=1&transport=zenoh&distro=lyrical&domain=0"
+    "https://conduit.direct/pair#v=1&transport=zenoh&distro=lyrical&domain=0"
     "&host=100.101.102.103&port=7447&checkin=100.101.102.103%3A7449&token=Zk3q9cA1bT0x&name=robot%20pc"
 )
 

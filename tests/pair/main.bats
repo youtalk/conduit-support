@@ -114,13 +114,13 @@ STUB
   run main --tailscale --no-qr
   [ "$status" -eq 1 ]
   [[ "$output" == *"Tailscale works with Zenoh only"* ]]
-  [[ "$output" != *"conduit.youtalk.jp/pair"* ]]
+  [[ "$output" != *"conduit.direct/pair"* ]]
 }
 
 @test "happy path Zenoh" {
   run main --no-qr
   [ "$status" -eq 0 ]
-  [[ "$output" == *"https://conduit.youtalk.jp/pair#v=1&transport=zenoh&distro=jazzy&domain=123&host=192.168.1.85&port=7447&checkin=192.168.1.85%3A7449&token="* ]]
+  [[ "$output" == *"https://conduit.direct/pair#v=1&transport=zenoh&distro=jazzy&domain=123&host=192.168.1.85&port=7447&checkin=192.168.1.85%3A7449&token="* ]]
   [[ "$output" == *"Tap Start in Conduit."* ]]
   [[ "$output" == *"Connected to iPhone."* ]]
   [ ! -e "$HOME/.config/conduit" ]
@@ -214,7 +214,7 @@ STUB
   run main --no-qr
   [ "$status" -eq 1 ]
   [[ "$output" == *"unset ROS_LOCALHOST_ONLY"* ]]
-  [[ "$output" != *"conduit.youtalk.jp/pair"* ]]
+  [[ "$output" != *"conduit.direct/pair"* ]]
 }
 
 @test "--no-qr asks to open the link, not to scan" {
@@ -238,7 +238,7 @@ STUB
   run main --no-qr
   [ "$status" -eq 1 ]
   [[ "$output" == *"CycloneDDS is recommended"* ]]
-  [[ "$output" != *"conduit.youtalk.jp/pair"* ]]
+  [[ "$output" != *"conduit.direct/pair"* ]]
 }
 
 @test "Fast DDS continues by default with ROS_STATIC_PEERS" {
