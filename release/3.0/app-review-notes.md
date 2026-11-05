@@ -28,9 +28,9 @@ Releasing the drive controls stops the commands. The app tells users that Condui
 emergency stop and that the robot's own stop must stay within reach.
 
 <!-- TODO(owner): keep the next paragraph out of the submission until the video is embedded at
-     https://conduit.youtalk.jp/robots/#demo-video (docs/robots.md, "Demo video"). -->
+     https://conduit.direct/robots/#demo-video (docs/robots.md, "Demo video"). -->
 A demo video of both, recorded with a Kachaka robot and the MoveIt Servo simulation of a
-Franka Panda arm, is at https://conduit.youtalk.jp/robots/#demo-video.
+Franka Panda arm, is at https://conduit.direct/robots/#demo-video.
 
 Without a ROS 2 computer the Robots list shows "No robots yet". In the profile editor, the Start
 button goes online and fills the profile in from the robot; topic names can also be typed by

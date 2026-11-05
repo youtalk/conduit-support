@@ -1,5 +1,5 @@
 site_name: Conduit
-site_url: https://conduit.youtalk.jp/
+site_url: https://conduit.direct/
 site_description: Turn your Apple device into a ROS 2 sensor publisher
 repo_url: https://github.com/youtalk/conduit-support
 repo_name: youtalk/conduit-support

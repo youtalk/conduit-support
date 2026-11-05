@@ -19,7 +19,7 @@ Captions in English; no music under the voice-over.
 | 12 | 0:10 | The pose menu opened and a pose picked | the SRDF's poses with the current one checked, then the button's spinner and "Moving to …", the arm moving, then the teal button showing the new pose |
 | 13 | 0:10 | Joint limit reached | "Halted: joint bound" on the chip |
 | 14 | 0:10 | The free plan's dial around the Start button, then Settings → Conduit Plus | the dial; "Free: 5 hours of use every week. Conduit Plus removes the limit." |
-| 15 | 0:10 | End card | conduit.youtalk.jp/robots |
+| 15 | 0:10 | End card | conduit.direct/robots |
 
 Recording setup: Kachaka with `ros2 launch conduit_teleop kachaka.launch.py` on the host that
 drives it, and a Kachaka profile whose **Goal pose** is the topic Kachaka takes goals on (shot 6).

@@ -1,4 +1,4 @@
-"""Generate the OpenGraph share image (1200x630) for conduit.youtalk.jp.
+"""Generate the OpenGraph share image (1200x630) for conduit.direct.
 
 Layout:
 - Plain white background — no tint, no gradient mesh, no glass card.
@@ -191,7 +191,7 @@ def build() -> None:
     # Footer URL — secondary gray.
     draw.text(
         (text_x, HEIGHT - 110),
-        "conduit.youtalk.jp",
+        "conduit.direct",
         font=foot_font,
         fill=LABEL2 + (255,),
     )
