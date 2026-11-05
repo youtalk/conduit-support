@@ -181,8 +181,8 @@ def build() -> None:
     subtitle_y = icon_y + 30 + title_img.height + 10
     draw.text(
         (text_x, subtitle_y),
-        "Stream 12 real-time sensors from iPhone,\n"
-        "iPad, Mac, and Apple Vision Pro into ROS 2.",
+        "Stream 13 real-time sensors from iPhone,\n"
+        "iPad, and Mac into ROS 2.",
         font=sub_font,
         fill=LABEL + (255,),
         spacing=10,
