@@ -32,6 +32,8 @@ jobs:
       - name: Test conduit_teleop (pure Python, no ROS)
         working-directory: ros/conduit_teleop
         run: python -m pytest test -v
+      - name: Copy the pairing script into docs/ so MkDocs publishes it
+        run: cp pair/pair.sh docs/pair.sh
       - run: mkdocs build --strict
 
   deploy:
@@ -49,4 +51,6 @@ jobs:
         run: test -f CNAME
       - name: Copy CNAME into docs/ so MkDocs publishes it
         run: cp CNAME docs/CNAME
+      - name: Copy the pairing script into docs/ so MkDocs publishes it
+        run: cp pair/pair.sh docs/pair.sh
       - run: mkdocs gh-deploy --force

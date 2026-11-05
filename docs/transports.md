@@ -31,6 +31,8 @@ Conduit 2.0 supports two transports for publishing ROS 2 messages. This page hel
 ## Configuration at a Glance
 
 **Zenoh:**
+Prefer a guided setup? See [Connect with a QR code](pair.md).
+
 - Settings → Transport: **Zenoh**
 - Router Address: `<host-ip>`
 - Router Port: `7447`
@@ -38,6 +40,8 @@ Conduit 2.0 supports two transports for publishing ROS 2 messages. This page hel
 - Distribution: your host's ROS 2 release (Lyrical by default)
 
 **DDS:**
+Prefer a guided setup? See [Connect with a QR code](pair.md).
+
 - Settings → Transport: **DDS**
 - Discovery Mode: **Hybrid** (recommended) / Multicast / Unicast
 - Unicast Peers: add the ROS 2 host IP (required for Unicast/Hybrid)
