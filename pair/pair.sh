@@ -637,6 +637,144 @@ show_link() {
   say "$link"
 }
 
+# Embedded check-in listener. Python 3 standard library only. It runs as a
+# coprocess (see start_checkin), so the code travels as an argument, not stdin.
+CHECKIN_PY=""
+read -r -d '' CHECKIN_PY << 'PY' || true
+# >>> python:checkin
+import hmac
+import json
+import os
+import re
+import socket
+import sys
+import threading
+
+TOKEN = sys.argv[1]
+PORT = int(sys.argv[2])
+HINT_SECONDS = float(os.environ.get("CONDUIT_PAIR_HINT_SECONDS", "120"))
+LOCK = threading.Lock()
+GOT_CHECKIN = threading.Event()
+
+
+def emit(line):
+    with LOCK:
+        sys.stdout.write(line + "\n")
+        sys.stdout.flush()
+
+
+def safe(value):
+    return re.sub(r"[^A-Za-z0-9._/ -]", "_", value)
+
+
+def handle(conn, peer_ip):
+    try:
+        conn.settimeout(5)
+        data = b""
+        while b"\n" not in data and len(data) < 4096:
+            chunk = conn.recv(4096 - len(data))
+            if not chunk:
+                break
+            data += chunk
+        reply = {"ok": False, "error": "bad_request"}
+        try:
+            req = json.loads(data.split(b"\n", 1)[0].decode("utf-8"))
+            fields = [req[k] for k in ("token", "node", "namespace", "device", "app_version")]
+            if all(isinstance(f, str) for f in fields):
+                if hmac.compare_digest(fields[0].encode(), TOKEN.encode()):
+                    reply = {"ok": True}
+                    emit(
+                        "CHECKIN phone_ip=%s node=%s namespace=%s device=%s app_version=%s"
+                        % (safe(peer_ip), safe(fields[1]), safe(fields[2]), safe(fields[3]), safe(fields[4]))
+                    )
+                    GOT_CHECKIN.set()
+                else:
+                    reply = {"ok": False, "error": "bad_token"}
+        except (ValueError, KeyError, TypeError, UnicodeDecodeError):
+            pass
+        conn.sendall((json.dumps(reply, separators=(",", ":")) + "\n").encode())
+    except OSError:
+        pass
+    finally:
+        conn.close()
+
+
+def watch_parent():
+    # The coprocess stdin is a pipe from the script; EOF means the script is gone.
+    try:
+        while sys.stdin.buffer.read(1024):
+            pass
+    except OSError:
+        pass
+    os._exit(0)
+
+
+def hint_timer():
+    if not GOT_CHECKIN.wait(HINT_SECONDS):
+        emit("HINT no_checkin")
+
+
+def main():
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        srv.bind(("0.0.0.0", PORT))
+    except OSError:
+        srv.close()
+        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv.bind(("0.0.0.0", 0))
+    srv.listen(16)
+    emit("PORT=%d" % srv.getsockname()[1])
+    threading.Thread(target=watch_parent, daemon=True).start()
+    threading.Thread(target=hint_timer, daemon=True).start()
+    while True:
+        conn, addr = srv.accept()
+        threading.Thread(target=handle, args=(conn, addr[0]), daemon=True).start()
+
+
+if __name__ == "__main__":
+    main()
+# <<< python:checkin
+PY
+
+# start_checkin TOKEN PORT: run the listener as the CHECKIN coprocess and set
+# PAIR_CHECKIN_PORT to the port it bound.
+start_checkin() {
+  local token="$1" port="$2" line
+  command -v python3 > /dev/null 2>&1 || die "python3 is required to receive the iPhone's check-in."
+  coproc CHECKIN { exec python3 -u -c "$CHECKIN_PY" "$token" "$port"; }
+  trap stop_checkin EXIT
+  read -r line <&"${CHECKIN[0]}" || die "The check-in listener did not start."
+  [[ "$line" =~ ^PORT=([0-9]+)$ ]] || die "The check-in listener did not report a port."
+  PAIR_CHECKIN_PORT="${BASH_REMATCH[1]}"
+}
+
+stop_checkin() {
+  if [[ -n "${CHECKIN_PID:-}" ]]; then
+    kill "$CHECKIN_PID" 2> /dev/null || true
+    wait "$CHECKIN_PID" 2> /dev/null || true
+    CHECKIN_PID=""
+  fi
+}
+
+# wait_checkin: block until a valid check-in. Sets PAIR_PHONE_IP, PAIR_NODE,
+# PAIR_NAMESPACE and PAIR_DEVICE; prints the no-check-in causes on HINT.
+wait_checkin() {
+  local line
+  while read -r line <&"${CHECKIN[0]}"; do
+    if [[ "$line" =~ ^CHECKIN\ phone_ip=([^\ ]*)\ node=([^\ ]*)\ namespace=([^\ ]*)\ device=(.*)\ app_version=([^\ ]*)$ ]]; then
+      PAIR_PHONE_IP="${BASH_REMATCH[1]}"
+      PAIR_NODE="${BASH_REMATCH[2]}"
+      PAIR_NAMESPACE="${BASH_REMATCH[3]}"
+      PAIR_DEVICE="${BASH_REMATCH[4]}"
+      return 0
+    elif [[ "$line" == "HINT no_checkin" ]]; then
+      if declare -F causes > /dev/null; then causes no_checkin; fi
+    fi
+  done
+  return 1
+}
+
 # Whether the host needs the iPhone as an explicit discovery peer. Both come
 # from the Part 1 spike (youtalk/conduit QR pairing plan) and may flip to false.
 HOST_PEERS_REQUIRED_CYCLONEDDS=true
