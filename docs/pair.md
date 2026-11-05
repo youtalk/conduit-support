@@ -4,7 +4,28 @@
 <img src="../assets/img/app_icon.png" width="96" height="96" alt="Download Conduit on the App Store">
 </a>
 
-**Conduit didn't open?** Install Conduit 2.6.0 or later from the [App Store](https://apps.apple.com/app/id6757171237), then scan the QR code again. The script on your PC keeps waiting.
+<div id="open-in-conduit" hidden>
+<p><a class="md-button md-button--primary" href="conduit://pair">Open in Conduit</a></p>
+<p>Conduit is installed but didn't open? Tap the button.</p>
+</div>
+
+<script>
+  // The pairing values stay in the URL fragment, which browsers never send to the server.
+  // The only use of it here is the conduit:// link, which hands it to the app on this phone.
+  (function () {
+    function showOpenButton() {
+      var box = document.getElementById("open-in-conduit");
+      if (!box) return;
+      var fragment = window.location.hash;
+      var isPairingLink = /^#v=\d/.test(fragment);
+      box.hidden = !isPairingLink;
+      if (isPairingLink) box.querySelector("a").href = "conduit://pair" + fragment;
+    }
+    if (window.document$) { window.document$.subscribe(showOpenButton); } else { showOpenButton(); }
+  })();
+</script>
+
+**Conduit not installed?** Install Conduit 2.6.0 or later from the [App Store](https://apps.apple.com/app/id6757171237), then scan the QR code again. The script on your PC keeps waiting.
 
 A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Conduit to check in. Scan the code with the iPhone's Camera app and Conduit fills in the connection settings for you.
 
