@@ -126,15 +126,73 @@ STUB
   [ ! -e "$HOME/.config/conduit" ]
 }
 
-@test "Zenoh waits for the router" {
+@test "Zenoh waits for the router when the user starts it" {
   zenoh_router_listening() {
     [[ -e "$BATS_TEST_TMPDIR/router" ]] && return 0
     touch "$BATS_TEST_TMPDIR/router"
     return 1
   }
+  echo n > "$PAIR_TTY"
   run main --no-qr
   [ "$status" -eq 0 ]
   [ "$(grep -c 'ros2 run rmw_zenoh_cpp rmw_zenohd' <<< "$output")" -eq 1 ]
+  [[ "$output" == *"Waiting for it on port 7447... (Ctrl+C to quit)"* ]]
+  [[ "$output" != *"Started the Zenoh router"* ]]
+}
+
+# stub_zenohd BODY: an rmw_zenohd under a fake rmw_zenoh_cpp prefix that runs BODY.
+stub_zenohd() {
+  local exe="$BATS_TEST_TMPDIR/zenoh/lib/rmw_zenoh_cpp/rmw_zenohd"
+  mkdir -p "${exe%/*}"
+  printf '#!/usr/bin/env bash\n%s\n' "$1" > "$exe"
+  chmod +x "$exe"
+  cat > "$STUBS/ros2" << STUB
+#!/usr/bin/env bash
+case "\$*" in
+  "pkg prefix rmw_zenoh_cpp") echo "$BATS_TEST_TMPDIR/zenoh" ;;
+  "node list --help") echo "  --spin-time SPIN_TIME" ;;
+  "node list"*) echo /conduit/conduit_node ;;
+  "topic echo"*) echo "frame_id: conduit_base_link" ;;
+esac
+STUB
+  chmod +x "$STUBS/ros2"
+}
+
+teardown() {
+  if [[ -e "$BATS_TEST_TMPDIR/zenohd.pid" ]]; then
+    kill "$(cat "$BATS_TEST_TMPDIR/zenohd.pid")" 2> /dev/null || true
+  fi
+}
+
+@test "Zenoh starts the router in the background by default" {
+  zenoh_router_listening() { [[ -e "$BATS_TEST_TMPDIR/router" ]]; }
+  stub_zenohd "echo \$\$ > '$BATS_TEST_TMPDIR/zenohd.pid'; echo 'router up'; touch '$BATS_TEST_TMPDIR/router'; exec sleep 30"
+  unset XDG_CACHE_HOME
+  run main --no-qr
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Start it now in the background? [Y/n]"* ]]
+  [[ "$output" == *"Started the Zenoh router (PID $(cat "$BATS_TEST_TMPDIR/zenohd.pid"))."* ]]
+  [[ "$output" == *"Log:  $HOME/.cache/conduit/rmw_zenohd.log"* ]]
+  [[ "$output" == *"Stop: kill $(cat "$BATS_TEST_TMPDIR/zenohd.pid")"* ]]
+  [[ "$output" == *"Connected to iPhone."* ]]
+  # Still running after the script ended, detached from it.
+  kill -0 "$(cat "$BATS_TEST_TMPDIR/zenohd.pid")"
+  grep -q 'router up' "$HOME/.cache/conduit/rmw_zenohd.log"
+}
+
+@test "a router that does not start reports its log" {
+  zenoh_router_listening() { return 1; }
+  stub_zenohd "echo 'address already in use' >&2; exit 1"
+  run start_zenoh_router 7447
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"The Zenoh router did not start."* ]]
+  [[ "$output" == *"  address already in use"* ]]
+}
+
+@test "no rmw_zenohd in the sourced ROS 2" {
+  run start_zenoh_router 7447
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"rmw_zenohd was not found"* ]]
 }
 
 @test "--tailscale and --checkin-port and --link-style custom" {
