@@ -101,6 +101,15 @@ check_not_container() {
   fi
 }
 
+# shell_setup PATH: the setup file for the user's shell; setup.zsh for zsh when it exists.
+shell_setup() {
+  local setup="$1"
+  if [[ "${SHELL##*/}" == zsh && -e "$(env_root)${setup%.bash}.zsh" ]]; then
+    setup="${setup%.bash}.zsh"
+  fi
+  printf '%s\n' "$setup"
+}
+
 check_ros_sourced() {
   local root setup
   root="$(env_root)"
@@ -111,7 +120,7 @@ check_ros_sourced() {
   if [[ -z "$setup" ]]; then
     die 1 "ROS 2 was not found. Install it first: $PAIR_INSTALL_URL"
   fi
-  setup="/${setup#"$root"/}"
+  setup="$(shell_setup "/${setup#"$root"/}")"
   die 1 "ROS 2 is installed but not sourced. Run: source $setup  and then run this script again."
 }
 
@@ -128,7 +137,7 @@ check_distro() {
 
 check_ros2_cli() {
   if ! command -v ros2 > /dev/null 2>&1; then
-    die 1 "ROS_DISTRO is $ROS_DISTRO, but the ros2 command was not found. Run: source /opt/ros/$ROS_DISTRO/setup.bash  and then run this script again."
+    die 1 "ROS_DISTRO is $ROS_DISTRO, but the ros2 command was not found. Run: source $(shell_setup "/opt/ros/$ROS_DISTRO/setup.bash")  and then run this script again."
   fi
 }
 
@@ -852,6 +861,52 @@ zenoh_router_listening() {
   (exec 3<> "/dev/tcp/127.0.0.1/$port") 2> /dev/null
 }
 
+# zenoh_router_executable: the rmw_zenohd binary of the sourced ROS 2.
+zenoh_router_executable() {
+  local prefix exe
+  prefix="$(ros2 pkg prefix rmw_zenoh_cpp 2> /dev/null)" || return 1
+  exe="$prefix/lib/rmw_zenoh_cpp/rmw_zenohd"
+  [[ -x "$exe" ]] || return 1
+  printf '%s\n' "$exe"
+}
+
+# start_zenoh_router PORT: start rmw_zenohd detached from this terminal, so it
+# keeps running after the script ends (the iPhone keeps using it). The binary
+# runs directly, not under `ros2 run`, so the PID shown is the router's own.
+# 0 once it listens on PORT.
+start_zenoh_router() {
+  local port="$1" exe log pid i
+  if ! exe="$(zenoh_router_executable)"; then
+    say "rmw_zenohd was not found in the sourced ROS 2 (package rmw_zenoh_cpp)."
+    return 1
+  fi
+  log="${XDG_CACHE_HOME:-$HOME/.cache}/conduit/rmw_zenohd.log"
+  if ! mkdir -p "${log%/*}"; then
+    say "Could not create ${log%/*} for the router's log."
+    return 1
+  fi
+  if command -v setsid > /dev/null 2>&1; then
+    setsid nohup "$exe" > "$log" 2>&1 < /dev/null &
+  else
+    nohup "$exe" > "$log" 2>&1 < /dev/null &
+  fi
+  pid=$!
+  for ((i = 0; i < 100; i++)); do
+    zenoh_router_listening "$port" && break
+    kill -0 "$pid" 2> /dev/null || break
+    sleep 0.1
+  done
+  if ! zenoh_router_listening "$port"; then
+    kill "$pid" 2> /dev/null || true
+    say "The Zenoh router did not start. The end of its log ($log):"
+    tail -n 5 "$log" 2> /dev/null | sed 's/^/  /' || true
+    return 1
+  fi
+  say "Started the Zenoh router (PID $pid). It keeps running after this script ends."
+  say "  Log:  $log"
+  say "  Stop: kill $pid"
+}
+
 fastdds_warning() {
   say "Fast DDS may drop or delay Conduit's high-rate topics (camera, LiDAR) over Wi-Fi. CycloneDDS is recommended:"
   say "  sudo apt install ros-${PAIR_DISTRO}-rmw-cyclonedds-cpp"
@@ -1165,10 +1220,13 @@ main() {
       transport=zenoh
       port=7447
       if ! zenoh_router_listening "$port"; then
-        say "The Zenoh router is not running. Start it in another terminal:"
-        say "  ros2 run rmw_zenoh_cpp rmw_zenohd"
-        say "Waiting for it on port $port..."
-        until zenoh_router_listening "$port"; do sleep 1; done
+        say "The Zenoh router is not running."
+        if ! { ask_yes_no "Start it now in the background?" y && start_zenoh_router "$port"; }; then
+          say "Start it in another terminal:"
+          say "  ros2 run rmw_zenoh_cpp rmw_zenohd"
+          say "Waiting for it on port $port... (Ctrl+C to quit)"
+          until zenoh_router_listening "$port"; do sleep 1; done
+        fi
       fi
       ;;
     fastdds)

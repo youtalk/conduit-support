@@ -75,6 +75,21 @@ setup() {
   [[ "$output" == *"source /opt/ros/jazzy/setup.bash"* ]]
 }
 
+@test "ROS 2 not sourced, zsh user" {
+  unset ROS_DISTRO
+  touch "$CONDUIT_PAIR_ROOT/opt/ros/jazzy/setup.zsh"
+  SHELL=/usr/bin/zsh run check_environment
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"source /opt/ros/jazzy/setup.zsh"* ]]
+}
+
+@test "ROS 2 not sourced, zsh user without setup.zsh" {
+  unset ROS_DISTRO
+  SHELL=/usr/bin/zsh run check_environment
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"source /opt/ros/jazzy/setup.bash"* ]]
+}
+
 @test "unsupported distro" {
   ROS_DISTRO=iron run check_environment
   [ "$status" -eq 1 ]

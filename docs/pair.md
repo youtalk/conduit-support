@@ -37,11 +37,11 @@ It installs nothing and never uses `sudo`. It asks before it changes anything ou
 - Whether to continue with Fast DDS, if that is your RMW (CycloneDDS is recommended).
 - Whether to add the iPhone as a discovery peer on this PC (DDS), and whether to add the matching line to `~/.bashrc`. The default answer to both is no.
 
-For Zenoh, the script waits for the router (`ros2 run rmw_zenoh_cpp rmw_zenohd`) if it is not running yet.
+For Zenoh, if the router is not running, the script offers to start it in the background. The router keeps running after the script ends; the script prints its log file and the `kill` command that stops it. Answer no to start it yourself (`ros2 run rmw_zenoh_cpp rmw_zenohd`); the script then waits for it.
 
 ## Tailscale
 
-To pair over the internet or across subnets, put the iPhone and the PC on one tailnet and run the script with `--tailscale`. Tailscale works with Zenoh only, so set `RMW_IMPLEMENTATION=rmw_zenoh_cpp` and start the router first.
+To pair over the internet or across subnets, put the iPhone and the PC on one tailnet and run the script with `--tailscale`. Tailscale works with Zenoh only, so set `RMW_IMPLEMENTATION=rmw_zenoh_cpp` first.
 
 ## Troubleshooting
 
