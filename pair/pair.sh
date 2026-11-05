@@ -637,6 +637,91 @@ show_link() {
   say "$link"
 }
 
+# Whether the host needs the iPhone as an explicit discovery peer. Both come
+# from the Part 1 spike (youtalk/conduit QR pairing plan) and may flip to false.
+HOST_PEERS_REQUIRED_CYCLONEDDS=true
+HOST_PEERS_REQUIRED_FASTDDS=true
+
+RESTART_NOTE="Restart ROS 2 nodes that were already running, and run 'ros2 daemon stop', so they pick up the iPhone. Run this script again if the iPhone's address changes."
+
+# zenoh_router_listening [PORT]: 0 when 127.0.0.1:PORT accepts a connection.
+zenoh_router_listening() {
+  local port="${1:-7447}"
+  # shellcheck disable=SC2261
+  (exec 3<> "/dev/tcp/127.0.0.1/$port") 2> /dev/null
+}
+
+fastdds_warning() {
+  say "Fast DDS may drop or delay Conduit's high-rate topics (camera, LiDAR) over Wi-Fi. CycloneDDS is recommended:"
+  say "  sudo apt install ros-${PAIR_DISTRO}-rmw-cyclonedds-cpp"
+  say "  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+}
+
+tailscale_needs_zenoh() {
+  say "Tailscale works with Zenoh only. To switch this shell to Zenoh:"
+  say "  export RMW_IMPLEMENTATION=rmw_zenoh_cpp"
+  say "  ros2 run rmw_zenoh_cpp rmw_zenohd    # in another terminal"
+  say "If rmw_zenoh_cpp is missing:"
+  say "  sudo apt install ros-${PAIR_DISTRO}-rmw-zenoh-cpp"
+  say "Then run this script again in that shell."
+}
+
+# host_peer_config PHONE_IP: write the peer files under ~/.config/conduit and
+# print export lines on stdout; notes for the user go to stderr.
+host_peer_config() {
+  local phone="$1" dir="$HOME/.config/conduit" f
+  case "$PAIR_RMW" in
+    cyclonedds)
+      mkdir -p "$dir"
+      f="$dir/cyclonedds-peer.xml"
+      printf '%s\n' "<CycloneDDS><Domain id=\"any\"><Discovery><Peers><Peer address=\"$phone\"/></Peers></Discovery></Domain></CycloneDDS>" > "$f"
+      printf "export CYCLONEDDS_URI='%s'\n" "${CYCLONEDDS_URI:+$CYCLONEDDS_URI,}file://$f"
+      ;;
+    fastdds)
+      if [[ "$PAIR_DISTRO" != humble ]]; then
+        printf "export ROS_STATIC_PEERS='%s'\n" "${ROS_STATIC_PEERS:+$ROS_STATIC_PEERS;}$phone"
+      elif [[ -n "${FASTRTPS_DEFAULT_PROFILES_FILE:-}" ]]; then
+        warn "FASTRTPS_DEFAULT_PROFILES_FILE is already set to $FASTRTPS_DEFAULT_PROFILES_FILE."
+        warn "Add these initial peers to its default participant profile by hand:"
+        warn "  udpv4 $phone (no port)"
+        warn "  udpv4 239.255.0.1 port $((7400 + 250 * PAIR_DOMAIN))"
+      else
+        mkdir -p "$dir"
+        f="$dir/fastdds-peer.xml"
+        cat > "$f" << XML
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+  <participant profile_name="conduit_pairing" is_default_profile="true">
+    <rtps>
+      <builtin>
+        <initialPeersList>
+          <locator><udpv4><address>$phone</address></udpv4></locator>
+          <locator><udpv4><address>239.255.0.1</address><port>$((7400 + 250 * PAIR_DOMAIN))</port></udpv4></locator>
+        </initialPeersList>
+      </builtin>
+    </rtps>
+  </participant>
+</profiles>
+XML
+        printf "export FASTRTPS_DEFAULT_PROFILES_FILE='%s'\n" "$f"
+      fi
+      ;;
+    *) ;;
+  esac
+}
+
+# bashrc_with_block FILE EXPORT_LINES: replace or append the pairing block.
+bashrc_with_block() {
+  local file="$1" lines="$2" begin="# >>> conduit pairing >>>" end="# <<< conduit pairing <<<" tmp
+  tmp="$(mktemp)"
+  if [[ -f "$file" ]]; then
+    awk -v b="$begin" -v e="$end" '$0 == b { skip = 1 } !skip { print } $0 == e { skip = 0 }' "$file" > "$tmp"
+  fi
+  printf '%s\n%s\n%s\n' "$begin" "$lines" "$end" >> "$tmp"
+  cat "$tmp" > "$file"
+  rm -f "$tmp"
+}
+
 main() {
   check_environment
 }
