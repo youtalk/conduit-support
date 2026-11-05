@@ -4,7 +4,7 @@
 <img src="../assets/img/app_icon.png" width="96" height="96" alt="Download Conduit on the App Store">
 </a>
 
-**Conduit didn't open?** Install Conduit 3.0 or later from the [App Store](https://apps.apple.com/app/id6757171237), then scan the QR code again. The script on your PC keeps waiting.
+**Conduit didn't open?** Install Conduit 2.6.0 or later from the [App Store](https://apps.apple.com/app/id6757171237), then scan the QR code again. The script on your PC keeps waiting.
 
 A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Conduit to check in. Scan the code with the iPhone's Camera app and Conduit fills in the connection settings for you.
 
