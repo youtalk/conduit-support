@@ -56,6 +56,9 @@ choose() {
   printf 'Choice [%s]: ' "$default" >&2
   answer="$(prompt_line)"
   answer="${answer:-$default}"
+  if [[ "$answer" =~ ^[0-9]{1,9}$ ]]; then
+    answer=$((10#$answer))
+  fi
   if [[ ! "$answer" =~ ^[0-9]+$ ]] || ((answer < 1 || answer > $#)); then
     answer="$default"
   fi
@@ -123,6 +126,12 @@ check_distro() {
   die 1 "ROS 2 '$ROS_DISTRO' is not supported. Supported: $PAIR_SUPPORTED_DISTROS."
 }
 
+check_ros2_cli() {
+  if ! command -v ros2 > /dev/null 2>&1; then
+    die 1 "ROS_DISTRO is $ROS_DISTRO, but the ros2 command was not found. Run: source /opt/ros/$ROS_DISTRO/setup.bash  and then run this script again."
+  fi
+}
+
 check_rmw() {
   case "${RMW_IMPLEMENTATION:-}" in
     rmw_zenoh_cpp) PAIR_RMW=zenoh ;;
@@ -140,6 +149,35 @@ check_domain() {
   PAIR_DOMAIN=$((10#$domain))
 }
 
+# DDS only: stop when discovery cannot leave this PC, so the iPhone can never
+# be found. Follows rcl: ROS_LOCALHOST_ONLY=1 counts on Humble and Jazzy only
+# (Jazzy turns it into the LOCALHOST range and drops ROS_STATIC_PEERS, but
+# keeps the CYCLONEDDS_URI peers), and ROS_AUTOMATIC_DISCOVERY_RANGE exists
+# from Jazzy on. The LOCALHOST range still uses the peers this script adds.
+# The environment is never changed; the fix is printed.
+check_discovery_range() {
+  local localhost_only=0 found=() fixes=()
+  [[ "$PAIR_RMW" != zenoh ]] || return 0
+  if [[ "${ROS_LOCALHOST_ONLY:-}" == 1 && ("$PAIR_DISTRO" == humble || "$PAIR_DISTRO" == jazzy) ]]; then
+    localhost_only=1
+    if [[ "$PAIR_DISTRO" == humble || "$PAIR_RMW" == fastdds ]]; then
+      found+=("ROS_LOCALHOST_ONLY=1")
+      fixes+=("unset ROS_LOCALHOST_ONLY")
+    fi
+  fi
+  # On Jazzy, ROS_LOCALHOST_ONLY=1 overrides the range.
+  if [[ "$PAIR_DISTRO" != humble && "${ROS_AUTOMATIC_DISCOVERY_RANGE:-}" == OFF ]] &&
+    ((!localhost_only || ${#fixes[@]})); then
+    found+=("ROS_AUTOMATIC_DISCOVERY_RANGE=OFF")
+    fixes+=("export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET")
+  fi
+  ((${#fixes[@]})) || return 0
+  warn "ROS 2 discovery is limited to this PC (${found[*]}), so the iPhone can never be found."
+  warn "To fix it in this shell, run:"
+  warn "$(printf '  %s\n' "${fixes[@]}")"
+  die 1 "and then run this script again."
+}
+
 # Sets PAIR_DISTRO, PAIR_RMW and PAIR_DOMAIN, or stops with exit code 1.
 check_environment() {
   check_platform
@@ -147,8 +185,10 @@ check_environment() {
   check_not_container
   check_ros_sourced
   check_distro
+  check_ros2_cli
   check_rmw
   check_domain
+  check_discovery_range
 }
 
 # stdin: `ip route get 1.1.1.1` output. Echoes "src dev".
@@ -839,23 +879,33 @@ host_peer_config() {
   local phone="$1" dir="$HOME/.config/conduit" f
   case "$PAIR_RMW" in
     cyclonedds)
-      mkdir -p "$dir"
       f="$dir/cyclonedds-peer.xml"
-      printf '%s\n' "<CycloneDDS><Domain id=\"any\"><Discovery><Peers><Peer address=\"$phone\"/></Peers></Discovery></Domain></CycloneDDS>" > "$f"
-      export_line CYCLONEDDS_URI "${CYCLONEDDS_URI:+$CYCLONEDDS_URI,}file://$f"
+      mkdir -p "$dir" &&
+        printf '%s\n' "<CycloneDDS><Domain id=\"any\"><Discovery><Peers><Peer address=\"$phone\"/></Peers></Discovery></Domain></CycloneDDS>" > "$f" ||
+        return 1
+      # A second run (or a ~/.bashrc block) may already carry the peer file.
+      if [[ "${CYCLONEDDS_URI:-}" == *"file://$f"* ]]; then
+        export_line CYCLONEDDS_URI "$CYCLONEDDS_URI"
+      else
+        export_line CYCLONEDDS_URI "${CYCLONEDDS_URI:+$CYCLONEDDS_URI,}file://$f"
+      fi
       ;;
     fastdds)
       if [[ "$PAIR_DISTRO" != humble ]]; then
-        export_line ROS_STATIC_PEERS "${ROS_STATIC_PEERS:+$ROS_STATIC_PEERS;}$phone"
+        if [[ ";${ROS_STATIC_PEERS:-};" == *";$phone;"* ]]; then
+          export_line ROS_STATIC_PEERS "$ROS_STATIC_PEERS"
+        else
+          export_line ROS_STATIC_PEERS "${ROS_STATIC_PEERS:+$ROS_STATIC_PEERS;}$phone"
+        fi
       elif [[ -n "${FASTRTPS_DEFAULT_PROFILES_FILE:-}" ]]; then
         warn "FASTRTPS_DEFAULT_PROFILES_FILE is already set to $FASTRTPS_DEFAULT_PROFILES_FILE."
         warn "Add these initial peers to its default participant profile by hand:"
         warn "  udpv4 $phone (no port)"
         warn "  udpv4 239.255.0.1 port $((7400 + 250 * PAIR_DOMAIN))"
       else
-        mkdir -p "$dir"
         f="$dir/fastdds-peer.xml"
-        cat > "$f" << XML
+        mkdir -p "$dir" || return 1
+        cat > "$f" << XML || return 1
 <?xml version="1.0" encoding="UTF-8"?>
 <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
   <participant profile_name="conduit_pairing" is_default_profile="true">
@@ -886,12 +936,22 @@ bashrc_with_block() {
     warn "$file has '$begin' without '$end'; it was left unchanged. Fix or remove that block and run this script again."
     return 1
   fi
-  tmp="$(mktemp)"
-  if [[ -f "$file" ]]; then
-    awk -v b="$begin" -v e="$end" '$0 == b { skip = 1 } !skip { print } $0 == e { skip = 0 }' "$file" > "$tmp"
-  fi
-  printf '%s\n%s\n%s\n' "$begin" "$lines" "$end" >> "$tmp"
-  cat "$tmp" > "$file"
+  # Callers run this in an `if`, where set -e is off: check every step, and
+  # touch FILE only once the new content is complete.
+  tmp="$(mktemp)" || return 1
+  {
+    [[ ! -f "$file" ]] ||
+      awk -v b="$begin" -v e="$end" '$0 == b { skip = 1 } !skip { print } $0 == e { skip = 0 }' "$file"
+    printf '%s\n%s\n%s\n' "$begin" "$lines" "$end"
+  } > "$tmp" || {
+    rm -f "$tmp"
+    return 1
+  }
+  cat "$tmp" > "$file" || {
+    warn "Could not write $file."
+    rm -f "$tmp"
+    return 1
+  }
   rm -f "$tmp"
 }
 
@@ -926,7 +986,9 @@ wait_for_node() {
 wait_for_data() {
   local status=()
   {
-    timeout "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
+    # Unbuffered so the first message reaches grep at once; --foreground keeps
+    # ros2 in this terminal's process group so Ctrl-C ends the wait.
+    PYTHONUNBUFFERED=1 timeout --foreground "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
       /tf_static tf2_msgs/msg/TFMessage 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link'
     status=("${PIPESTATUS[@]}")
   } || true
@@ -1033,7 +1095,11 @@ apply_host_peers() {
     ! ask_yes_no "Add the iPhone ($PAIR_PHONE_IP) as a discovery peer on this PC?" n; then
     return 0
   fi
-  exports="$(host_peer_config "$PAIR_PHONE_IP")"
+  if ! exports="$(host_peer_config "$PAIR_PHONE_IP")"; then
+    warn "Could not write $HOME/.config/conduit, so this PC was not given the iPhone as a discovery peer."
+    warn "Check that $HOME/.config is a writable directory and run this script again."
+    return 0
+  fi
   if [[ -n "$exports" ]]; then
     # The lines are built by export_line, so they are safe to evaluate here.
     eval "$exports"
@@ -1042,6 +1108,8 @@ apply_host_peers() {
     if ask_yes_no "Add this to ~/.bashrc?" n; then
       if bashrc_with_block "$HOME/.bashrc" "$exports"; then
         say "Added to ~/.bashrc."
+      else
+        warn "Could not update ~/.bashrc; add the lines above to it by hand."
       fi
     fi
   fi
@@ -1115,7 +1183,11 @@ main() {
   link="$(build_link "$link_style" "$transport" "$PAIR_DISTRO" "$PAIR_DOMAIN" "$PAIR_HOST" "$port" \
     "$PAIR_HOST:$PAIR_CHECKIN_PORT" "$token" "$(hostname)")"
   show_link "$link" "$no_qr"
-  say "Scan the QR with the iPhone's Camera app. Waiting for Conduit to check in..."
+  if ((no_qr)); then
+    say "Open the link on the iPhone. Waiting for Conduit to check in..."
+  else
+    say "Scan the QR with the iPhone's Camera app. Waiting for Conduit to check in..."
+  fi
   wait_checkin || die 2 "The check-in listener stopped before the iPhone checked in."
   say "$PAIR_DEVICE checked in from $PAIR_PHONE_IP."
 

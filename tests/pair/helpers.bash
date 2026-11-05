@@ -20,5 +20,12 @@ make_fixture() {
   touch "$CONDUIT_PAIR_ROOT/opt/ros/jazzy/setup.bash"
   export PAIR_UNAME=Linux
   unset WSL_DISTRO_NAME RMW_IMPLEMENTATION ROS_DOMAIN_ID
+  unset ROS_LOCALHOST_ONLY ROS_AUTOMATIC_DISCOVERY_RANGE
   export ROS_DISTRO=jazzy
+  # A sourced ROS 2 puts ros2 on PATH; tests that need its output stub it again.
+  mkdir -p "$BATS_TEST_TMPDIR/rosbin"
+  printf '#!/usr/bin/env bash\n' > "$BATS_TEST_TMPDIR/rosbin/ros2"
+  chmod +x "$BATS_TEST_TMPDIR/rosbin/ros2"
+  PATH="$BATS_TEST_TMPDIR/rosbin:$PATH"
+  export PATH
 }

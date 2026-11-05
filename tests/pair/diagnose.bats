@@ -204,3 +204,23 @@ STUB
   [ "$PAIR_DEVICE" = "My iPhone" ]
   [ "$PAIR_NAMESPACE" = conduit ]
 }
+
+@test "wait_for_data runs ros2 unbuffered in the foreground" {
+  cat > "$STUBS/ros2" << STUB
+#!/usr/bin/env bash
+echo "PYTHONUNBUFFERED=\${PYTHONUNBUFFERED:-}" >> "$BATS_TEST_TMPDIR/ros2.log"
+echo 'frame_id: conduit_base_link'
+STUB
+  chmod +x "$STUBS/ros2"
+  real_timeout="$(command -v timeout)"
+  cat > "$STUBS/timeout" << STUB
+#!/usr/bin/env bash
+echo "timeout \$*" >> "$BATS_TEST_TMPDIR/ros2.log"
+exec "$real_timeout" "\$@"
+STUB
+  chmod +x "$STUBS/timeout"
+  run wait_for_data 5
+  [ "$status" -eq 0 ]
+  grep -qx 'PYTHONUNBUFFERED=1' "$BATS_TEST_TMPDIR/ros2.log"
+  grep -q -- '^timeout --foreground 5 ros2 topic echo' "$BATS_TEST_TMPDIR/ros2.log"
+}

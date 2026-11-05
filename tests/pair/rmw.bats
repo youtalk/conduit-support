@@ -145,3 +145,46 @@ setup() {
   [[ "$stderr" == *"$f"* ]]
   cmp "$f" "$BATS_TEST_TMPDIR/before"
 }
+
+@test "bashrc is left unchanged when the temp file cannot be made" {
+  f="$BATS_TEST_TMPDIR/bashrc"
+  echo 'alias a=b' > "$f"
+  cp "$f" "$BATS_TEST_TMPDIR/before"
+  TMPDIR="$BATS_TEST_TMPDIR/missing" run --separate-stderr bashrc_with_block "$f" "export X='1'"
+  [ "$status" -eq 1 ]
+  cmp "$f" "$BATS_TEST_TMPDIR/before"
+}
+
+@test "bashrc that cannot be written returns 1" {
+  f="$BATS_TEST_TMPDIR/bashrc"
+  mkdir "$f" "$BATS_TEST_TMPDIR/t"
+  TMPDIR="$BATS_TEST_TMPDIR/t" run --separate-stderr bashrc_with_block "$f" "export X='1'"
+  [ "$status" -eq 1 ]
+  [ -z "$(ls -A "$BATS_TEST_TMPDIR/t")" ]
+}
+
+@test "peer file that cannot be written prints no export" {
+  local rmw
+  : > "$HOME/.config"
+  for rmw in cyclonedds:jazzy fastdds:humble; do
+    PAIR_RMW=${rmw%%:*} PAIR_DISTRO=${rmw##*:}
+    run --separate-stderr host_peer_config 192.168.1.50
+    [ "$status" -ne 0 ]
+    [ -z "$output" ]
+  done
+}
+
+@test "conduit peer file already in CYCLONEDDS_URI is not added again" {
+  PAIR_RMW=cyclonedds PAIR_DISTRO=jazzy
+  f="$HOME/.config/conduit/cyclonedds-peer.xml"
+  CYCLONEDDS_URI="file:///etc/my.xml,file://$f" run --separate-stderr host_peer_config 192.168.1.50
+  [ "$output" = "export CYCLONEDDS_URI='file:///etc/my.xml,file://$f'" ]
+}
+
+@test "phone already in ROS_STATIC_PEERS is not added again" {
+  PAIR_RMW=fastdds PAIR_DISTRO=jazzy
+  ROS_STATIC_PEERS='10.0.0.2;192.168.1.50' run --separate-stderr host_peer_config 192.168.1.50
+  [ "$output" = "export ROS_STATIC_PEERS='10.0.0.2;192.168.1.50'" ]
+  ROS_STATIC_PEERS='192.168.1.5' run --separate-stderr host_peer_config 192.168.1.50
+  [ "$output" = "export ROS_STATIC_PEERS='192.168.1.5;192.168.1.50'" ]
+}

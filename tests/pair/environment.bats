@@ -140,3 +140,61 @@ setup() {
   echo 9 > "$PAIR_TTY"; run --separate-stderr choose "which?" 1 a b c
   [ "$output" = 1 ]
 }
+
+@test "choose accepts leading zeros" {
+  export PAIR_TTY="$BATS_TEST_TMPDIR/tty"
+  echo 08 > "$PAIR_TTY"; run --separate-stderr choose "which?" 1 a b c d e f g h i
+  [ "$status" -eq 0 ]
+  [ "$output" = 8 ]
+  echo 09 > "$PAIR_TTY"; run --separate-stderr choose "which?" 1 a b c
+  [ "$status" -eq 0 ]
+  [ "$output" = 1 ]
+}
+
+@test "ROS_DISTRO set but ros2 missing" {
+  rm "$BATS_TEST_TMPDIR/rosbin/ros2"
+  run check_environment
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"source /opt/ros/jazzy/setup.bash"* ]]
+}
+
+@test "ROS_LOCALHOST_ONLY=1 stops DDS on Humble" {
+  local rmw
+  for rmw in rmw_cyclonedds_cpp rmw_fastrtps_cpp; do
+    ROS_DISTRO=humble RMW_IMPLEMENTATION=$rmw ROS_LOCALHOST_ONLY=1 run check_environment
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"discovery is limited to this PC"* ]]
+    [[ "$output" == *"  unset ROS_LOCALHOST_ONLY"* ]]
+  done
+}
+
+@test "ROS_LOCALHOST_ONLY=1 stops Fast DDS on Jazzy" {
+  ROS_LOCALHOST_ONLY=1 run check_environment
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"  unset ROS_LOCALHOST_ONLY"* ]]
+}
+
+@test "ROS_LOCALHOST_ONLY=1 keeps CycloneDDS peers on Jazzy and is gone from Kilted" {
+  # Jazzy maps it to the LOCALHOST range, which keeps the CYCLONEDDS_URI peers;
+  # Kilted and later ignore it.
+  RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_LOCALHOST_ONLY=1 check_environment
+  ROS_DISTRO=kilted ROS_LOCALHOST_ONLY=1 check_environment
+}
+
+@test "ROS_AUTOMATIC_DISCOVERY_RANGE=OFF stops DDS" {
+  local rmw
+  for rmw in rmw_cyclonedds_cpp rmw_fastrtps_cpp; do
+    RMW_IMPLEMENTATION=$rmw ROS_AUTOMATIC_DISCOVERY_RANGE=OFF run check_environment
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"discovery is limited to this PC"* ]]
+    [[ "$output" == *"  export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET"* ]]
+  done
+}
+
+@test "LOCALHOST range keeps static peers, Humble ignores the range, Zenoh is unaffected" {
+  RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST check_environment
+  ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST check_environment
+  ROS_DISTRO=humble ROS_AUTOMATIC_DISCOVERY_RANGE=OFF check_environment
+  RMW_IMPLEMENTATION=rmw_zenoh_cpp ROS_AUTOMATIC_DISCOVERY_RANGE=OFF ROS_LOCALHOST_ONLY=1 check_environment
+  [ "$PAIR_RMW" = zenoh ]
+}

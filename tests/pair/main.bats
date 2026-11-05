@@ -187,6 +187,42 @@ STUB
   grep -q "export CYCLONEDDS_URI='file://$HOME/.config/conduit/cyclonedds-peer.xml'" "$HOME/.bashrc"
 }
 
+@test "bashrc that cannot be written is reported" {
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  mkdir "$HOME/.bashrc"
+  echo y > "$PAIR_TTY"
+  run main --no-qr
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"Added to ~/.bashrc"* ]]
+  [[ "$output" == *"Could not update ~/.bashrc"* ]]
+}
+
+@test "peer file that cannot be written is reported, not exported" {
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  : > "$HOME/.config"
+  echo y > "$PAIR_TTY"
+  run main --no-qr
+  [[ "$output" == *"Could not write $HOME/.config/conduit"* ]]
+  [[ "$output" != *"export CYCLONEDDS_URI="* ]]
+  [[ "$output" != *"Add this to ~/.bashrc?"* ]]
+  [ ! -e "$HOME/.bashrc" ]
+  ! grep -q "CYCLONEDDS_URI=file://" "$BATS_TEST_TMPDIR/ros2.log"
+}
+
+@test "localhost-only discovery stops before the link" {
+  export RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_LOCALHOST_ONLY=1
+  run main --no-qr
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"unset ROS_LOCALHOST_ONLY"* ]]
+  [[ "$output" != *"conduit.youtalk.jp/pair"* ]]
+}
+
+@test "--no-qr asks to open the link, not to scan" {
+  run main --no-qr
+  [[ "$output" == *"Open the link on the iPhone"* ]]
+  [[ "$output" != *"Scan the QR"* ]]
+}
+
 @test "optional host peers are only offered" {
   export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
   HOST_PEERS_REQUIRED_CYCLONEDDS=false
