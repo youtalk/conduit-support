@@ -23,7 +23,12 @@ jobs:
           python-version: "3.x"
           cache: pip
       - run: pip install -r requirements.txt
+      # tests/pair/test_embedded_qr.py decodes the QR with zbarimg.
+      - name: Install bats and zbar
+        run: sudo apt-get update && sudo apt-get install -y bats zbar-tools
       - run: python -m pytest tests/ -v
+      - run: shellcheck pair/pair.sh
+      - run: bats tests/pair
       - name: Test conduit_teleop (pure Python, no ROS)
         working-directory: ros/conduit_teleop
         run: python -m pytest test -v
