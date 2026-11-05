@@ -17,17 +17,17 @@ A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Condu
 ## Run it
 
 ```bash
-curl -fsSL https://conduit.youtalk.jp/pair.sh | bash
+curl -fsSL https://conduit.direct/pair.sh | bash
 ```
 
-Options go after `bash -s --`, for example `curl -fsSL https://conduit.youtalk.jp/pair.sh | bash -s -- --tailscale`. Run `bash -s -- --help` to list them.
+Options go after `bash -s --`, for example `curl -fsSL https://conduit.direct/pair.sh | bash -s -- --tailscale`. Run `bash -s -- --help` to list them.
 
 ### Read it first
 
 The script is a single file. To read it before running it:
 
 ```bash
-curl -fsSL https://conduit.youtalk.jp/pair.sh | less
+curl -fsSL https://conduit.direct/pair.sh | less
 ```
 
 It installs nothing and never uses `sudo`. It asks before it changes anything outside its own run (for example before adding the iPhone to `~/.bashrc`), and it leaves no process running when it exits.

@@ -20,6 +20,6 @@ def test_association_file():
 
 def test_pair_page():
     text = (ROOT / "docs/pair.md").read_text()
-    assert "curl -fsSL https://conduit.youtalk.jp/pair.sh | bash" in text
+    assert "curl -fsSL https://conduit.direct/pair.sh | bash" in text
     assert "https://apps.apple.com/app/id6757171237" in text
     assert "location.hash" not in text
