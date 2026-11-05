@@ -39,6 +39,7 @@ extra_css:
 
 nav:
   - Home: index.md
+  - Connect with a QR code: pair.md
   - FAQ: faq.md
   - Troubleshooting: troubleshooting.md
   - Platform notes: platform-notes.md
@@ -73,6 +74,9 @@ markdown_extensions:
 
 plugins:
   - search
+
+exclude_docs: |
+  !.well-known/
 
 hooks:
   - scripts/sync_readme.py

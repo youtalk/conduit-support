@@ -10,3 +10,6 @@
 .venv/
 __pycache__/
 *.pyc
+
+# Copied from pair/pair.sh at build time
+/docs/pair.sh
