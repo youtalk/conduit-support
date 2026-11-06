@@ -35,8 +35,6 @@ body:
       options:
         - iOS (iPhone)
         - iOS (iPad)
-        - visionOS (Apple Vision Pro)
-        - tvOS (Apple TV)
         - macOS (Mac Catalyst)
         - All platforms
     validations:

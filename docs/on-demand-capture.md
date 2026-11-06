@@ -8,6 +8,7 @@ Conduit 2.4.0 adds **Publish only when subscribed**. The sensors keep running, b
 2. Under **Publishing**, turn on **Publish only when subscribed**.
 
 **Good to know:**
+
 - It is **off by default**, so existing setups keep publishing continuously.
 - It is **one app-wide setting**. It applies to every sensor topic; there is no per-sensor switch. Latched topics such as `/tf_static` always publish (see below).
 - It works with both the **Zenoh** and **DDS** transports.

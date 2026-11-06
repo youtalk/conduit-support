@@ -29,6 +29,10 @@
 
 A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Conduit to check in. Scan the code with the iPhone's Camera app and Conduit fills in the connection settings for you.
 
+!!! note "Needs Conduit 2.6.0 or later"
+    QR pairing arrives in Conduit 2.6.0. Settings → About & Help shows your version. With an
+    older version, set up the connection by hand: see [Zenoh or DDS](transports.md).
+
 ## Requirements
 
 - A native PC (not WSL, not inside a container) running Ubuntu, RHEL or Fedora, with ROS 2 sourced in the shell you run the script from:
@@ -42,6 +46,7 @@ A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Condu
     | Fedora | Lyrical |
 
     RHEL rebuilds such as Rocky Linux and AlmaLinux count as RHEL. Install ROS 2 with the [official instructions](https://docs.ros.org/en/lyrical/Get-Started/Installation.html). Windows is not supported yet.
+
 - `RMW_IMPLEMENTATION` set to `rmw_zenoh_cpp` or `rmw_cyclonedds_cpp`. Fast DDS (the default when it is unset) works, but may drop or delay high-rate topics such as the camera and LiDAR.
 - The iPhone and the PC on the same Wi-Fi, or on the same Tailscale tailnet.
 
@@ -98,4 +103,4 @@ If nothing happens after you scan the QR code, the script prints what to check. 
 - With Fast DDS, switch to CycloneDDS: `export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`.
 - If the iPhone's address changed, run the script again.
 
-See also [Transports](transports.md) and [Troubleshooting](troubleshooting.md).
+See also [Zenoh or DDS](transports.md) and [Troubleshooting](troubleshooting.md).

@@ -1,5 +1,5 @@
 name: Connection Issue
-description: Report network or router connection problems
+description: Report network, router or discovery problems (Zenoh or DDS)
 title: "[Connection]: "
 labels: ["connection", "bug"]
 body:
@@ -8,26 +8,108 @@ body:
       value: |
         Experiencing connection issues? Please provide detailed information to help us diagnose the problem.
 
+        **Tip**: If you connected with a QR code, the pairing script prints what to check. See [Connect with a QR code](https://conduit.direct/pair/) and [Troubleshooting](https://conduit.direct/troubleshooting/).
+
   - type: input
-    id: router-address
+    id: app-version
     attributes:
-      label: Router Address
-      description: What Zenoh router address are you using?
-      placeholder: "192.168.1.100:7447"
+      label: App Version
+      description: Which version of Conduit are you using? See Settings → About & Help.
+      placeholder: "2.6.0"
     validations:
       required: true
 
   - type: dropdown
-    id: network-type
+    id: transport
     attributes:
-      label: Network Type
-      description: How are your devices connected?
+      label: Transport
+      description: Which transport is selected in Conduit's Settings → Transport?
       options:
-        - WiFi (same network)
-        - Ethernet
-        - WiFi (different subnets)
-        - Cellular (not recommended)
-        - Other
+        - Zenoh
+        - DDS
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pairing
+    attributes:
+      label: QR Code Pairing
+      description: Did you set up the connection with the QR code script (Conduit 2.6.0 or later)?
+      options:
+        - "Yes"
+        - "No, I entered the settings by hand"
+    validations:
+      required: false
+
+  - type: input
+    id: router-address
+    attributes:
+      label: Router Address (Zenoh only)
+      description: The Router Address and Router Port in Conduit's Settings. Leave empty for DDS.
+      placeholder: "192.168.1.100:7447"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: router-status
+    attributes:
+      label: Zenoh Router Status (Zenoh only)
+      description: Is rmw_zenohd running on your ROS 2 system?
+      options:
+        - Yes, confirmed running
+        - Not sure
+        - No, not running
+        - Not applicable (DDS)
+    validations:
+      required: false
+
+  - type: input
+    id: dds-peers
+    attributes:
+      label: DDS Peers (DDS only)
+      description: The peers in Conduit's Settings → Discovery. Write "none" if the list is empty (multicast only). Leave empty for Zenoh.
+      placeholder: "192.168.1.100"
+    validations:
+      required: false
+
+  - type: input
+    id: dds-network-interface
+    attributes:
+      label: DDS Network Interface (DDS only)
+      description: The Network Interface in Conduit's Settings → Discovery. Leave empty for Zenoh.
+      placeholder: "en0 (WiFi)"
+    validations:
+      required: false
+
+  - type: textarea
+    id: cyclonedds-uri
+    attributes:
+      label: Host CYCLONEDDS_URI (DDS only)
+      description: The value of CYCLONEDDS_URI on the ROS 2 host, if set. Leave empty for Zenoh.
+      render: xml
+    validations:
+      required: false
+
+  - type: input
+    id: domain-id
+    attributes:
+      label: Domain ID
+      description: The Domain ID in Conduit's Settings, and ROS_DOMAIN_ID on the host.
+      placeholder: "Conduit: 0, host ROS_DOMAIN_ID: 0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: wire-mode
+    attributes:
+      label: Distribution Setting
+      description: Which distribution is selected in Conduit's Settings → Distribution?
+      options:
+        - Humble
+        - Jazzy
+        - Kilted
+        - Lyrical
+        - Rolling
     validations:
       required: true
 
@@ -46,16 +128,27 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: router-status
+  - type: input
+    id: rmw-implementation
     attributes:
-      label: Zenoh Router Status
-      description: Is rmw_zenohd running on your ROS 2 system?
+      label: RMW_IMPLEMENTATION on the host
+      description: The value of RMW_IMPLEMENTATION on the ROS 2 host.
+      placeholder: "rmw_zenoh_cpp, rmw_cyclonedds_cpp, unset"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: network-type
+    attributes:
+      label: Network Type
+      description: How are your devices connected?
       options:
-        - Yes, confirmed running
-        - Not sure
-        - No, not running
-        - Don't have ROS 2 system
+        - Wi-Fi (same network)
+        - Wi-Fi (different subnets)
+        - Ethernet
+        - Tailscale
+        - Cellular
+        - Other
     validations:
       required: true
 
@@ -64,7 +157,7 @@ body:
     attributes:
       label: Error Message
       description: What error message does the app show?
-      placeholder: "Connection Failed: Could not connect to Zenoh router..."
+      placeholder: "Connection Failed: ..."
       render: text
     validations:
       required: true
@@ -75,10 +168,10 @@ body:
       label: Network Setup
       description: Describe your network configuration
       placeholder: |
-        - Router IP: 192.168.1.1
-        - iOS device IP: 192.168.1.50
+        - iPhone / iPad / Mac IP: 192.168.1.50
         - ROS 2 system IP: 192.168.1.100
-        - Firewall: enabled/disabled
+        - Firewall on the ROS 2 system: enabled/disabled
+        - Guest or office Wi-Fi: yes/no
     validations:
       required: false
 
@@ -88,8 +181,9 @@ body:
       label: Troubleshooting Steps Tried
       description: What have you already tried?
       placeholder: |
-        - Verified router is running (ros2 run rmw_zenoh_cpp rmw_zenohd)
-        - Confirmed devices on same network
+        - Zenoh: verified the router is running (ros2 run rmw_zenoh_cpp rmw_zenohd)
+        - DDS: added the device's address as a peer on the host and ran ros2 daemon stop
+        - Confirmed devices on the same network
         - Checked firewall settings
     validations:
       required: false
@@ -97,8 +191,8 @@ body:
   - type: textarea
     id: router-logs
     attributes:
-      label: Router Logs (if available)
-      description: Any relevant output from rmw_zenohd?
+      label: Logs (if available)
+      description: Any relevant output from rmw_zenohd, the pairing script, or ros2 commands on the host
       render: shell
     validations:
       required: false

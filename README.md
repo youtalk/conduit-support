@@ -8,213 +8,231 @@
 
 </div>
 
-**Transform your Apple devices into ROS 2 sensor publishers**
+**Your iPhone, iPad or Mac as a ROS 2 sensor**
 
-Stream real-time sensor data directly to your robotics system via **Zenoh** or **DDS** — pick the transport that matches your ROS 2 setup. No bridge, no `rcl` / `rclcpp`, no CMake on a non-Linux host.
-Used cumulatively by **10,000+ ROS 2 developers worldwide** — has ranked as high as **#4 in the App Store's Developer Tools category** (Japan) since January 2026.
+Conduit publishes the sensors of your Apple device to a ROS 2 graph over **Zenoh** or **DDS**. No bridge, no `rcl` / `rclcpp`, nothing to build on the device. Scan a QR code from your ROS 2 PC and the topics show up in `ros2 topic list`.
+Conduit has been downloaded over 10,000 times and has ranked as high as **#4 in Developer Tools** on the Japanese App Store.
 
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20|%20Jazzy%20|%20Kilted%20|%20Lyrical%20|%20Rolling-22314E?style=for-the-badge)](https://docs.ros.org)
-[![Built on swift-ros2](https://img.shields.io/badge/Built%20on-swift--ros2%202.1.0-orange?style=for-the-badge&logo=swift)](https://github.com/youtalk/swift-ros2)
+[![Built on swift-ros2](https://img.shields.io/badge/Built%20on-swift--ros2%203.1-orange?style=for-the-badge&logo=swift)](https://github.com/swift-ros2/swift-ros2)
 
 ---
 
-## Demo Videos
+## Get started
+
+1. **Install** Conduit from the [App Store](https://apps.apple.com/app/id6757171237).
+2. **On your ROS 2 PC** (Ubuntu, RHEL or Fedora, with ROS 2 sourced), run:
+    ```bash
+    curl -fsSL https://conduit.direct/pair.sh | bash
+    ```
+    The script checks the setup and shows a QR code.
+3. **Scan the QR code** with the iPhone's Camera app. Conduit opens and fills in the connection settings.
+4. **Turn on sensors and tap Start**, then check on the PC:
+    ```bash
+    ros2 topic echo /conduit/imu
+    ```
+
+QR pairing needs Conduit 2.6.0 or later. See [Connect with a QR code](docs/pair.md) for the requirements, Tailscale and troubleshooting.
+
+<details>
+<summary><b>Set up by hand: Zenoh</b></summary>
+
+1. Start the Zenoh router on your ROS 2 PC:
+    ```bash
+    source /opt/ros/lyrical/setup.bash   # or jazzy / humble / …
+    export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+    export ROS_DOMAIN_ID=0  # 0-232
+    ros2 run rmw_zenoh_cpp rmw_zenohd
+    ```
+2. In Conduit, open Settings: **Transport** Zenoh, **Router Address** the PC's IP, **Router Port** `7447`, **Domain ID** the same as the PC, and **Distribution** your ROS 2 release (Lyrical for new installs). Tap **Done**.
+3. Turn on sensors and tap Start.
+4. Check: `ros2 topic echo /conduit/imu`
+
+</details>
+
+<details>
+<summary><b>Set up by hand: DDS (CycloneDDS)</b></summary>
+
+1. On your ROS 2 PC, add the iPhone as a discovery peer and restart the ROS 2 daemon:
+    ```bash
+    source /opt/ros/lyrical/setup.bash   # or jazzy / humble / …
+    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    export ROS_DOMAIN_ID=0  # 0-232
+    export CYCLONEDDS_URI='<CycloneDDS><Domain><Discovery><Peers><Peer address="IPHONE_IP"/></Peers></Discovery></Domain></CycloneDDS>'
+    ros2 daemon stop
+    ```
+    Settings → Discovery → **This Device** in Conduit shows the iPhone's address.
+2. In Conduit, open Settings: **Transport** DDS, **Domain ID** the same as the PC, **Distribution** your ROS 2 release. In **Discovery**, add the PC's IP under **Peers** and pick **en0 (WiFi)** as the **Network Interface**. Tap **Done**.
+3. Turn on sensors and tap Start.
+4. Check: `ros2 topic echo /conduit/imu --qos-reliability best_effort`
+
+Run `ros2 daemon stop` again whenever you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID` or `CYCLONEDDS_URI`: the daemon keeps its first settings. See [Troubleshooting](docs/troubleshooting.md#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri).
+
+</details>
+
+---
+
+## Demo videos
 
 <table>
 <tr>
 <td align="center" width="33%">
-<a href="https://www.youtube.com/watch?v=d28sQYQlpYY">
-<img src="https://img.youtube.com/vi/d28sQYQlpYY/0.jpg" width="280" alt="Teleoperation Demo"><br>
-<b>Teleoperation</b>
+<a href="https://www.youtube.com/watch?v=2myDfnNBuuk">
+<img src="https://img.youtube.com/vi/2myDfnNBuuk/0.jpg" width="280" alt="Getting Started"><br>
+<b>Getting Started</b>
 </a><br>
-<sub>Control robots using Game Controller sensor via ROS 2 joy messages</sub>
+<sub>Connect Conduit to your ROS 2 system step by step</sub>
 </td>
 <td align="center" width="33%">
 <a href="https://www.youtube.com/watch?v=ObnJOpGvpzI">
-<img src="https://img.youtube.com/vi/ObnJOpGvpzI/0.jpg" width="280" alt="Camera & LiDAR Demo"><br>
+<img src="https://img.youtube.com/vi/ObnJOpGvpzI/0.jpg" width="280" alt="Camera & LiDAR"><br>
 <b>Camera & LiDAR</b>
 </a><br>
-<sub>Stream iPhone camera images and LiDAR point clouds to ROS 2</sub>
+<sub>Stream camera images and LiDAR point clouds to ROS 2</sub>
 </td>
 <td align="center" width="33%">
-<a href="https://www.youtube.com/watch?v=2myDfnNBuuk">
-<img src="https://img.youtube.com/vi/2myDfnNBuuk/0.jpg" width="280" alt="Onboarding Demo"><br>
-<b>Getting Started</b>
+<a href="https://www.youtube.com/watch?v=d28sQYQlpYY">
+<img src="https://img.youtube.com/vi/d28sQYQlpYY/0.jpg" width="280" alt="Teleoperation"><br>
+<b>Teleoperation</b>
 </a><br>
-<sub>Step-by-step guide to connect Conduit with your ROS 2 system</sub>
+<sub>Drive a robot with a game controller through ROS 2 Joy messages</sub>
 </td>
 </tr>
 <tr>
 <td align="center" width="33%">
 <a href="https://www.youtube.com/watch?v=TgNgDvFeAMs">
-<img src="https://img.youtube.com/vi/TgNgDvFeAMs/0.jpg" width="280" alt="Cyclone DDS Demo"><br>
+<img src="https://img.youtube.com/vi/TgNgDvFeAMs/0.jpg" width="280" alt="Cyclone DDS"><br>
 <b>Cyclone DDS</b>
 </a><br>
-<sub>Native ROS 2 communication over Cyclone DDS — no Zenoh router, no bridge</sub>
+<sub>Talk to ROS 2 over Cyclone DDS, with no Zenoh router</sub>
 </td>
 <td align="center" width="33%">
 <a href="https://www.youtube.com/watch?v=yhI3eWcWSNQ">
-<img src="https://img.youtube.com/vi/yhI3eWcWSNQ/0.jpg" width="280" alt="MCAP Recording Demo"><br>
+<img src="https://img.youtube.com/vi/yhI3eWcWSNQ/0.jpg" width="280" alt="MCAP Recording"><br>
 <b>MCAP Recording</b>
 </a><br>
-<sub>Record every topic and export an MCAP file for Foxglove or ros2 bag</sub>
+<sub>Record every topic to an MCAP file for Foxglove or ros2 bag</sub>
 </td>
 <td align="center" width="33%"></td>
 </tr>
 </table>
 
+### Coming in Conduit 3: Robots
+
+Conduit 3 subscribes as well as publishes: watch a robot's camera, map and diagnostics, and drive it from the phone. See [Robots](docs/robots.md).
+
+<table>
+<tr>
+<td align="center" width="50%">
+<a href="https://www.youtube.com/watch?v=tERF16pEvUA">
+<img src="https://img.youtube.com/vi/tERF16pEvUA/0.jpg" width="400" alt="Drive a mobile robot"><br>
+<b>Drive a mobile robot</b>
+</a><br>
+<sub>Drive a robot through its own camera from your iPhone</sub>
+</td>
+<td align="center" width="50%">
+<a href="https://www.youtube.com/watch?v=5x5xeL3mKAI">
+<img src="https://img.youtube.com/vi/5x5xeL3mKAI/0.jpg" width="400" alt="Move a robot arm"><br>
+<b>Move a robot arm</b>
+</a><br>
+<sub>Move a MoveIt Servo arm by moving your iPhone</sub>
+</td>
+</tr>
+</table>
+
 ---
 
-## Built on swift-ros2
+## What Conduit publishes
 
-All ROS 2 wire work — Zenoh / DDS FFI, XCDR v1 codec, Humble/Jazzy/Kilted/Lyrical/Rolling wire codecs, the publisher/subscription API — is delegated to [**swift-ros2**](https://github.com/youtalk/swift-ros2), a native Swift client library for ROS 2 that was extracted from Conduit and now ships independently.
+### 13 sensors
 
-swift-ros2 covers every consumer device OS that runs Swift: **iOS / iPadOS / macOS / Mac Catalyst / visionOS** (pre-built xcframeworks via SwiftPM), plus **Linux** (Ubuntu 22.04 / 24.04, x86_64 + aarch64), **Windows** (x86_64), and **Android** (arm64-v8a + x86_64) via source build. By worldwide market share, that's roughly 90%+ of identifiable consumer devices — phones, tablets, laptops, headsets, SBCs — all able to publish and subscribe through the same SwiftPM-resolvable package.
+- **Motion**: IMU (100 Hz) · Magnetometer (100 Hz) · GPS (1 Hz) · Proximity (10 Hz) · Device Pose (60 Hz, Conduit 3)
+- **Perception**: Camera (30 Hz) · LiDAR (30 Hz, point cloud or depth image) · Microphone (`audio_common_msgs/AudioData`)
+- **Environment**: Barometer (10 Hz) · Illuminance (10 Hz) · Thermal (1 Hz)
+- **Input**: Game Controller (`sensor_msgs/Joy`, 50 Hz, Reliable)
+- **Status**: Battery (1 Hz)
 
-If you want to wire your own Swift app into a ROS 2 graph (rather than use Conduit as a black-box sensor publisher), [swift-ros2](https://github.com/youtalk/swift-ros2) is the SDK underneath this app.
+Every topic, message type and frame: [Sensors and topics](docs/sensors.md).
 
----
-
-## Features
-
-| Platform | Sensors |
-|----------|---------|
-| iOS / iPadOS 16+ | All 12 sensors |
-| visionOS 1+ | Camera, IMU, Game Controller |
-| macOS 13+ (Mac Catalyst) | Camera, Battery, Game Controller |
+| Device | Sensors |
+|--------|---------|
+| iPhone (iOS 16+) | All 13. LiDAR on Pro models (iPhone 12 Pro and later) |
+| iPad (iPadOS 16+) | All except Proximity. LiDAR on iPad Pro (2020 and later) |
+| Mac (macOS 13+, Mac Catalyst) | Camera, Microphone, Battery, Thermal, Game Controller |
 
 ### Transports
 
-| Transport | ROS 2 RMW | Bridge required | Best for |
+| Transport | ROS 2 RMW | Router required | Best for |
 |-----------|-----------|-----------------|----------|
-| **Zenoh** | `rmw_zenoh_cpp` | Yes (Zenoh router) | Cross-subnet, WAN, corporate networks |
-| **DDS**   | `rmw_cyclonedds_cpp` | No (direct) | Same-LAN, standard ROS 2 |
+| **Zenoh** | `rmw_zenoh_cpp` | Yes (`rmw_zenohd`) | Across subnets, over Tailscale, networks without multicast |
+| **DDS**   | `rmw_cyclonedds_cpp` | No | One LAN, an existing CycloneDDS setup |
 
-See [TRANSPORTS.md](docs/TRANSPORTS.md) for a detailed comparison.
+See [Zenoh or DDS](docs/transports.md).
 
-### 12 Sensor Types
+### MCAP recording
 
-- **Motion**: IMU (100Hz) · Magnetometer (100Hz) · GPS (1Hz) · Proximity (10Hz)
-- **Perception**: Camera (30Hz) · LiDAR (30Hz) · Microphone (`audio_common_msgs/AudioData`, streaming)
-- **Environment**: Barometer (10Hz) · Illuminance (10Hz) · Thermal (1Hz)
-- **Input**: Game Controller (50Hz)
-- **Status**: Battery (1Hz)
+Record every topic to an **MCAP** file and open it in [Foxglove](https://foxglove.dev/) or replay it with `ros2 bag play`. Recording is free and works without a network: pick **Record** instead of **Publish** next to the Start button. The message schemas are written into the file, so it opens without your `.msg` files. See [Recording (MCAP)](docs/recording.md).
 
-### MCAP Recording
+### In-app purchases
 
-Capture every published topic to a local **MCAP** file with one tap, replay it later in [Foxglove](https://foxglove.dev/), `ros2 bag play`, or any MCAP-aware tool. Recordings live in the app's Documents directory and ship out via the standard share sheet (Files, AirDrop, Mail, …) — Conduit never uploads them. Schemas are written into the MCAP header automatically so the bag round-trips through any reader without external `.msg` files.
-
-Same wire path as live publishing: the same XCDR v1 encoder from [swift-ros2](https://github.com/youtalk/swift-ros2) feeds both the Zenoh / DDS publisher and the MCAP writer, so the on-disk bytes match what arrives on the ROS 2 graph.
-
-### In-App Purchases
-
-A core slice (IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal, Battery, Microphone, Front camera) ships free. Wide / Ultra-wide / Telephoto cameras, LiDAR, Game Controller, Background publishing, and MCAP Recording are unlocked individually via App Store In-App Purchases.
+IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal, Battery, Microphone, the front camera and MCAP recording are free. One-time purchases unlock the **Back Cameras** (Wide, Ultra Wide and Telephoto), **LiDAR**, **Game Controller**, **Background Mode** and **Recording Export** (sharing recordings off the device).
 
 ---
 
 ## Screenshots
 
-### Main Tabs
-
 <table>
 <tr>
 <td align="center" width="25%">
-<img src="images/motion-enabled.png" width="180" alt="Motion Sensors"><br>
+<img src="images/onboarding-connect.png" width="180" alt="Connect to ROS 2"><br>
+<b>Connect</b><br>
+<sub>Run one line on your ROS 2 PC and scan the QR code it shows</sub>
+</td>
+<td align="center" width="25%">
+<img src="images/start.png" width="180" alt="Motion sensors before Start"><br>
+<b>Pick sensors</b><br>
+<sub>Turn sensors on, choose Publish, Record or Both, and tap Start</sub>
+</td>
+<td align="center" width="25%">
+<img src="images/motion.png" width="180" alt="Motion sensors while recording"><br>
 <b>Motion</b><br>
-<sub>IMU, GPS, Magnetometer, Proximity</sub>
+<sub>IMU, GPS, Magnetic Field and Proximity with live rates</sub>
 </td>
 <td align="center" width="25%">
-<img src="images/perception-enabled.png" width="180" alt="Perception Sensors"><br>
+<img src="images/perception.png" width="180" alt="Perception sensors"><br>
 <b>Perception</b><br>
-<sub>Microphone, Camera, LiDAR</sub>
+<sub>Microphone, cameras and LiDAR</sub>
 </td>
+</tr>
+<tr>
 <td align="center" width="25%">
-<img src="images/status-enabled.png" width="180" alt="Status Sensors"><br>
+<img src="images/status.png" width="180" alt="Status sensors"><br>
 <b>Status</b><br>
-<sub>Battery, Thermal, Barometer, Illuminance, Game Controller</sub>
+<sub>Battery, Thermal, Barometer, Illuminance and Game Controller</sub>
 </td>
 <td align="center" width="25%">
 <img src="images/recordings.png" width="180" alt="Recordings"><br>
 <b>Recordings</b><br>
-<sub>MCAP bags — record alongside or instead of live publishing</sub>
-</td>
-</tr>
-</table>
-
-### Onboarding & Settings
-
-<table>
-<tr>
-<td align="center" width="25%">
-<img src="images/setup-communication.png" width="180" alt="Setup Communication"><br>
-<b>1. Setup Communication</b><br>
-<sub>Pick Zenoh or DDS, follow the host-side recipe</sub>
-</td>
-<td align="center" width="25%">
-<img src="images/switch-transport.png" width="180" alt="Switch Transport Anytime"><br>
-<b>2. Switch Transport Anytime</b><br>
-<sub>Change transport, router, or discovery later from Settings</sub>
-</td>
-<td align="center" width="25%">
-<img src="images/start-publishing.png" width="180" alt="Start Publishing or Recording"><br>
-<b>3. Publish or Record</b><br>
-<sub>Tap Play to stream, or Record to save an MCAP file</sub>
+<sub>MCAP files on the device, behind the folder button</sub>
 </td>
 <td align="center" width="25%">
 <img src="images/settings.png" width="180" alt="Settings"><br>
 <b>Settings</b><br>
-<sub>Transport, Domain ID, Device IP, Router address</sub>
+<sub>Transport, router, Domain ID and Distribution</sub>
+</td>
+<td align="center" width="25%">
+<img src="images/dds-discovery.png" width="180" alt="DDS Discovery"><br>
+<b>DDS Discovery</b><br>
+<sub>Peers and network interface for DDS</sub>
 </td>
 </tr>
 </table>
 
 ---
 
-## Quick Start
+## Docker test environments
 
-1. **Download** from the [App Store](https://apps.apple.com/app/id6757171237)
-2. **Choose your transport** — see [TRANSPORTS.md](docs/TRANSPORTS.md)
-
-### Quick Start — Zenoh
-
-1. Start the Zenoh router on your ROS 2 system:
-   ```bash
-   source /opt/ros/lyrical/setup.bash   # or jazzy / humble / …
-   export RMW_IMPLEMENTATION=rmw_zenoh_cpp
-   export ROS_DOMAIN_ID=0  # Valid range: 0-232
-   ros2 run rmw_zenoh_cpp rmw_zenohd
-   ```
-2. In the Conduit app: Settings → Transport: **Zenoh**, enter the host IP and port `7447`, set Domain ID to match, and set Distribution to your host's ROS 2 release (Lyrical by default).
-3. Enable sensors and tap Play.
-4. Verify: `ros2 topic echo /conduit/imu`
-
-### Quick Start — DDS
-
-1. On your ROS 2 host:
-   ```bash
-   source /opt/ros/lyrical/setup.bash   # or jazzy / humble / …
-   export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-   export ROS_DOMAIN_ID=0  # Valid range: 0-232
-
-   # If you previously ran ros2 commands under a different RMW
-   # (e.g. rmw_zenoh_cpp), restart the cached ros2 daemon so it picks up
-   # the new RMW_IMPLEMENTATION / ROS_DOMAIN_ID / CYCLONEDDS_URI.
-   ros2 daemon stop
-   ros2 daemon start          # optional — `ros2 topic list` will autostart it
-
-   ros2 topic list
-   ```
-2. In the Conduit app: Settings → Transport: **DDS**, Discovery Mode: **Hybrid**, add the host IP to Unicast Peers, Network Interface: `en0`, set Domain ID to match, and set Distribution to your host's ROS 2 release (Lyrical by default).
-3. Enable sensors and tap Play.
-4. Verify: `ros2 topic echo /conduit/imu --qos-reliability best_effort`
-
-> **Note:** Re-run `ros2 daemon stop` any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or the unicast peer list — the daemon caches the first context and silently ignores later env-var changes. See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md#ros2-cli-shows-stale-topics-after-changing-rmw_implementation-or-cyclonedds_uri) for the full failure mode.
-
----
-
-## Docker Test Environments
-
-### Zenoh Router (Docker)
+### Zenoh router (Docker)
 
 Pre-built images on ghcr.io:
 ```bash
@@ -245,9 +263,9 @@ ROS_DOMAIN_ID=5 docker compose up ros-lyrical -d
 docker compose down
 ```
 
-### DDS Subscriber (Docker, Linux only)
+### DDS subscriber (Docker, Linux only)
 
-> **macOS note:** Docker Desktop on macOS does not provide true host networking, so the container cannot receive DDS traffic from an iOS device on the same LAN. On macOS, run your DDS subscriber natively or in a Parallels/UTM VM.
+> **macOS note:** Docker Desktop on macOS does not provide true host networking, so the container cannot receive DDS traffic from an iPhone on the same LAN. On macOS, run your DDS subscriber natively or in a Parallels/UTM VM.
 
 ```bash
 cd conduit-support/docker
@@ -265,27 +283,34 @@ See [docker/README.md](docker/README.md) for the complete Docker guide.
 
 ---
 
+## Built on swift-ros2
+
+All of Conduit's ROS 2 work (Zenoh and DDS transports, the CDR codec, the Humble to Rolling wire formats, publishers and subscriptions) is done by [**swift-ros2**](https://github.com/swift-ros2/swift-ros2), a native Swift client library for ROS 2 that started inside Conduit. To put ROS 2 in your own Swift app, use swift-ros2 directly: it runs on iOS, iPadOS, macOS, Mac Catalyst and visionOS, and builds from source on Linux, Windows and Android.
+
+---
+
 ## Documentation
 
-- [Transports](docs/TRANSPORTS.md) — Zenoh vs DDS comparison and when to use each
-- [On-demand capture](docs/ON_DEMAND_CAPTURE.md) — Publish only when subscribed: capture a fresh message on request
-- [FAQ](docs/FAQ.md) — Frequently asked questions
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md) — Common issues and solutions
-- [Platform Notes](docs/PLATFORM_NOTES.md) — Platform-specific information
-- [Known Issues](docs/KNOWN_ISSUES.md) — Current limitations and workarounds
-- [Privacy Policy](PRIVACY.md) — Data handling, sensor permissions, analytics
+- [Connect with a QR code](docs/pair.md): the fastest way to connect
+- [Zenoh or DDS](docs/transports.md): which transport to use
+- [Platform notes](docs/platform-notes.md): what each device supports
+- [Sensors and topics](docs/sensors.md): every topic, message type, rate and frame
+- [Recording (MCAP)](docs/recording.md): record, open and share MCAP files
+- [On-demand capture](docs/on-demand-capture.md): publish only when subscribed
+- [Game controller teleop](docs/teleop.md): drive a robot with `teleop_twist_joy`
+- [Robots](docs/robots.md): coming in Conduit 3
+- [FAQ](docs/faq.md), [Troubleshooting](docs/troubleshooting.md), [Known issues](docs/known-issues.md)
+- [Privacy policy](docs/privacy.md)
 
 ---
 
 ## Support
 
-- [Report Bug / Request Feature](https://github.com/youtalk/conduit-support/issues/new/choose)
-- [Community Discussions](https://github.com/youtalk/conduit-support/discussions)
-
----
+- [Report a bug or request a feature](https://github.com/youtalk/conduit-support/issues/new/choose)
+- [Community discussions](https://github.com/youtalk/conduit-support/discussions)
 
 ## Links
 
-- [App Website](https://conduit.direct)
-- [swift-ros2 (underlying ROS 2 client library)](https://github.com/youtalk/swift-ros2)
-- [Privacy Policy](PRIVACY.md)
+- [Website](https://conduit.direct)
+- [Conduit on the App Store](https://apps.apple.com/app/id6757171237)
+- [swift-ros2](https://github.com/swift-ros2/swift-ros2)

@@ -1,10 +1,12 @@
-# Troubleshooting Guide
+# Troubleshooting guide
 
 Common issues and solutions for Conduit.
 
-> **Which transport are you using?** Check Settings → Transport in the Conduit app. Zenoh and DDS have different failure modes. Zenoh issues are under "## Connection Issues" and "## Topic Issues" below; DDS-specific issues are in "## DDS Transport Issues" at the bottom of this page.
+> **Connecting for the first time?** Use [Connect with a QR code](pair.md). The script checks the ROS 2 PC (RMW, router, firewall, peers), fills in Conduit's settings, and prints what to fix when the iPhone does not check in.
 
-## Connection Issues
+> **Which transport are you using?** Check Settings → Transport in the Conduit app. Zenoh and DDS have different failure modes. Zenoh issues are under "Connection issues" and "Topic issues" below; DDS-specific issues are in "DDS transport issues" at the bottom of this page.
+
+## Connection issues
 
 ### "Connection Failed: Timeout"
 
@@ -33,7 +35,9 @@ Common issues and solutions for Conduit.
 
 3. **Verify same network**: iPhone and ROS 2 system must be on same WiFi/LAN
 
-4. **Test connectivity**:
+4. **Allow Local Network access**: iOS Settings → Privacy & Security → Local Network → Conduit must be on.
+
+5. **Test connectivity**:
    ```bash
    # From iPhone, ping ROS 2 system
    # Or from ROS 2 system, ping iPhone
@@ -67,6 +71,19 @@ Common issues and solutions for Conduit.
 
 4. **Try different port**: If 7447 is blocked, configure router with different port
 
+### Connection drops and reconnects
+
+**Problem**: Data stops for a while during a session, then comes back on its own.
+
+**What Conduit does:** When a send fails (for example, the router restarts or Wi-Fi drops briefly), Conduit keeps running and reconnects in the background. It retries after 1, 2, 4, 8 and 16 seconds, then every 30 seconds, with no limit. Sends never block the app: while the network is stalled, Conduit drops the oldest queued messages instead of freezing. When the device loses its network entirely, Conduit stops publishing and shows **Connection Lost**.
+
+**Solutions:**
+
+1. **Wait**: after a router restart, data usually resumes at the next retry.
+2. **Check the router or host**: if data does not come back, see ["Connection Failed: Timeout"](#connection-failed-timeout) above.
+3. **Check Wi-Fi signal**: weak Wi-Fi causes repeated drops, especially with camera or LiDAR.
+4. **Restart publishing**: stop and start again in the app.
+
 ### "Network Unreachable"
 
 **Problem**: No network connectivity.
@@ -84,7 +101,7 @@ Common issues and solutions for Conduit.
    - Restart iPhone
    - Restart router
 
-## Topic Issues
+## Topic issues
 
 ### Topic doesn't appear in `ros2 topic list`
 
@@ -107,7 +124,8 @@ Common issues and solutions for Conduit.
 2. **Verify RMW_IMPLEMENTATION**:
    ```bash
    echo $RMW_IMPLEMENTATION
-   # Must be: rmw_zenoh_cpp
+   # Zenoh transport: rmw_zenoh_cpp
+   # DDS transport:   rmw_cyclonedds_cpp (see "DDS transport issues" below)
    ```
 
 3. **Check the Distribution setting**:
@@ -141,14 +159,15 @@ Common issues and solutions for Conduit.
 
 3. **Check QoS compatibility**:
    - App uses: Reliability=BestEffort, History=KeepLast(10) by default
-   - Try adjusting in sensor settings
+   - Game Controller (`sensor_msgs/Joy`) is Reliable by default
+   - Subscribe with `--qos-reliability best_effort`, or change the sensor's QoS in its settings
 
 4. **Restart app**: Stop and restart publishing
 
 5. **Check the Distribution setting**:
    - Set Settings → Distribution to match your host (Humble vs Jazzy and later)
 
-## Sensor Issues
+## Sensor issues
 
 ### "Camera Permission Denied"
 
@@ -165,13 +184,15 @@ Common issues and solutions for Conduit.
 **Reasons:**
 
 1. **Device doesn't have LiDAR**:
-   - Required: iPhone 12 Pro, iPhone 13 Pro, iPhone 14 Pro, iPhone 15 Pro
-   - iPad Pro 2020 or newer
-   - Apple Vision Pro
+   - iPhone: iPhone 12 Pro or later Pro models
+   - iPad: iPad Pro (2020 or later)
+   - Mac: not available
 
 2. **Camera permission required**: LiDAR uses ARKit which requires camera access
 
-3. **Premium unlock required**: LiDAR is a premium feature
+3. **Purchase required**: LiDAR is a one-time In-App Purchase
+
+4. **Another camera is on**: ARKit gives only the wide camera, so turning on the front, ultra-wide or telephoto camera turns LiDAR off
 
 ### "Microphone Permission Denied"
 
@@ -212,31 +233,13 @@ Common issues and solutions for Conduit.
 
 5. **Check logs**: Look for error messages in app
 
-## Platform-Specific Issues
+## Platform-specific issues
 
-### visionOS: No GPS Sensor
+### macOS: IMU not available
 
-**Expected behavior**: Vision Pro doesn't have GPS hardware (indoor device).
+**Expected behavior**: On Mac, Conduit offers only Camera, Microphone, Battery, Thermal and Game Controller. IMU, Magnetometer, Barometer, Illuminance, GPS, Proximity, LiDAR and Device Pose are not available.
 
-**Workaround**: Use WiFi positioning if available, or use iPhone/iPad for GPS data.
-
-### tvOS: Most Sensors Unavailable
-
-**Expected behavior**: Apple TV only has Game Controller support.
-
-**Reason**: Apple TV is a stationary device without motion/location sensors.
-
-### macOS: IMU Not Available
-
-**Expected behavior**: Macs don't have accelerometer/gyroscope.
-
-**Workaround**: Use iPhone/iPad for IMU data.
-
-### Simulator: Mock Data Only
-
-**Expected behavior**: Simulator generates synthetic sensor data.
-
-**Note**: Useful for development/testing, but not real sensor readings.
+**Workaround**: Use an iPhone or iPad for those sensors. See [Platform notes](platform-notes.md).
 
 ### `ros2 topic echo /conduit/audio` fails with "unknown type"
 
@@ -269,7 +272,7 @@ Common issues and solutions for Conduit.
    source install/setup.bash
    ```
 
-## Performance Issues
+## Performance issues
 
 ### High battery drain
 
@@ -298,19 +301,21 @@ Common issues and solutions for Conduit.
 2. **Network issues**: Connection lost
    - Verify router still running
    - Check WiFi signal strength
+   - See [Connection drops and reconnects](#connection-drops-and-reconnects)
 
 3. **Restart app**: Force quit and relaunch
 
-## Data Issues
+## Data issues
 
 ### Data rate lower than configured
 
 **Possible reasons:**
 
-1. **Hardware limitation**: Some sensors have max rates
-   - IMU: 100 Hz max
-   - Camera: 30 Hz max
-   - GPS: 1-10 Hz typical
+1. **Hardware limitation**: Each sensor has a maximum rate, and the device may not reach it
+   - IMU, Magnetometer: 100 Hz max
+   - Camera, LiDAR: 60 Hz max (30 Hz default); higher resolutions lower the achievable rate
+   - GPS: 10 Hz max (1 Hz default); the GPS hardware may update less often
+   - See [Sensors and topics](sensors.md) for every sensor
 
 2. **Network congestion**: Local network can't handle bandwidth
 
@@ -326,13 +331,13 @@ Common issues and solutions for Conduit.
 
 **Check:**
 
-1. **System time**: Ensure iOS device clock is accurate
+1. **System time**: `header.stamp` is wall-clock time (seconds since the Unix epoch, like ROS time on the host). Ensure the iOS device clock is set automatically (iOS Settings → General → Date & Time → Set Automatically), and that the host's clock is synchronized too.
 
-2. **Timezone**: ROS 2 uses UTC, iOS uses local time
+2. **AR-derived topics**: LiDAR point clouds, depth images, Device Pose (Conduit 3) and the camera images in LiDAR mode carry the ARKit frame's capture time, not the publish time. Messages from the same frame share an identical stamp.
 
-3. **Timestamp source**: Verify using correct time source (system vs sensor)
+3. **Comparing with `ros2 topic delay`**: a large or negative delay usually means the two clocks differ, not that the data is late.
 
-## DDS Transport Issues
+## DDS transport issues
 
 ### No topics appear when using DDS
 
@@ -355,12 +360,13 @@ Common issues and solutions for Conduit.
    Must match the Domain ID field in Conduit Settings.
 
 3. **Verify network interface binding on iOS:**
-   - Conduit Settings → Transport → DDS → Network Interface must be `en0` (WiFi).
-   - Leaving this as "auto" frequently fails because iOS may select a cellular or VPN interface.
+   - Conduit Settings → **Discovery** → **Network Interface** must be **en0 (WiFi)** on iPhone and iPad (the default).
+   - "auto" can fail because iOS may select a cellular or VPN interface.
 
 4. **Multicast blocked by WiFi AP:**
    - Many consumer access points enable "AP isolation" or drop multicast.
-   - Workaround: switch Discovery Mode to **Unicast** and add the ROS 2 host IP to the Unicast Peers list in Settings.
+   - Workaround: add peers on both sides. In Conduit, Settings → **Discovery** → **Peers**: add the ROS 2 host's IP address. On the host, add the iPhone's address (shown as **This Device** on the same page) to the `Peers` list in `CYCLONEDDS_URI`. With peers, Conduit uses unicast on top of multicast.
+   - The [QR code script](pair.md) can add the iPhone as a peer on the host for you.
 
 5. **Firewall on ROS 2 host:**
    - DDS uses UDP ports starting at `7400 + 250 * domain_id` (for domain 0: 7400, 7401, 7410, 7411).
@@ -399,26 +405,27 @@ Any time you change `RMW_IMPLEMENTATION`, `ROS_DOMAIN_ID`, `CYCLONEDDS_URI`, or 
 
 2. **CameraInfo reliability:** CameraInfo uses BestEffort with TransientLocal (`latchedBestEffort`). Standard `image_transport` subscribers expect Reliable — override the subscriber QoS.
 
-3. **Large messages (Camera, LiDAR):** Use Unicast discovery. Multicast reassembly of fragmented RTPS data over consumer WiFi is unreliable — see [known-issues.md](known-issues.md).
+3. **Large messages (Camera, LiDAR):** Add peers (Settings → **Discovery** → **Peers**) so data also goes over unicast. Fragmented RTPS data over consumer Wi-Fi multicast is unreliable — see [known-issues.md](known-issues.md).
 
 4. **"Waiting for subscriber" on the sensor row:** **Publish only when subscribed** (Settings → Publishing) is on and no subscription matches the topic. Check the subscriber's QoS (best effort, see item 1), or turn the setting off. See [On-demand capture](on-demand-capture.md).
 
 ### Disconnect takes several seconds (DDS)
 
-**Problem:** Pressing Stop in the app causes a 2-5 second delay before "Publishing" clears.
+**Problem:** After you press Stop, it can take a few seconds before "Publishing" clears.
 
-**Expected behavior:** DDS disconnect is serialized to avoid an iOS-specific participant-delete deadlock. See [known-issues.md](known-issues.md).
+**Expected behavior:** Closing the DDS publishers and participant can take a moment. No action is needed. See [known-issues.md](known-issues.md).
 
 ### iOS cannot reach the ROS 2 host (DDS over LAN)
 
 **Problem:** `ping` from iOS to host works, but DDS discovery fails.
 
 **Solutions:**
+
 - Confirm both devices are on the same subnet; DDS default transport is UDP, which does not cross routers without configuration.
 - Corporate networks often block multicast and inter-client UDP. Use a dedicated test LAN or phone hotspot.
 - On macOS Docker Desktop, the Docker container **cannot** receive DDS from iOS because Docker Desktop does not provide true host networking. Run the subscriber on Linux, a Parallels VM, or natively on macOS instead.
 
-## Getting More Help
+## Getting more help
 
 If your issue isn't listed here:
 

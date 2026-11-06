@@ -5,6 +5,11 @@ description: Watch a ROS 2 robot's camera, map and diagnostics on your iPhone, i
 
 # Robots
 
+!!! info "Coming in Conduit 3"
+    Robots is part of Conduit 3, which is not on the App Store yet. The Conduit on the App Store
+    today (2.x) publishes sensors but has no robot button. This page describes Robots as it will
+    ship in Conduit 3.
+
 Conduit 3.0 subscribes as well as publishes. A **robot profile** says which topics hold the
 robot's camera, map, odometry, battery and diagnostics, and where Conduit sends its commands.
 **Open** shows the drive view:
@@ -16,6 +21,22 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
 - **Robot arms** — hold HOLD and move your iPhone or iPad: a [MoveIt Servo](robots-arm.md) arm
   follows, while the screen shows the wrist camera, the gripper, diagnostics and a menu that
   moves the arm to the poses of its SRDF. On a Mac the arm view only watches.
+
+## Demo videos
+
+Sneak peeks of Conduit 3: a robot driven from the iPhone through its own camera, and a MoveIt
+Servo arm that follows the iPhone.
+
+<div class="conduit-grid">
+<figure>
+<div class="conduit-video"><iframe src="https://www.youtube.com/embed/tERF16pEvUA" title="Conduit 3 sneak peek: drive a robot through its own camera from your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+<figcaption><strong>Drive a mobile robot</strong>Camera, map and joystick in the drive view. See <a href="../robots-mobile/">Mobile robots</a>.</figcaption>
+</figure>
+<figure>
+<div class="conduit-video"><iframe src="https://www.youtube.com/embed/5x5xeL3mKAI" title="Conduit 3 sneak peek: move a robot arm by moving your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+<figcaption><strong>Move a robot arm</strong>Hold HOLD and move the iPhone; MoveIt Servo follows. See <a href="../robots-arm/">Robot arms</a>.</figcaption>
+</figure>
+</div>
 
 ## What you need
 
@@ -39,6 +60,7 @@ Each robot in the list shows a glyph for its kind, its name, its kind (**Mobile 
 
 1. Tap **+**. The editor opens with **Kind** set to **Mobile robot**; switch it to **Arm** for a
    robot arm. Give the robot a name.
+
 2. Tap **Start** in the bottom corner (while Conduit is offline, a "Discover your robot" tip
    points at it). Conduit goes online and fills in the new profile from the robot:
     - each empty topic field that has exactly one discovered topic of the right type, including
@@ -50,10 +72,12 @@ Each robot in the list shows a glyph for its kind, its name, its kind (**Mobile 
     Each field is filled once. A field you type in or clear stays as you left it, and a saved
     profile is never filled again. The list button next to a field shows every discovered topic
     that fits it.
+
 3. Check the fields. An empty field shows a usual name in grey. **Joy output** and **Goal pose**
    are never discovered, because only the robot subscribes to them: type them if the grey name is
    wrong. Under **Required topics**, an empty field is saved as the grey default. Under
    **Optional topics**, an empty field turns off what it feeds.
+
 4. Tap **Save**. An arm's named poses are not part of the profile: the arm view's pose menu lists
    the group states of the robot's SRDF; see [Named poses](robots-arm.md#named-poses).
 
@@ -130,7 +154,7 @@ list.
 
 | What you see | What to check |
 | --- | --- |
-| "No topics found" in the profile editor | Distribution (Humble vs Jazzy and later), domain ID, the Zenoh router or DDS unicast peers, the profile's connection |
+| "No topics found" in the profile editor | Distribution (Humble vs Jazzy and later), domain ID, the Zenoh router or DDS peers, the profile's connection |
 | "Robot link lost" in the profile editor | The link is down ("Router connection lost", "No data from the robot" or "Robot publishers left the graph"); Conduit keeps retrying |
 | "Servo not found" in the Robots list | Nothing publishes the arm profile's **Servo status** topic: Servo is not running, or the profile names another node |
 | "No data — check Distribution / QoS" | The topic exists but nothing arrives: a type mismatch from the wrong Distribution, or QoS |
@@ -140,11 +164,3 @@ list.
 | Red **STALE** over the camera | No camera frame for 0.5 s. The last image stays, dimmed, until frames come back, and the camera chip turns red |
 | Camera at 15 fps, or "Paused — device is hot" / "Camera paused: the device is too hot" | The device is hot: the camera is drawn at 15 fps when it is seriously hot and stops drawing when it is critically hot. Control is never slowed down |
 | "Camera paused: use Conduit full screen" in the iPad arm view | iPadOS pauses motion tracking while Conduit shares the screen with other apps. Use Conduit full screen |
-
-## Demo video
-
-A demo video of a Kachaka driven from the iPhone and a MoveIt Servo arm following the phone will
-be added here.
-
-<!-- TODO(owner): embed the video here once it is recorded, in the same form as the demo videos
-     in README.md, and reword the sentence above to "The video below shows …". -->

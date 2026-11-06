@@ -5,6 +5,11 @@ description: Move a MoveIt Servo arm with the motion of your iPhone or iPad, and
 
 # Teleoperate a robot arm
 
+!!! info "Coming in Conduit 3"
+    Robots is part of Conduit 3, which is not on the App Store yet. The Conduit on the App Store
+    today (2.x) publishes sensors but has no robot button. This page describes Robots as it will
+    ship in Conduit 3.
+
 While you hold **HOLD**, the arm's end effector follows the motion of your iPhone or iPad:
 Conduit turns ARKit's pose of the device into `geometry_msgs/TwistStamped` for MoveIt Servo
 (`/servo_node/delta_twist_cmds` by default). A gripper arc works the gripper, and a pose menu
@@ -132,16 +137,19 @@ start at their defaults each time the view opens. The panel is off while HOLD is
    the robot's front" or "Wait for motion tracking, then Align". Align again after motion tracking
    restarts or fails ("Motion tracking restarted. Align again.", "Motion tracking failed. Align
    again.").
+
 2. **Hold HOLD and move.** HOLD is dimmed until the link is up, Servo is ready, the robot clock
    is known and you have tapped Align. The status line says what it waits for ("Connecting…", a
    Servo problem, the robot clock, "Starting…"). A press when only Align is
    missing opens a "Tap Align first" dialog. A press also needs normal motion tracking, and is
    refused with "Waiting for motion tracking" or "Motion tracking is limited. Move the device
    slowly." without it. HOLD turns green and reads **HOLDING** while the arm follows.
+
 3. **Release to stop.** Releasing HOLD sends three zero twists at once. Tracking loss, a covered
    camera, a pose jump or a lost link also stop the arm, with one zero twist ("The pose jumped.
    Release and press again.", "Motion tracking paused. Release and press again."); release and
    press again to resume.
+
 4. **Gripper.** With HOLD released, tap the arc to open or close the gripper, or drag along it to
    set an opening. The readout along the arc says "40 % open" ("Moving · 40 % open" while a goal
    runs). The white handle is the opening asked for, and with a Gripper joint the track fills

@@ -31,6 +31,7 @@ theme:
     - navigation.tracking
     - navigation.tabs
     - navigation.sections
+    - navigation.footer
     - search.suggest
     - content.code.copy
 
@@ -39,19 +40,24 @@ extra_css:
 
 nav:
   - Home: index.md
-  - Connect with a QR code: pair.md
-  - FAQ: faq.md
-  - Troubleshooting: troubleshooting.md
-  - Platform notes: platform-notes.md
-  - Transports (Zenoh / DDS): transports.md
+  - Get started:
+      - Connect with a QR code: pair.md
+      - Zenoh or DDS: transports.md
+      - Platform notes: platform-notes.md
+  - Guides:
+      - Sensors and topics: sensors.md
+      - Recording (MCAP): recording.md
+      - On-demand capture: on-demand-capture.md
+      - Game controller teleop: teleop.md
   - Robots:
       - Overview: robots.md
       - Mobile robots: robots-mobile.md
       - Robot arms: robots-arm.md
-  - On-demand capture: on-demand-capture.md
-  - Teleoperation: teleop.md
-  - Known issues: known-issues.md
-  - Privacy policy: privacy.md
+  - Help:
+      - FAQ: faq.md
+      - Troubleshooting: troubleshooting.md
+      - Known issues: known-issues.md
+      - Privacy policy: privacy.md
 
 markdown_extensions:
   - admonition

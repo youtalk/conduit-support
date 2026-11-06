@@ -1,30 +1,46 @@
-# Frequently Asked Questions
+# Frequently asked questions
 
-## Setup & Configuration
+## Setup & configuration
+
+### How do I connect with a QR code?
+
+Requires Conduit 2.6.0 or later.
+
+Run one command on your ROS 2 PC:
+
+```bash
+curl -fsSL https://conduit.direct/pair.sh | bash
+```
+
+The script checks the PC's ROS 2 setup, shows a QR code, and waits. Scan the code with the iPhone's Camera app, and Conduit fills in the connection settings. This is the easiest way to connect, for Zenoh and for DDS. See [Connect with a QR code](pair.md) for the requirements and for what to do when nothing happens after the scan.
+
+The manual steps below still work if you prefer them or cannot run the script.
 
 ### Which transport should I use: Zenoh or DDS?
 
-Conduit 2.0 supports two transports — choose based on your ROS 2 middleware:
+Conduit supports two transports. Choose based on your ROS 2 middleware:
 
 | | Zenoh | DDS (CycloneDDS) |
 |---|---|---|
 | **RMW** | rmw_zenoh_cpp | rmw_cyclonedds_cpp |
 | **Router required** | Yes (rmw_zenohd) | No |
-| **Network** | TCP/UDP to router | Multicast or unicast on LAN |
+| **Network** | TCP to the router | Multicast on the LAN, plus unicast to any peers you add |
 | **Distros** | Humble, Jazzy, Kilted, Lyrical, Rolling | Humble, Jazzy, Kilted, Lyrical, Rolling |
-| **Setup** | Enter router IP in Settings | Set discovery mode in Settings |
+| **Setup** | Enter the router address in Settings | Optional peers in Settings → **Discovery** |
 
-**Recommendation:** Use **Zenoh** if you already have rmw_zenoh_cpp set up. Use **DDS** if your stack uses rmw_cyclonedds_cpp and you want zero-broker operation.
+**Recommendation:** Use **Zenoh** if you already have rmw_zenoh_cpp set up. Use **DDS** if your stack uses rmw_cyclonedds_cpp and you don't want to run a router.
 
 See [transports.md](transports.md) for a deeper side-by-side comparison and network-requirements reference.
 
 ### I used Conduit 1.x — what changed in 2.0?
 
-**Transport choice:** 2.0 adds DDS (CycloneDDS) alongside Zenoh. Existing Zenoh users can keep their current router setup — Zenoh remains fully supported. DDS is opt-in via Settings → Transport.
+**Transport choice:** 2.0 adds DDS (CycloneDDS) alongside Zenoh. Your Zenoh router setup keeps working. Pick DDS in Settings → Transport.
 
-**Supported distros:** Kilted and Rolling joined Humble and Jazzy in 2.0; Lyrical joined in 2.3.0.
+**Supported distros:** Kilted and Rolling joined Humble and Jazzy in 2.0; Lyrical joined in 2.3.0 and is the default for new installs.
 
 ### How do I connect via Zenoh?
+
+The [QR code](pair.md) fills in these settings for you. To set them by hand:
 
 1. Start the Zenoh router on your ROS 2 system:
    ```bash
@@ -41,19 +57,22 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
    ipconfig      # Windows
    ```
 
-3. In Conduit app:
+3. In the Conduit app:
    - Tap Settings (gear icon)
+   - Transport: **Zenoh**
    - Enter Router Address (e.g., `192.168.1.100`)
    - Enter Router Port (default: `7447`)
    - Enter Domain ID (must match ROS_DOMAIN_ID on host)
    - Distribution: your host's ROS 2 release (Lyrical by default)
-   - Tap Save
+   - Tap **Done**. Settings are saved as you change them.
 
 4. Enable sensors and tap Play
 
 **Important:** Domain ID must match between the app and ROS 2 system. Valid range: 0-232 (RTPS specification limit).
 
 ### How do I connect via DDS?
+
+The [QR code](pair.md) fills in these settings for you and can add the iPhone as a peer on the PC. To set them by hand:
 
 1. On your ROS 2 system:
    ```bash
@@ -73,22 +92,26 @@ See [transports.md](transports.md) for a deeper side-by-side comparison and netw
 
 2. In the Conduit app:
    - Tap Settings → Transport: **DDS**
-   - Discovery Mode: **Hybrid** (recommended) or Unicast
-   - Add the ROS 2 host IP to Unicast Peers
-   - **Network Interface: `en0`** (required on iOS — do not leave as "auto")
    - Domain ID: must match `ROS_DOMAIN_ID`
    - Distribution: your host's ROS 2 release (Lyrical by default)
-   - Tap Save
+   - Tap **Discovery**. On the **DDS Discovery** page:
+     - **Peers:** add the ROS 2 host's IP address. Without peers, Conduit uses multicast discovery only. With peers, it uses unicast to the peers on top of multicast.
+     - **Network Interface:** **en0 (WiFi)** on iPhone and iPad (the default).
+     - **This Device** shows the iPhone's address. Add it as a peer on the ROS 2 host too, in `CYCLONEDDS_URI` (see [Transports](transports.md)).
+   - Tap **Done**. Settings are saved as you change them; discovery changes apply the next time you tap Start.
 
 3. Enable sensors and tap Play
 
 **Important:**
+
 - Domain ID must match between the app and ROS 2 system. Valid range: **0-232** (DDS RTPS limit).
-- On iOS, DDS **requires** binding to `en0` (WiFi) — multicast / auto-select often fails.
+- On iPhone and iPad, keep the network interface on **en0 (WiFi)**. "auto" can pick a cellular or VPN interface.
+- Many Wi-Fi networks drop multicast. If discovery fails, add peers on both sides.
 
 ### Which ROS 2 versions are supported?
 
 Conduit supports:
+
 - **ROS 2 Humble** (Ubuntu 22.04) - No type hash
 - **ROS 2 Jazzy** (Ubuntu 24.04) - RIHS01 type hash
 - **ROS 2 Kilted** (Ubuntu 24.04) - RIHS01 type hash
@@ -96,8 +119,13 @@ Conduit supports:
 - **ROS 2 Rolling** - RIHS01 type hash
 
 Supported RMW implementations:
-- **rmw_zenoh_cpp** — via Zenoh transport (set Settings → Distribution to match the host)
-- **rmw_cyclonedds_cpp 0.10.5** — via DDS transport (default RMW on many ROS 2 distributions)
+
+- **rmw_zenoh_cpp** — via the Zenoh transport
+- **rmw_cyclonedds_cpp** — via the DDS transport. Use the version that ships with your distro. Conduit embeds CycloneDDS 11.0.1.
+
+Set Settings → Distribution to match the host for either transport.
+
+The default RMW on every one of these distros is Fast DDS (`rmw_fastrtps_cpp`), so set `RMW_IMPLEMENTATION` explicitly. A Fast DDS host can discover Conduit over DDS, but may drop or delay high-rate topics such as the camera and LiDAR.
 
 ### Why can't I see my topics in `ros2 topic list`?
 
@@ -123,12 +151,18 @@ Supported RMW implementations:
    ```bash
    # Verify RMW setting
    echo $RMW_IMPLEMENTATION
-   # Should output: rmw_zenoh_cpp
+   # Zenoh transport: rmw_zenoh_cpp
+   # DDS transport:   rmw_cyclonedds_cpp
    ```
+   After changing it, run `ros2 daemon stop` so the CLI picks up the new value.
 
 4. **Network connectivity**: Ensure iPhone and ROS 2 system are on the same network
 
-5. **Firewall blocking port 7447**: Check firewall settings on ROS 2 system
+5. **Firewall on the ROS 2 system**: allow TCP 7447 for Zenoh, or the DDS UDP ports (`7400 + 250 × domain` and up) for DDS.
+
+6. **Distribution mismatch**: Settings → Distribution must match the host (Humble vs Jazzy and later).
+
+The [QR code script](pair.md) checks most of these on the host for you.
 
 ### What does the Distribution setting change?
 
@@ -139,51 +173,51 @@ Pick the release your host runs; there is no automatic detection.
 
 ### Can I use Conduit without a ROS 2 system?
 
-Yes, for testing:
-- The iOS Simulator generates mock sensor data
-- You can verify app functionality without ROS 2
-- However, you won't be able to receive data without a Zenoh router
+Yes. **Record mode** works with no network at all. Choose **Record** next to the play button and Conduit writes the sensors to an `.mcap` file on the device. See [MCAP recording](#mcap-recording).
 
-For production use, you need a ROS 2 system (Humble, Jazzy, Kilted, Lyrical, or Rolling) with **one** of the supported transports:
+To receive live data, you need a ROS 2 system (Humble, Jazzy, Kilted, Lyrical, or Rolling) with **one** of the supported transports:
+
 - **Zenoh:** `rmw_zenoh_cpp` middleware and a running Zenoh router (`rmw_zenohd`).
-- **DDS:** `rmw_cyclonedds_cpp` middleware on the same LAN as your iOS device — no broker required.
+- **DDS:** `rmw_cyclonedds_cpp` middleware on the same LAN as your iPhone or iPad — no router required.
 
 ### Which sensors work on which platforms?
 
-| Platform | Available Sensors |
-|----------|-------------------|
-| **iOS/iPadOS** | All 12 sensors (IMU, GPS, Camera, LiDAR*, Magnetometer, Barometer, Battery, Thermal, Proximity†, Illuminance, Microphone, Game Controller) |
-| **visionOS** | Camera, IMU, Game Controller |
-| **tvOS** | Game Controller only |
-| **macOS** | Camera, Battery, Game Controller |
+- **iPhone:** all 13 sensors. LiDAR needs a Pro model from iPhone 12 Pro on.
+- **iPad:** every sensor except Proximity. LiDAR needs an iPad Pro (2020 or later).
+- **Mac (Mac Catalyst):** Camera, Microphone, Battery, Thermal and Game Controller only.
 
-*LiDAR requires iPhone 12 Pro or newer, iPad Pro 2020+, Vision Pro
-†Proximity sensor only on iPhone (not iPad)
+Device Pose (Conduit 3) runs on iPhone and iPad only, and only while ARKit tracking is normal.
+
+See [Platform notes](platform-notes.md) for details per platform, and [Sensors and topics](sensors.md) for every topic, message type, rate and frame.
 
 ### How do I enable background mode?
 
-Background mode is a premium In-App Purchase. After unlocking it:
+Turn on Settings → Publishing → **Background Publishing**. It needs the Background Mode In-App Purchase; until you buy it, the toggle shows a lock.
 
-1. Tap Settings → Enable "Background Mode"
-2. Grant location permission if using GPS
+What happens when you leave the app:
 
-**Limitations:**
-- GPS background tracking not supported (privacy constraints)
-- Camera, LiDAR, and Microphone stop in background (iOS restrictions on ARKit and audio session)
-- Only IMU, GPS (foreground only), Magnetometer, Barometer, Battery, Thermal continue in background
+- **Background Publishing off:** Conduit stops publishing.
+- **Background Publishing on:** Camera and LiDAR stop (iOS does not allow them in the background). The other sensors keep publishing until iOS suspends the app, which it can do at any time.
+
+Keep Conduit in the foreground when you need data for a long time, for example a long GPS track. See [Known issues](known-issues.md).
 
 ### What are the premium features?
 
-**Free features:**
-- IMU, GPS, Magnetometer, Barometer, Battery, Thermal, Proximity, Illuminance, **Microphone**
-- Front camera
+**Free:**
 
-**Premium features** (one-time In-App Purchase per feature):
-- **Multi-camera** — Wide, ultra-wide, telephoto cameras (front camera stays free)
-- **LiDAR sensor** — Point cloud depth sensing (iPhone Pro / iPad Pro / Vision Pro)
-- **Game Controller** — MFi / Bluetooth controller input
-- **Background mode** — Continue publishing supported sensors when the app is backgrounded
-- **MCAP Recording** — Record live topics to a local `.mcap` file for replay in Foxglove or `ros2 bag play`
+- IMU, GPS, Magnetometer, Barometer, Illuminance, Proximity, Battery, Thermal, **Microphone**
+- Front camera
+- **MCAP recording** to the device
+
+**One-time In-App Purchases:**
+
+- **Back Cameras** — Wide, Ultra Wide and Telephoto cameras in one purchase (the front camera stays free)
+- **LiDAR** — point cloud and depth (iPhone Pro / iPad Pro)
+- **Game Controller** — MFi / Bluetooth controller input as `sensor_msgs/Joy`
+- **Background Mode** — keep publishing supported sensors while the app is in the background
+- **Recording Export** — export and share recorded `.mcap` files to other apps and devices
+
+Settings → **Premium Features** shows what you have unlocked and has **Restore Purchases**.
 
 ### How do I verify data is being published?
 
@@ -221,16 +255,13 @@ If you expected data, check:
 **Common reasons:**
 
 1. **Hardware limitation**: Device doesn't have that sensor
-   - LiDAR: iPhone 12 Pro+ only
-   - Barometer: iPhone 6+ only
+   - LiDAR: iPhone 12 Pro or later Pro models, iPad Pro (2020 or later)
    - Proximity: iPhone only (not iPad)
 
 2. **Platform limitation**:
-   - visionOS: No GPS (indoor device)
-   - tvOS: Only Game Controller
-   - macOS: No IMU/GPS/Magnetometer
+   - Mac: only Camera, Microphone, Battery, Thermal and Game Controller. See [Which sensors work on which platforms?](#which-sensors-work-on-which-platforms)
 
-3. **Permission denied**: Grant permission in Settings → Privacy
+3. **Permission denied**: Grant permission in iOS Settings → Privacy & Security
 
 4. **Runtime unavailable**:
    - Game Controller: No controller connected
@@ -238,28 +269,31 @@ If you expected data, check:
 
 ### Can I use multiple cameras simultaneously?
 
-Yes! Conduit supports multi-camera streaming:
+Yes. Each camera has its own row:
 
-1. Tap the Camera sensor row
-2. Select multiple cameras (front, wide, ultra-wide, telephoto)
-3. Each camera publishes to its own topics (default namespace `conduit`):
+1. Turn on the cameras you want (front, wide, ultra-wide, telephoto)
+2. Each camera publishes to its own topics (default namespace `conduit`):
    - `/conduit/camera/front/image_raw/compressed`
    - `/conduit/camera/wide/image_raw/compressed`
    - `/conduit/camera/ultrawide/image_raw/compressed`
    - `/conduit/camera/telephoto/image_raw/compressed`
 
-   These are the default compressed outputs. With the camera's output set to raw, the image goes to `.../image_raw` instead (or to both topics). Each camera also publishes `/conduit/camera/<camera>/camera_info`.
+   These are the default compressed outputs. With the camera's output set to raw, the image goes to `.../image_raw` instead. Each camera also publishes `/conduit/camera/<camera>/camera_info`.
 
-**Note:** Wide, ultra-wide, and telephoto cameras require Premium unlock.
+**Notes:**
+
+- The wide, ultra-wide and telephoto cameras need the Back Cameras purchase. The front camera is free.
+- LiDAR uses ARKit, which gives only the wide camera. While LiDAR is on, only the wide camera streams; turning on another camera turns LiDAR off. LiDAR can also publish `/conduit/camera/wide/depth/image_raw`, aligned with the wide camera.
 
 ### How do I change the publishing rate?
 
-1. Tap the gear icon ⚙️ next to any sensor
-2. Adjust "Rate (Hz)" slider
-3. Configure QoS settings if needed
-4. Tap Save
+1. Stop publishing. The settings button appears under each sensor's toggle.
+2. Tap the settings button (sliders icon) under the sensor's toggle
+3. Pick a rate from **Rate (Hz)**
+4. Change the QoS settings if needed
+5. Tap **Save**
 
-Different sensors have different maximum rates (see Supported Sensors table).
+Each sensor has its own maximum rate, shown in the sheet. See [Sensors and topics](sensors.md) for the default and maximum rates.
 
 ---
 
@@ -270,6 +304,7 @@ Different sensors have different maximum rates (see Supported Sensors table).
 The Microphone sensor publishes `audio_common_msgs/msg/AudioData` messages.
 
 **Audio parameters:**
+
 - **Sample rate**: 16,000 Hz
 - **Channels**: 1 (mono)
 - **Format**: S16LE (signed 16-bit little-endian PCM)
@@ -364,23 +399,27 @@ if __name__ == '__main__':
 
 ### Does the Microphone sensor work in the background?
 
-No. iOS restricts microphone access to foreground apps only. The microphone stops when the app is backgrounded.
+No. In the current release the microphone stops when Conduit goes to the background, even with Background Publishing on.
 
 Keep the app in the foreground when using the Microphone sensor.
 
 ---
 
-## MCAP Recording
+## MCAP recording
 
 ### How does MCAP recording work?
 
-When you start a recording, Conduit writes every published topic — same XCDR v1 bytes as the live Zenoh / DDS publish path — to a local `.mcap` file in the app's Documents directory. Schemas are embedded in the MCAP header automatically, so the bag round-trips through any MCAP-aware reader (Foxglove, `ros2 bag play`, the `mcap` CLI) without external `.msg` files.
+Choose **Record** or **Both** next to the play button, then tap play. Conduit writes every topic it produces to an `.mcap` file on the device, as the same XCDR v1 bytes it sends to ROS 2. The schemas are embedded in the file, so any MCAP reader (Foxglove, Lichtblick, `ros2 bag play`, the `mcap` CLI) opens it without external `.msg` files.
 
-Recordings are saved on-device only. Conduit never uploads them. From the in-app Recordings list you can share a recording via the system share sheet (Files, AirDrop, mail, …) or delete it.
+- **Publish:** live to ROS 2 only.
+- **Record:** to a file only. Needs no network and no ROS 2 system.
+- **Both:** live to ROS 2 and to a file.
+
+Recording is free. Recordings stay on the device; Conduit never uploads them. Open them from the folder button next to Settings in the toolbar, where you can delete them. To export a recording through the share sheet (Files, AirDrop, mail, …), you need the Recording Export purchase. Without it, recordings are kept in the app's private storage and the share button shows a lock.
 
 ### Can I record while publishing live to ROS 2?
 
-Yes. Recording is a tee on the same publish path, not a separate pipeline — every message you send to ROS 2 is also written to the bag.
+Yes. Choose **Both**. Recording is a sink on the same publish path, not a separate pipeline — every message you send to ROS 2 is also written to the file.
 
 ### How do I replay an MCAP file?
 
@@ -395,38 +434,42 @@ sudo apt install ros-humble-rosbag2-storage-mcap
 ros2 bag play recording.mcap --storage mcap
 ```
 
-### Why is the Recording button greyed out?
+### Do I need a purchase to record?
 
-MCAP Recording is a one-time In-App Purchase (see [premium features](#what-are-the-premium-features)). After unlocking it, the Recording control becomes active in the FAB mode selector.
+No. Recording to the device is free, and the Record and Both modes are always available. Only exporting a recording out of the app needs the one-time Recording Export purchase (see [premium features](#what-are-the-premium-features)).
 
 ---
 
 ### Does Conduit work offline?
 
-No. Conduit requires network connectivity to:
-- Connect to Zenoh router on your local network
-- Publish sensor data to ROS 2 topics
+Partly:
 
-However, **no internet is required** - only local network between your iOS device and ROS 2 system.
+- **Record** mode works with no network at all.
+- **Publish** and **Both** need a local network between your iPhone or iPad and the ROS 2 system (or a Zenoh router you can reach).
+
+**No internet is required** for either.
 
 ### How do I reset app settings?
 
-1. Delete and reinstall the app, OR
-2. iOS Settings → Conduit → Reset (if available)
+Delete and reinstall the app. This clears:
 
-This will clear:
-- Saved router address
+- Connection settings (router address, peers, Domain ID, Distribution)
 - Sensor configurations
-- Premium purchase status is preserved (linked to Apple ID)
+- Recordings stored on the device
+
+Purchases are tied to your Apple ID. After reinstalling, tap Settings → Premium Features → **Restore Purchases**.
+
+To see the setup tour again without resetting anything, tap Settings → About & Help → **Replay Onboarding**.
 
 ### Is my data sent to the cloud?
 
 **No.** All sensor data:
-- Stays on your local network
-- Sent only to your configured Zenoh router
-- Never uploaded to external servers
-- Never shared with third parties
 
-Firebase Analytics collects anonymous app usage statistics only (opt-out available in iOS Settings).
+- Stays on your local network (or your Tailscale tailnet, if you use one)
+- Goes only to the ROS 2 host or Zenoh router you configure
+- Is never uploaded to external servers
+- Is never shared with third parties
+
+Firebase Analytics collects anonymous app usage statistics only, with no sensor values. To turn it off, open Settings → About & Help → Privacy and turn off **Send Usage Statistics**.
 
 See our [Privacy Policy](privacy.md) for details.

@@ -1,44 +1,39 @@
 /* ============================================================
    Conduit · Support site theme
-   Apple-native aesthetic on top of MkDocs Material.
-   Mirrors App/Theme/AppleTheme.swift one-for-one:
-   - SF Pro Rounded for display, SF Pro for body
-   - System palette (Apple Blue / Indigo / Green / Teal …)
-   - Glass surfaces with ultraThinMaterial-equivalent blur
-   - Apple-spec corner radii (10 / 14 / 18 / 22)
+   Apple-native look on top of MkDocs Material, following
+   App/Theme/AppleTheme.swift:
+   - SF Pro Rounded for headings, SF Pro for body text
+   - Apple system colors, flat surfaces, no decorative gradients
+   - Apple corner radii (10 / 14 / 18 / 22)
    ============================================================ */
 
 /* ----- 1. Design tokens ----- */
 
 :root,
 [data-md-color-scheme="default"] {
-  /* Apple system palette — values match AppleTheme.swift colors */
+  /* Apple system colors (light) */
   --conduit-blue:   #007AFF;
   --conduit-indigo: #5856D6;
   --conduit-green:  #34C759;
   --conduit-orange: #FF9500;
   --conduit-red:    #FF3B30;
-  --conduit-purple: #AF52DE;
-  --conduit-teal:   #30B0C7;
-  --conduit-pink:   #FF2D55;
 
-  /* Surface */
-  --conduit-bg:           #F5F5F7;      /* warm Apple gray */
+  /* Surfaces */
+  --conduit-bg:           #F2F2F7;      /* systemGroupedBackground */
   --conduit-bg-elevated:  #FFFFFF;
-  --conduit-bg-grouped:   #EFEEF3;
-  --conduit-separator:    rgba(60, 60, 67, 0.12);
-  --conduit-label:        rgba(0, 0, 0, 0.92);
-  --conduit-label-2:      rgba(60, 60, 67, 0.68);
-  --conduit-label-3:      rgba(60, 60, 67, 0.42);
-  --conduit-glass:        rgba(255, 255, 255, 0.62);
-  --conduit-glass-stroke: rgba(255, 255, 255, 0.7);
-  --conduit-glass-edge:   rgba(0, 0, 0, 0.05);
+  --conduit-bg-grouped:   #F2F2F7;
+  --conduit-fill:         rgba(120, 120, 128, 0.12);
+  --conduit-separator:    rgba(60, 60, 67, 0.16);
+  --conduit-label:        #1D1D1F;
+  --conduit-label-2:      rgba(60, 60, 67, 0.75);
+  --conduit-label-3:      rgba(60, 60, 67, 0.45);
+  --conduit-tint-fill:    rgba(0, 122, 255, 0.10);
+  --conduit-shadow:       0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.10);
 
-  /* Gradient — appleGradientBlue */
-  --conduit-gradient: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
-  --conduit-gradient-soft: linear-gradient(135deg,
-    rgba(0, 122, 255, 0.18) 0%,
-    rgba(88, 86, 214, 0.18) 100%);
+  /* Terminal panel (dark in both schemes) */
+  --conduit-term-bg:      #1C1C1E;
+  --conduit-term-fg:      #F2F2F7;
+  --conduit-term-prompt:  #30D158;
 
   /* Typography */
   --conduit-font:        -apple-system, BlinkMacSystemFont, "SF Pro Text",
@@ -61,26 +56,36 @@
   --md-default-fg-color:           var(--conduit-label);
   --md-default-fg-color--light:    var(--conduit-label-2);
   --md-default-fg-color--lighter:  var(--conduit-label-3);
-  --md-code-bg-color:              rgba(60, 60, 67, 0.08);
-  --md-code-fg-color:              #1d1d1f;
+  --md-code-bg-color:              rgba(120, 120, 128, 0.12);
+  --md-code-fg-color:              #1D1D1F;
 }
 
 [data-md-color-scheme="slate"] {
-  --conduit-bg:           #0B0B0F;
-  --conduit-bg-elevated:  #16161C;
-  --conduit-bg-grouped:   #1C1C22;
-  --conduit-separator:    rgba(120, 120, 128, 0.32);
-  --conduit-label:        rgba(255, 255, 255, 0.96);
-  --conduit-label-2:      rgba(235, 235, 245, 0.6);
+  /* Apple system colors (dark) */
+  --conduit-blue:   #0A84FF;
+  --conduit-indigo: #5E5CE6;
+  --conduit-green:  #30D158;
+  --conduit-orange: #FF9F0A;
+  --conduit-red:    #FF453A;
+
+  --conduit-bg:           #000000;
+  --conduit-bg-elevated:  #1C1C1E;
+  --conduit-bg-grouped:   #2C2C2E;
+  --conduit-fill:         rgba(120, 120, 128, 0.24);
+  --conduit-separator:    rgba(84, 84, 88, 0.65);
+  --conduit-label:        #F5F5F7;
+  --conduit-label-2:      rgba(235, 235, 245, 0.62);
   --conduit-label-3:      rgba(235, 235, 245, 0.32);
-  --conduit-glass:        rgba(28, 28, 36, 0.6);
-  --conduit-glass-stroke: rgba(255, 255, 255, 0.12);
-  --conduit-glass-edge:   rgba(255, 255, 255, 0.08);
+  --conduit-tint-fill:    rgba(10, 132, 255, 0.18);
+  --conduit-shadow:       none;
+
+  --conduit-term-bg:      #2C2C2E;
 
   --md-default-bg-color: var(--conduit-bg);
   --md-default-fg-color: var(--conduit-label);
-  --md-code-bg-color:    rgba(255, 255, 255, 0.06);
-  --md-code-fg-color:    #f5f5f7;
+  --md-typeset-a-color:  var(--conduit-blue);
+  --md-code-bg-color:    rgba(120, 120, 128, 0.24);
+  --md-code-fg-color:    #F5F5F7;
 }
 
 /* ----- 2. Base surface ----- */
@@ -96,42 +101,20 @@ body,
   letter-spacing: -0.011em;
 }
 
-/* Subtle atmospheric backdrop — radial blurs reminiscent of iOS gradient meshes */
-.md-main {
-  position: relative;
-  background:
-    radial-gradient(60vw 60vw at 12% -10%, rgba(0, 122, 255, 0.10), transparent 60%),
-    radial-gradient(50vw 50vw at 110% 8%,  rgba(88, 86, 214, 0.10), transparent 65%),
-    radial-gradient(40vw 40vw at 90% 95%,  rgba(48, 176, 199, 0.08), transparent 70%),
-    var(--conduit-bg);
-}
+.md-main { background: var(--conduit-bg); }
 
-[data-md-color-scheme="slate"] .md-main {
-  background:
-    radial-gradient(70vw 60vw at 8% -10%, rgba(0, 122, 255, 0.18), transparent 60%),
-    radial-gradient(50vw 50vw at 110% 12%, rgba(88, 86, 214, 0.20), transparent 65%),
-    radial-gradient(40vw 40vw at 90% 100%, rgba(175, 82, 222, 0.16), transparent 70%),
-    var(--conduit-bg);
-}
-
-/* ----- 3. Header — translucent glass bar like iOS large-title nav ----- */
+/* ----- 3. Header and tabs ----- */
 
 .md-header {
-  background: rgba(255, 255, 255, 0.72);
-  -webkit-backdrop-filter: saturate(180%) blur(28px);
-  backdrop-filter: saturate(180%) blur(28px);
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
   color: var(--conduit-label);
   box-shadow: 0 0.5px 0 var(--conduit-separator);
 }
 
-.md-header[data-md-state="shadow"] {
-  box-shadow: 0 0.5px 0 var(--conduit-separator),
-              0 12px 30px -18px rgba(0, 0, 0, 0.18);
-}
-
 [data-md-color-scheme="slate"] .md-header {
-  background: rgba(12, 12, 18, 0.72);
-  color: var(--conduit-label);
+  background: rgba(22, 22, 24, 0.8);
 }
 
 .md-header__title {
@@ -149,29 +132,25 @@ body,
 .md-tabs__link {
   font-family: var(--conduit-font-rounded);
   font-weight: 600;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   opacity: 1;
   color: var(--conduit-label-2);
-  transition: color .25s ease;
+  transition: color .2s ease;
 }
 
-.md-tabs__link--active,
+.md-tabs__item--active .md-tabs__link,
 .md-tabs__link:hover {
   color: var(--conduit-blue);
 }
 
-/* Search input → pill */
 .md-search__form {
-  border-radius: 14px;
-  background: var(--conduit-glass);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  box-shadow: inset 0 0 0 0.5px var(--conduit-glass-stroke);
+  border-radius: 10px;
+  background: var(--conduit-fill);
 }
 .md-search__input { font-family: var(--conduit-font); }
 .md-search__input::placeholder { color: var(--conduit-label-3); }
 
-/* ----- 4. Typography — display uses Rounded ----- */
+/* ----- 4. Typography ----- */
 
 .md-typeset h1,
 .md-typeset h2,
@@ -179,41 +158,40 @@ body,
 .md-typeset h4,
 .md-typeset h5 {
   font-family: var(--conduit-font-rounded);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.022em;
   color: var(--conduit-label);
+  overflow-wrap: normal;
 }
 
 .md-typeset h1 {
-  font-weight: 700;
-  font-size: 2.6rem;
-  line-height: 1.05;
-  margin: 0 0 1.2em;
-  background: var(--conduit-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-weight: 800;
+  font-size: clamp(1.7rem, 1.1rem + 2.4vw, 2.4rem);
+  line-height: 1.1;
+  margin: 0 0 1em;
 }
 
 .md-typeset h2 {
   font-weight: 700;
-  font-size: 1.7rem;
-  margin-top: 2.4em;
-  padding-top: 1.2em;
+  font-size: clamp(1.3rem, 1.05rem + 1vw, 1.6rem);
+  line-height: 1.2;
+  margin-top: 2.2em;
+  padding-top: 1.1em;
   border-top: 0.5px solid var(--conduit-separator);
 }
 
 .md-typeset h3 {
   font-weight: 600;
-  font-size: 1.22rem;
+  font-size: 1.15rem;
+  line-height: 1.3;
   margin-top: 1.8em;
 }
 
-.md-typeset h4 { font-weight: 600; font-size: 1.05rem; }
+.md-typeset h4 { font-weight: 600; font-size: 1rem; }
 
 .md-typeset p,
 .md-typeset li {
   color: var(--conduit-label);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   line-height: 1.65;
 }
 
@@ -222,428 +200,500 @@ body,
 .md-typeset a {
   color: var(--conduit-blue);
   text-decoration: none;
-  background-image: linear-gradient(currentColor, currentColor);
-  background-position: 0 100%;
-  background-repeat: no-repeat;
-  background-size: 0 1px;
-  transition: background-size .35s cubic-bezier(.2,.8,.2,1), color .2s;
+  text-underline-offset: 0.18em;
 }
 .md-typeset a:hover {
-  color: var(--conduit-indigo);
-  background-size: 100% 1px;
+  color: var(--conduit-blue);
+  text-decoration: underline;
+}
+.md-typeset a:focus-visible,
+.md-tabs__link:focus-visible {
+  outline: 2px solid var(--conduit-blue);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
-/* ----- 5. Content area — glass card surrounds everything ----- */
+/* ----- 5. Layout ----- */
 
-/* The primary (left) sidebar shows only "Home" / "FAQ" / … — same as the
-   top tabs. It just adds dead whitespace, so hide it on desktop and let
-   the content area claim the freed columns. On narrow viewports Material
-   already collapses it into the hamburger drawer, which we keep intact. */
-@media (min-width: 76.25em) {
-  .md-sidebar--primary { display: none; }
-  .md-main__inner.md-grid {
-    grid-template-columns: 1fr minmax(0, 16.2rem);
-    max-width: 72rem;
-  }
-}
+/* Wider than Material's 61rem so the text column keeps a comfortable
+   width next to both sidebars. */
+.md-grid { max-width: 76rem; }
 
-.md-content {
-  max-width: 920px;
-  margin: 0 auto;
-}
-
+/* Pages sit on one white sheet on wide screens. On phones the sheet is
+   dropped so the text gets the full width. */
 .md-content__inner {
-  padding: 1.6rem 1.4rem 4rem;
+  padding: 0.4rem 0 3rem;
 }
 
-@media (min-width: 76.25em) {
-  .md-content { max-width: none; }
+@media (min-width: 60em) {
   .md-content__inner {
     background: var(--conduit-bg-elevated);
     border-radius: 22px;
-    padding: 2.5rem 3rem 3.4rem;
-    margin: 1.6rem 1.4rem 3rem;
-    box-shadow:
-      0 1px 0 var(--conduit-glass-edge),
-      0 24px 60px -28px rgba(0, 0, 0, 0.18);
+    padding: 2.2rem 2.4rem 3rem;
+    margin: 1.4rem 0.8rem 3rem;
+    box-shadow: var(--conduit-shadow);
     border: 0.5px solid var(--conduit-separator);
   }
+  /* Material's spacer before the first heading */
+  .md-content__inner::before { display: none; }
 }
 
-[data-md-color-scheme="slate"] .md-content__inner {
-  background: var(--conduit-bg-elevated);
+@media (max-width: 59.9375em) {
+  .md-main { background: var(--conduit-bg-elevated); }
 }
 
-/* Hide any stray "# Conduit" H1 on the home page — sync_readme.py normally
-   strips it and replaces with the hero, but if the regex ever misses the
-   H1 will surface unstyled; this is the belt-and-braces fallback. The
+/* The home page is one long page: it needs no section sidebar. */
+@media (min-width: 76.25em) {
+  [data-conduit-home="true"] .md-sidebar--primary { display: none; }
+}
+
+/* The README's "---" rules are for GitHub; on the site every H2 already
+   has a rule above it. */
+[data-conduit-home="true"] .md-typeset hr { display: none; }
+
+/* Hide a stray "# Conduit" H1 on the home page — sync_readme.py replaces it
+   with the hero, this is the fallback if the regex ever misses. The
    data-conduit-home attribute is set on <html> by overrides/main.html. */
 [data-conduit-home="true"] .md-content__inner > h1:first-of-type {
   display: none;
 }
 
-/* ----- 6. Hero block (injected into index.md by scripts/sync_readme.py) ----- */
+/* ----- 6. Home hero (injected into index.md by scripts/sync_readme.py) ----- */
 
 .conduit-hero {
-  position: relative;
-  margin: -0.4rem 0 2.8rem;
-  padding: 2.6rem 2rem 2.2rem;
-  border-radius: 24px;
-  overflow: hidden;
-  isolation: isolate;
-  background: var(--conduit-glass);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  backdrop-filter: saturate(180%) blur(24px);
-  border: 0.5px solid var(--conduit-glass-stroke);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 30px 60px -36px rgba(0, 60, 200, 0.30);
-}
-
-.conduit-hero::before,
-.conduit-hero::after {
-  content: "";
-  position: absolute;
-  inset: auto;
-  z-index: -1;
-  filter: blur(60px);
-  opacity: 0.85;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.conduit-hero::before {
-  width: 320px; height: 320px;
-  background: radial-gradient(circle, var(--conduit-blue), transparent 65%);
-  top: -120px; left: -80px;
-}
-.conduit-hero::after {
-  width: 360px; height: 360px;
-  background: radial-gradient(circle, var(--conduit-indigo), transparent 65%);
-  bottom: -160px; right: -80px;
-}
-
-.conduit-hero__inner {
   display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 1.5rem 1.6rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem 2.4rem;
   align-items: start;
-  text-align: left;
+  margin: 0 0 2.4rem;
+  padding: 0 0 2.4rem;
+  border-bottom: 0.5px solid var(--conduit-separator);
 }
 
-.conduit-hero__copy { min-width: 0; }
-.conduit-hero__copy > * + * { margin-top: 0; }
-
-@media (max-width: 48em) {
-  .conduit-hero { padding: 2rem 1.4rem 1.8rem; border-radius: 20px; }
-  .conduit-hero__inner {
-    grid-template-columns: 1fr;
-    justify-items: start;
-    gap: 1.1rem;
+@media (max-width: 59.9375em) {
+  .conduit-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.6rem;
+    padding-top: 0.8rem;
   }
 }
 
-.conduit-hero__inner > a:first-child {
-  display: inline-flex;
-  background: none !important;
-  background-image: none !important;
-  background-size: 0 !important;
+.conduit-hero__copy { min-width: 0; }
+
+.md-typeset .conduit-hero__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
 }
+
+.md-typeset .conduit-hero__brand a { display: inline-flex; }
 
 .conduit-hero__icon {
-  width: 96px; height: 96px;
-  border-radius: 22px;
-  object-fit: cover;
+  width: 64px;
+  height: 64px;
+  border-radius: 15px;
   display: block;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.6) inset,
-    0 18px 36px -16px rgba(0, 60, 200, 0.45);
-  transition: transform .35s cubic-bezier(.2,.8,.2,1);
-}
-.conduit-hero__inner > a:first-child:hover .conduit-hero__icon {
-  transform: translateY(-2px) scale(1.02);
-}
-
-@media (max-width: 48em) {
-  .conduit-hero__icon { width: 72px; height: 72px; border-radius: 18px; }
-}
-
-.conduit-hero__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(0, 122, 255, 0.12);
-  color: var(--conduit-blue);
-  font-family: var(--conduit-font-rounded);
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .02em;
-  text-transform: uppercase;
-}
-.conduit-hero__eyebrow::before {
-  content: "";
-  width: 6px; height: 6px;
-  border-radius: 999px;
-  background: var(--conduit-green);
-  box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.18);
+  box-shadow: 0 0 0 0.5px var(--conduit-separator);
 }
 
 .md-typeset .conduit-hero h1.conduit-hero__title {
-  margin: .55rem 0 .55rem;
+  margin: 0;
   padding: 0;
   border: 0;
   font-family: var(--conduit-font-rounded);
   font-weight: 800;
   letter-spacing: -0.035em;
-  font-size: clamp(2.2rem, 4.8vw, 3.2rem);
-  line-height: 1.02;
-  background: var(--conduit-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-size: clamp(2.2rem, 1.4rem + 3vw, 3rem);
+  line-height: 1;
+  color: var(--conduit-label);
 }
 
 .md-typeset .conduit-hero p.conduit-hero__subtitle {
-  margin: 0;
-  font-size: 1.02rem;
-  line-height: 1.55;
+  margin: 1.1rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
   color: var(--conduit-label-2);
-  max-width: 36rem;
+  max-width: 30rem;
+}
+
+.md-typeset .conduit-hero p.conduit-hero__subtitle strong {
+  color: var(--conduit-label);
+  font-weight: 600;
 }
 
 .conduit-hero__cta {
   margin-top: 1.4rem;
   display: flex;
   flex-wrap: wrap;
-  gap: .65rem;
+  gap: 0.6rem;
 }
 
-/* Buttons opt out of the global anchor underline animation by overriding
-   `background-image` directly — we can't use `background-size: 0` because
-   the primary button itself uses background-image for its gradient. */
+.md-typeset .conduit-hero p.conduit-hero__note {
+  margin: 1.2rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--conduit-label-2);
+}
+
+/* Buttons — iOS filled and tinted styles */
 .md-typeset a.conduit-btn {
   display: inline-flex;
   align-items: center;
-  gap: .5rem;
-  padding: .7rem 1.15rem;
-  border-radius: 14px;
+  padding: 0.62rem 1.05rem;
+  border-radius: 12px;
   font-family: var(--conduit-font-rounded);
   font-weight: 600;
-  font-size: .9rem;
-  letter-spacing: -.01em;
+  font-size: 0.86rem;
+  letter-spacing: -0.01em;
   text-decoration: none;
-  background-position: 0 0;
-  background-repeat: no-repeat;
-  background-size: auto;
-  transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s, filter .22s;
+  transition: filter .15s ease;
 }
 .md-typeset a.conduit-btn--primary {
-  background-image: var(--conduit-gradient);
+  background-color: var(--conduit-blue);
   color: #fff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 14px 30px -14px rgba(0, 100, 255, 0.55);
 }
-.md-typeset a.conduit-btn--primary:hover {
-  color: #fff;
-  transform: translateY(-1px);
-  filter: saturate(115%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 18px 36px -14px rgba(0, 100, 255, 0.65);
-}
-.md-typeset a.conduit-btn--ghost {
-  background-color: rgba(0, 122, 255, 0.10);
-  background-image: linear-gradient(180deg, rgba(0, 122, 255, 0.08), rgba(88, 86, 214, 0.08));
+.md-typeset a.conduit-btn--primary:hover { color: #fff; filter: brightness(1.08); }
+.md-typeset a.conduit-btn--tinted {
+  background-color: var(--conduit-tint-fill);
   color: var(--conduit-blue);
-  border: 1px solid rgba(0, 122, 255, 0.22);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
 }
-.md-typeset a.conduit-btn--ghost:hover {
-  transform: translateY(-1px);
-  color: var(--conduit-indigo);
-  background-color: rgba(0, 122, 255, 0.16);
-  border-color: rgba(88, 86, 214, 0.35);
-}
+.md-typeset a.conduit-btn--tinted:hover { filter: brightness(0.97); }
 
-[data-md-color-scheme="slate"] .md-typeset a.conduit-btn--ghost {
-  background-color: rgba(120, 160, 255, 0.10);
-  background-image: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
-  color: #4DA3FF;
-  border-color: rgba(120, 160, 255, 0.32);
-}
-
-/* Traction stats row */
-.conduit-stats {
-  margin-top: 1.6rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: .8rem;
-}
-
-.conduit-stat {
-  padding: .85rem 1rem;
-  background: rgba(255, 255, 255, 0.55);
-  border: 0.5px solid var(--conduit-glass-stroke);
-  border-radius: 14px;
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-}
-[data-md-color-scheme="slate"] .conduit-stat {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.conduit-stat__num {
-  display: block;
+/* Material's own buttons (used on the QR pairing page) get the same shape. */
+.md-typeset .md-button {
+  border-radius: 12px;
   font-family: var(--conduit-font-rounded);
-  font-weight: 700;
-  font-size: 1.35rem;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  background: var(--conduit-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-weight: 600;
+  border-width: 0;
+  background-color: var(--conduit-tint-fill);
+  color: var(--conduit-blue);
 }
-.conduit-stat__label {
+.md-typeset .md-button--primary {
+  background-color: var(--conduit-blue);
+  color: #fff;
+}
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus {
+  color: #fff;
+  background-color: var(--conduit-blue);
+  filter: brightness(1.08);
+}
+
+/* Terminal: what the ROS 2 host sees once Conduit is publishing */
+.conduit-terminal {
+  margin: 0;
+  min-width: 0;
+  border-radius: 14px;
+  background: var(--conduit-term-bg);
+  color: var(--conduit-term-fg);
+  font-family: var(--conduit-font-mono);
+  font-size: 0.68rem;
+  line-height: 1.75;
+  padding: 1rem 1.2rem 1.1rem;
+  overflow-x: auto;
+}
+
+@media (max-width: 30em) {
+  .conduit-terminal { font-size: 0.6rem; padding: 0.9rem 0.9rem 1rem; }
+}
+
+.conduit-terminal__prompt {
   display: block;
-  margin-top: 2px;
-  font-size: .72rem;
-  font-weight: 500;
-  letter-spacing: .02em;
-  color: var(--conduit-label-2);
-  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+  white-space: nowrap;
+}
+.conduit-terminal__prompt::before {
+  content: "$ ";
+  color: var(--conduit-term-prompt);
 }
 
-/* Reveal animation */
-@keyframes conduit-rise {
-  from { opacity: 0; transform: translate3d(0, 14px, 0); }
-  to   { opacity: 1; transform: translate3d(0, 0,   0); }
+.md-typeset .conduit-terminal ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
-.conduit-hero,
-[data-conduit-home="true"] .md-content > article > *:not(.conduit-hero) {
-  animation: conduit-rise .7s cubic-bezier(.22,.8,.2,1) both;
-}
-[data-conduit-home="true"] .md-content > article > *:nth-child(2)  { animation-delay: .08s; }
-[data-conduit-home="true"] .md-content > article > *:nth-child(3)  { animation-delay: .14s; }
-[data-conduit-home="true"] .md-content > article > *:nth-child(4)  { animation-delay: .20s; }
-[data-conduit-home="true"] .md-content > article > *:nth-child(5)  { animation-delay: .26s; }
 
-/* ----- 7. Admonitions become glass cards ----- */
+.md-typeset .conduit-terminal li {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* The one moment of motion: topics appear one by one, as they do on the
+   host when you turn sensors on. */
+@keyframes conduit-topic-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.conduit-terminal li {
+  animation: conduit-topic-in .25s ease-out both;
+}
+.conduit-terminal li:nth-child(1)  { animation-delay: .30s; }
+.conduit-terminal li:nth-child(2)  { animation-delay: .38s; }
+.conduit-terminal li:nth-child(3)  { animation-delay: .46s; }
+.conduit-terminal li:nth-child(4)  { animation-delay: .54s; }
+.conduit-terminal li:nth-child(5)  { animation-delay: .62s; }
+.conduit-terminal li:nth-child(6)  { animation-delay: .70s; }
+.conduit-terminal li:nth-child(7)  { animation-delay: .78s; }
+.conduit-terminal li:nth-child(8)  { animation-delay: .86s; }
+.conduit-terminal li:nth-child(9)  { animation-delay: .94s; }
+.conduit-terminal li:nth-child(10) { animation-delay: 1.02s; }
+.conduit-terminal li:nth-child(11) { animation-delay: 1.10s; }
+.conduit-terminal li:nth-child(12) { animation-delay: 1.18s; }
+.conduit-terminal li:nth-child(13) { animation-delay: 1.26s; }
+.conduit-terminal li:nth-child(14) { animation-delay: 1.34s; }
+.conduit-terminal li:nth-child(15) { animation-delay: 1.42s; }
+
+/* ----- 7. Admonitions ----- */
 
 .md-typeset .admonition,
 .md-typeset details {
-  border: 0.5px solid var(--conduit-separator);
-  border-radius: 18px;
+  border-width: 1px;
+  border-radius: 14px;
   background: var(--conduit-bg-elevated);
-  box-shadow: 0 14px 30px -22px rgba(0, 0, 0, 0.15);
-  padding: 0;
+  box-shadow: none;
+  padding: 0 1rem;
+  font-size: 0.86rem;
   overflow: hidden;
 }
+
 .md-typeset .admonition-title,
 .md-typeset summary {
-  background: var(--conduit-gradient-soft);
+  margin: 0 -1rem;
+  padding: 0.6rem 1rem 0.6rem 2.7rem;
   font-family: var(--conduit-font-rounded);
   font-weight: 600;
-  border-bottom: 0.5px solid var(--conduit-separator);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  border: 0;
 }
+
+.md-typeset .admonition-title::before,
+.md-typeset summary::before {
+  left: 1rem;
+  top: 0.72rem;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.md-typeset summary::after {
+  right: 1rem;
+  top: 0.72rem;
+}
+
 .md-typeset .admonition > :last-child,
-.md-typeset details > :last-child { margin-bottom: 1rem; }
+.md-typeset details > :last-child { margin-bottom: 0.9rem; }
+.md-typeset details:not([open]) > summary { margin-bottom: 0; }
+
+.md-typeset .admonition p,
+.md-typeset .admonition li,
+.md-typeset details p,
+.md-typeset details li { font-size: 0.86rem; }
 
 /* ----- 8. Code & tables ----- */
 
 .md-typeset code {
   font-family: var(--conduit-font-mono);
   font-size: 0.84em;
-  padding: 0.12em 0.42em;
+  padding: 0.1em 0.38em;
   border-radius: 6px;
   background: var(--md-code-bg-color);
 }
 
-/* Code blocks adapt to scheme:
-   - light: soft Apple-gray panel with subtle border (mirrors `AppleCard`)
-   - dark : near-black panel matching iOS code editors */
-.md-typeset pre > code,
-.md-typeset .highlight pre {
+.md-typeset pre,
+.md-typeset pre > code {
   border-radius: 14px;
-  padding: 1rem 1.1rem;
-  line-height: 1.55;
-  background: #F2F2F5;
-  color: #1d1d1f;
-  border: 0.5px solid var(--conduit-separator);
-  box-shadow: 0 10px 24px -22px rgba(0, 0, 0, 0.12);
 }
+.md-typeset pre > code {
+  padding: 0.95rem 1.05rem;
+  line-height: 1.55;
+  background: var(--conduit-bg-grouped);
+}
+
+/* Material bleeds code blocks to the screen edges on phones; keep them
+   inside the text column with their rounded corners. */
+@media screen and (max-width: 44.984375em) {
+  .md-content__inner > pre,
+  .md-content__inner > .highlight,
+  .md-content__inner > .highlight > pre,
+  .md-typeset > .highlight,
+  .md-typeset li > .highlight {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .md-content__inner > pre > code,
+  .md-content__inner > .highlight > pre > code,
+  .md-content__inner > .highlight code {
+    border-radius: 14px;
+  }
+}
+
 .md-typeset .highlight .filename {
   font-family: var(--conduit-font-rounded);
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--conduit-fill);
   color: var(--conduit-label-2);
-  border-bottom: 0.5px solid var(--conduit-separator);
   border-radius: 14px 14px 0 0;
 }
 .md-clipboard { color: var(--conduit-label-3); }
 .md-clipboard:hover { color: var(--conduit-blue); }
 
-[data-md-color-scheme="slate"] .md-typeset pre > code,
-[data-md-color-scheme="slate"] .md-typeset .highlight pre {
-  background: #0B0B0F;
-  color: #f5f5f7;
-  border: 0.5px solid var(--conduit-glass-edge);
-  box-shadow: 0 14px 30px -22px rgba(0, 0, 0, 0.35);
-}
-[data-md-color-scheme="slate"] .md-typeset .highlight .filename {
-  background: rgba(255,255,255,0.06);
-  color: #f5f5f7;
-  border-bottom: 0.5px solid rgba(255,255,255,0.08);
-}
-[data-md-color-scheme="slate"] .md-clipboard { color: rgba(255,255,255,0.4); }
+/* Material lets wide tables bleed past the text column; keep them inside
+   (they still scroll sideways when they are too wide). */
+.md-typeset__scrollwrap { margin: 1em 0; }
+.md-typeset__table { padding: 0; display: table; min-width: 100%; }
 
 .md-typeset table:not([class]) {
   border-radius: 14px;
   overflow: hidden;
   border: 0.5px solid var(--conduit-separator);
   background: var(--conduit-bg-elevated);
-  box-shadow: 0 10px 24px -22px rgba(0, 0, 0, 0.18);
+  box-shadow: none;
+  font-size: 0.8rem;
 }
 .md-typeset table:not([class]) th {
-  background: var(--conduit-gradient-soft);
+  background: var(--conduit-bg-grouped);
   font-family: var(--conduit-font-rounded);
   font-weight: 600;
   color: var(--conduit-label);
   border-bottom: 0.5px solid var(--conduit-separator);
 }
 .md-typeset table:not([class]) td,
-.md-typeset table:not([class]) th { padding: .75rem 1rem; }
+.md-typeset table:not([class]) th { padding: 0.65rem 0.9rem; }
 .md-typeset table:not([class]) tr { border-bottom: 0.5px solid var(--conduit-separator); }
 .md-typeset table:not([class]) tr:last-child { border-bottom: 0; }
+.md-typeset table:not([class]) code { white-space: nowrap; }
 
-/* Demo / screenshot grids in README — img inside table cells */
-.md-typeset table:not([class]) img {
-  border-radius: 14px;
-  box-shadow: 0 18px 36px -22px rgba(0, 60, 200, 0.30);
-  transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s;
-}
-.md-typeset table:not([class]) img:hover {
-  transform: translateY(-3px) scale(1.012);
-  box-shadow: 0 24px 48px -24px rgba(0, 60, 200, 0.45);
-}
+/* The app icon wherever a page shows it */
+.md-typeset img[src$="app_icon.png"] { border-radius: 22.5%; }
 
-/* Standalone Markdown images (e.g. app icon at top of README) */
-.md-typeset > p > img:only-child { border-radius: 22px; }
-
-/* Inline badge images (img.shields.io) — keep them crisp, no radius bleed */
+/* Inline badge images (img.shields.io) */
 .md-typeset img[src*="shields.io"] {
-  border-radius: 6px;
-  box-shadow: none;
+  border-radius: 4px;
   vertical-align: middle;
 }
 
-/* ----- 9. Sidebar & nav ----- */
+/* ----- 9. Media grids (videos, screenshots) ----- */
+
+/* README media tables (class added by sync_readme.py) become grids. */
+.md-typeset table.conduit-media,
+.md-typeset table.conduit-media tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 1.6rem 1.2rem;
+  border: 0;
+  background: none;
+  font-size: inherit;
+}
+.md-typeset table.conduit-media {
+  display: block;
+  margin: 1.2rem 0 1.6rem;
+}
+.md-typeset table.conduit-media tr { display: contents; }
+.md-typeset table.conduit-media td {
+  display: block;
+  width: auto;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--conduit-label-2);
+}
+.md-typeset table.conduit-media td:empty { display: none; }
+.md-typeset table.conduit-media td br { display: none; }
+.md-typeset table.conduit-media td b {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--conduit-label);
+  font-family: var(--conduit-font-rounded);
+  font-size: 0.86rem;
+}
+.md-typeset table.conduit-media td sub {
+  font-size: inherit;
+  vertical-align: baseline;
+}
+.md-typeset table.conduit-media td img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  box-shadow: 0 0 0 0.5px var(--conduit-separator);
+}
+/* Phone screenshots: two columns on phones, four on wider screens */
+.md-typeset table.conduit-media:has(img[src*="assets/img/"]) tbody {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 40em) {
+  .md-typeset table.conduit-media:has(img[src*="assets/img/"]) tbody {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.md-typeset .conduit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 1.4rem 1.2rem;
+  margin: 1.2rem 0 1.6rem;
+}
+.md-typeset .conduit-grid--shots {
+  grid-template-columns: repeat(auto-fill, minmax(min(42%, 9.5rem), 1fr));
+}
+
+.md-typeset .conduit-grid figure {
+  margin: 0;
+  min-width: 0;
+  display: block;
+}
+
+.md-typeset .conduit-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+.md-typeset .conduit-video iframe,
+.md-typeset .conduit-video img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+
+.md-typeset img.conduit-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  box-shadow: 0 0 0 0.5px var(--conduit-separator);
+}
+
+.md-typeset .conduit-grid figcaption {
+  margin: 0.6rem 0 0;
+  max-width: none;
+  text-align: left;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--conduit-label-2);
+}
+.md-typeset .conduit-grid figcaption strong {
+  display: block;
+  color: var(--conduit-label);
+  font-family: var(--conduit-font-rounded);
+  font-size: 0.86rem;
+}
+
+/* ----- 10. Sidebar & nav ----- */
 
 .md-nav {
   font-family: var(--conduit-font);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
 }
 .md-nav__title {
   font-family: var(--conduit-font-rounded);
@@ -656,27 +706,32 @@ body,
   color: var(--conduit-blue);
   font-weight: 600;
 }
-.md-nav__link:hover { color: var(--conduit-indigo); }
+.md-nav__link:hover { color: var(--conduit-blue); }
 
 .md-sidebar__scrollwrap { scrollbar-width: thin; }
 
 /* TOC right rail */
-.md-nav--secondary .md-nav__title { font-size: .72rem; text-transform: uppercase; opacity: .7; }
+.md-nav--secondary .md-nav__title {
+  font-size: .72rem;
+  color: var(--conduit-label-2);
+  background: transparent;
+  box-shadow: none;
+}
 
-/* ----- 10. Footer ----- */
+/* ----- 11. Footer ----- */
 
 .md-footer {
   background: transparent;
   color: var(--conduit-label-2);
-  margin-top: 2rem;
 }
-.md-footer-meta { background: rgba(0,0,0,0.04); }
-[data-md-color-scheme="slate"] .md-footer-meta { background: rgba(255,255,255,0.04); }
+.md-footer__link { color: var(--conduit-label); }
+.md-footer-meta { background: var(--conduit-bg-grouped); }
+.md-footer-meta,
+.md-footer-meta a { color: var(--conduit-label-2); }
 .md-footer-meta__inner { font-family: var(--conduit-font-rounded); font-weight: 500; }
 
-/* ----- 11. Reduce-motion respect ----- */
+/* ----- 12. Reduced motion ----- */
 @media (prefers-reduced-motion: reduce) {
-  .conduit-hero,
-  [data-conduit-home="true"] .md-content > article > * { animation: none !important; }
-  .md-typeset table:not([class]) img:hover { transform: none; }
+  html { scroll-behavior: auto; }
+  .conduit-terminal li { animation: none; }
 }

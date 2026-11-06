@@ -8,7 +8,7 @@ body:
       value: |
         Need help with Conduit? Ask your question here!
 
-        **Tip**: For quick answers, check our [FAQ](../docs/FAQ.md) and [Troubleshooting Guide](../docs/TROUBLESHOOTING.md) first.
+        **Tip**: For quick answers, check the [FAQ](https://conduit.direct/faq/) and [Troubleshooting](https://conduit.direct/troubleshooting/) first.
 
   - type: dropdown
     id: category
@@ -34,10 +34,7 @@ body:
       options:
         - iOS (iPhone)
         - iOS (iPad)
-        - visionOS (Apple Vision Pro)
-        - tvOS (Apple TV)
         - macOS (Mac Catalyst)
-        - iOS Simulator
     validations:
       required: true
 
@@ -56,9 +53,10 @@ body:
       label: Current Setup
       description: Describe your current configuration
       placeholder: |
-        - ROS 2 Version: Lyrical
-        - Router Address: 192.168.1.100
-        - Enabled Sensors: IMU, GPS
+        - Conduit version: 2.6.0
+        - ROS 2 version: Lyrical
+        - Transport: Zenoh (router 192.168.1.100) or DDS
+        - Enabled sensors: IMU, GPS
     validations:
       required: false
 
