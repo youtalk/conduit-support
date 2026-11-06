@@ -1,8 +1,7 @@
 /* ============================================================
    Conduit · Support site theme
-   Apple-native look on top of MkDocs Material, following
-   App/Theme/AppleTheme.swift:
-   - SF Pro Rounded for headings, SF Pro for body text
+   Apple-native look on top of MkDocs Material:
+   - SF Pro for all text, SF Mono for code
    - Apple system colors, flat surfaces, no decorative gradients
    - Apple corner radii (10 / 14 / 18 / 22)
    ============================================================ */
@@ -38,9 +37,6 @@
   /* Typography */
   --conduit-font:        -apple-system, BlinkMacSystemFont, "SF Pro Text",
                          "Inter Variable", system-ui, sans-serif;
-  --conduit-font-rounded:-apple-system-rounded, "SF Pro Rounded",
-                         ui-rounded, -apple-system, BlinkMacSystemFont,
-                         "Hiragino Maru Gothic ProN", system-ui, sans-serif;
   --conduit-font-mono:   ui-monospace, "SF Mono", "Menlo", "Monaco",
                          "Cascadia Mono", "Roboto Mono", monospace;
 
@@ -118,7 +114,6 @@ body,
 }
 
 .md-header__title {
-  font-family: var(--conduit-font-rounded);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -130,7 +125,6 @@ body,
 }
 
 .md-tabs__link {
-  font-family: var(--conduit-font-rounded);
   font-weight: 600;
   font-size: 0.8rem;
   opacity: 1;
@@ -157,7 +151,6 @@ body,
 .md-typeset h3,
 .md-typeset h4,
 .md-typeset h5 {
-  font-family: var(--conduit-font-rounded);
   letter-spacing: -0.022em;
   color: var(--conduit-label);
   overflow-wrap: normal;
@@ -264,7 +257,7 @@ body,
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 2rem 2.4rem;
-  align-items: start;
+  align-items: center;
   margin: 0 0 2.4rem;
   padding: 0 0 2.4rem;
   border-bottom: 0.5px solid var(--conduit-separator);
@@ -300,7 +293,6 @@ body,
   margin: 0;
   padding: 0;
   border: 0;
-  font-family: var(--conduit-font-rounded);
   font-weight: 800;
   letter-spacing: -0.035em;
   font-size: clamp(2.2rem, 1.4rem + 3vw, 3rem);
@@ -341,7 +333,6 @@ body,
   align-items: center;
   padding: 0.62rem 1.05rem;
   border-radius: 12px;
-  font-family: var(--conduit-font-rounded);
   font-weight: 600;
   font-size: 0.86rem;
   letter-spacing: -0.01em;
@@ -362,7 +353,6 @@ body,
 /* Material's own buttons (used on the QR pairing page) get the same shape. */
 .md-typeset .md-button {
   border-radius: 12px;
-  font-family: var(--conduit-font-rounded);
   font-weight: 600;
   border-width: 0;
   background-color: var(--conduit-tint-fill);
@@ -377,6 +367,31 @@ body,
   color: #fff;
   background-color: var(--conduit-blue);
   filter: brightness(1.08);
+}
+
+/* Stage: the host's terminal with the iPhone in front of it, the same
+   picture as the share image (scripts/generate_og_image.py). */
+.conduit-hero__stage {
+  display: grid;
+  grid-template-columns: 56fr 20fr 24fr;
+  align-items: center;
+}
+.conduit-hero__stage .conduit-terminal {
+  grid-column: 1 / 3;
+  grid-row: 1;
+  overflow: hidden;
+}
+.md-typeset img.conduit-hero__device {
+  grid-column: 2 / 4;
+  grid-row: 1;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.18));
+}
+
+@media (max-width: 59.9375em) {
+  .conduit-hero__stage { grid-template-columns: 62fr 18fr 20fr; max-width: 30rem; }
 }
 
 /* Terminal: what the ROS 2 host sees once Conduit is publishing */
@@ -395,6 +410,19 @@ body,
 
 @media (max-width: 30em) {
   .conduit-terminal { font-size: 0.6rem; padding: 0.9rem 0.9rem 1rem; }
+}
+
+/* The three window buttons of a macOS terminal */
+.conduit-terminal::before {
+  content: "";
+  display: block;
+  height: 12px;
+  margin-bottom: 0.7rem;
+  background:
+    radial-gradient(circle at 6px 6px,  #FF5F57 5.5px, transparent 6px),
+    radial-gradient(circle at 26px 6px, #FEBC2E 5.5px, transparent 6px),
+    radial-gradient(circle at 46px 6px, #28C840 5.5px, transparent 6px);
+  background-repeat: no-repeat;
 }
 
 .conduit-terminal__prompt {
@@ -464,7 +492,6 @@ body,
 .md-typeset summary {
   margin: 0 -1rem;
   padding: 0.6rem 1rem 0.6rem 2.7rem;
-  font-family: var(--conduit-font-rounded);
   font-weight: 600;
   font-size: 0.86rem;
   line-height: 1.4;
@@ -532,7 +559,6 @@ body,
 }
 
 .md-typeset .highlight .filename {
-  font-family: var(--conduit-font-rounded);
   background: var(--conduit-fill);
   color: var(--conduit-label-2);
   border-radius: 14px 14px 0 0;
@@ -555,7 +581,6 @@ body,
 }
 .md-typeset table:not([class]) th {
   background: var(--conduit-bg-grouped);
-  font-family: var(--conduit-font-rounded);
   font-weight: 600;
   color: var(--conduit-label);
   border-bottom: 0.5px solid var(--conduit-separator);
@@ -609,7 +634,6 @@ body,
   display: block;
   margin-top: 0.55rem;
   color: var(--conduit-label);
-  font-family: var(--conduit-font-rounded);
   font-size: 0.86rem;
 }
 .md-typeset table.conduit-media td sub {
@@ -685,7 +709,6 @@ body,
 .md-typeset .conduit-grid figcaption strong {
   display: block;
   color: var(--conduit-label);
-  font-family: var(--conduit-font-rounded);
   font-size: 0.86rem;
 }
 
@@ -696,7 +719,6 @@ body,
   font-size: 0.8rem;
 }
 .md-nav__title {
-  font-family: var(--conduit-font-rounded);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--conduit-label);
@@ -728,7 +750,7 @@ body,
 .md-footer-meta { background: var(--conduit-bg-grouped); }
 .md-footer-meta,
 .md-footer-meta a { color: var(--conduit-label-2); }
-.md-footer-meta__inner { font-family: var(--conduit-font-rounded); font-weight: 500; }
+.md-footer-meta__inner { font-weight: 500; }
 
 /* ----- 12. Reduced motion ----- */
 @media (prefers-reduced-motion: reduce) {

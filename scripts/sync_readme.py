@@ -110,6 +110,7 @@ _HERO_HTML = """\
       on the Japanese App Store.
     </p>
   </div>
+  <div class="conduit-hero__stage">
   <div class="conduit-terminal" role="img" aria-label="ros2 topic list on the ROS 2 host shows Conduit's topics">
     <span class="conduit-terminal__prompt">ros2 topic list</span>
     <ol>
@@ -129,6 +130,10 @@ _HERO_HTML = """\
       <li>/tf</li>
       <li>/tf_static</li>
     </ol>
+  </div>
+  <img class="conduit-hero__device" src="assets/img/hero-iphone.png"
+       alt="Conduit on iPhone, publishing the Motion sensors live"
+       width="640" height="1319">
   </div>
 </div>
 
