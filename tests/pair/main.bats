@@ -98,7 +98,7 @@ STUB
 @test "unsupported exits 1" {
   PAIR_UNAME=Darwin run main
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Ubuntu only"* ]]
+  [[ "$output" == *"Ubuntu, RHEL and Fedora only"* ]]
 }
 
 @test "no terminal exits 1 before any prompt" {

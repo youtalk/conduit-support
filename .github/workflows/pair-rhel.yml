@@ -1,0 +1,69 @@
+name: Pairing script on RHEL and Fedora
+
+# Runs pair.sh end to end on each RHEL/Fedora + ROS 2 pair that has RPM
+# packages, with tests/pair/smoke/fake_conduit.py in place of the iPhone.
+# A container stands in for the PC, so this checks the script, not the LAN.
+on:
+  pull_request:
+    paths:
+      - "pair/**"
+      - "tests/pair/**"
+      - ".github/workflows/pair-rhel.yml"
+  push:
+    branches: [main]
+    paths:
+      - "pair/**"
+      - "tests/pair/**"
+      - ".github/workflows/pair-rhel.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: ${{ matrix.target.name }} ${{ matrix.target.distro }} ${{ matrix.rmw }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.target.image }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: "RHEL 8", image: "rockylinux:8", release: el, distro: humble }
+          - { name: "RHEL 9", image: "rockylinux:9", release: el, distro: jazzy }
+          - { name: "RHEL 9", image: "rockylinux:9", release: el, distro: kilted }
+          - { name: "RHEL 10", image: "rockylinux/rockylinux:10", release: el, distro: lyrical }
+          - { name: "Fedora 43", image: "fedora:43", release: fc, distro: lyrical }
+        rmw: [rmw_cyclonedds_cpp, rmw_zenoh_cpp]
+    steps:
+      - uses: actions/checkout@v4
+
+      # The steps of docs.ros.org's "Installing on RHEL / Fedora (RPM packages)".
+      - name: Install ROS 2 ${{ matrix.target.distro }} from RPM packages
+        env:
+          RELEASE: ${{ matrix.target.release }}
+          DISTRO: ${{ matrix.target.distro }}
+        run: |
+          set -eux
+          if [ "$RELEASE" = el ]; then
+            dnf install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm"
+            env FORCE_DNF=1 crb enable
+          fi
+          version="$(curl -fsSL https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F tag_name | awk -F'"' '{print $4}')"
+          dnf install -y "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${version}/ros2-release-${version}-1.${RELEASE}.noarch.rpm"
+          # The tools a desktop or server install already has.
+          dnf install -y iproute hostname procps-ng util-linux findutils
+          dnf install -y "ros-${DISTRO}-ros-base" "ros-${DISTRO}-rmw-cyclonedds-cpp" "ros-${DISTRO}-rmw-zenoh-cpp"
+
+      - name: Pair with a fake Conduit
+        shell: bash
+        env:
+          DISTRO: ${{ matrix.target.distro }}
+          RMW_IMPLEMENTATION: ${{ matrix.rmw }}
+          ROS_DOMAIN_ID: "42"
+        run: |
+          set +u
+          source "/opt/ros/${DISTRO}/setup.bash"
+          set -u
+          bash tests/pair/smoke/run.sh

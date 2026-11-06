@@ -11,16 +11,43 @@ setup() {
 @test "not Linux" {
   PAIR_UNAME=Darwin run check_environment
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Ubuntu"* ]]
+  [[ "$output" == *"Ubuntu, RHEL and Fedora"* ]]
   [[ "$output" == *"other systems are planned"* ]]
 }
 
-@test "not Ubuntu" {
-  echo 'ID=fedora' > "$CONDUIT_PAIR_ROOT/etc/os-release"
+@test "unsupported Linux distributions" {
+  local release
+  for release in 'ID=debian' $'ID=linuxmint\nID_LIKE="ubuntu debian"' 'ID=arch' $'ID=opensuse-tumbleweed\nID_LIKE="opensuse suse"'; do
+    printf '%s\n' "$release" > "$CONDUIT_PAIR_ROOT/etc/os-release"
+    run check_environment
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Ubuntu, RHEL and Fedora"* ]]
+    [[ "$output" == *"other systems are planned"* ]]
+  done
+}
+
+@test "no os-release" {
+  rm "$CONDUIT_PAIR_ROOT/etc/os-release"
   run check_environment
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Ubuntu"* ]]
   [[ "$output" == *"other systems are planned"* ]]
+}
+
+@test "Ubuntu is ubuntu" {
+  check_platform
+  [ "$PAIR_OS" = ubuntu ]
+}
+
+@test "RHEL, Fedora and RHEL rebuilds are rhel" {
+  local release
+  for release in 'ID="rhel"' 'ID=fedora' $'ID="rocky"\nID_LIKE="rhel centos fedora"' \
+    $'ID="almalinux"\nID_LIKE="rhel centos fedora"' $'ID="centos"\nID_LIKE="rhel fedora"'; do
+    printf '%s\n' "$release" > "$CONDUIT_PAIR_ROOT/etc/os-release"
+    unset PAIR_OS
+    check_platform
+    [ "$PAIR_OS" = rhel ]
+    check_environment
+  done
 }
 
 @test "WSL is detected from /proc/version" {
@@ -48,6 +75,11 @@ setup() {
   run check_environment
   [ "$status" -eq 1 ]
   [[ "$output" == *"containers are not supported yet"* ]]
+}
+
+@test "PAIR_ALLOW_CONTAINER=1 lets the CI smoke tests run in a container" {
+  touch "$CONDUIT_PAIR_ROOT/.dockerenv"
+  PAIR_ALLOW_CONTAINER=1 check_environment
 }
 
 @test "container is detected from cgroup" {

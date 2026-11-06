@@ -67,18 +67,39 @@ choose() {
 
 env_root() { printf '%s' "${CONDUIT_PAIR_ROOT:-}"; }
 
+# os_release_field NAME: the value of NAME in /etc/os-release, without quotes.
+os_release_field() {
+  local file
+  file="$(env_root)/etc/os-release"
+  [[ -r "$file" ]] || return 0
+  sed -n "s/^$1=//p" "$file" | head -n1 | tr -d '"'
+}
+
+# Sets PAIR_OS to ubuntu or rhel (RHEL, Fedora and their rebuilds such as Rocky
+# Linux and AlmaLinux: the systems ROS 2 publishes RPM packages for).
 check_platform() {
-  local root os_id
-  root="$(env_root)"
-  if [[ "${PAIR_UNAME:-$(uname -s)}" != Linux ]]; then
-    die 1 "This script supports Ubuntu only; other systems are planned."
+  local os_id like
+  PAIR_OS=""
+  if [[ "${PAIR_UNAME:-$(uname -s)}" == Linux ]]; then
+    os_id="$(os_release_field ID)"
+    like=" $(os_release_field ID_LIKE) "
+    case "$os_id" in
+      ubuntu) PAIR_OS=ubuntu ;;
+      rhel | fedora) PAIR_OS=rhel ;;
+      *) [[ "$like" != *" rhel "* && "$like" != *" fedora "* ]] || PAIR_OS=rhel ;;
+    esac
   fi
-  os_id=""
-  if [[ -r "$root/etc/os-release" ]]; then
-    os_id="$(sed -n 's/^ID=//p' "$root/etc/os-release" | head -n1 | tr -d '"')"
+  if [[ -z "${PAIR_OS:-}" ]]; then
+    die 1 "This script supports Ubuntu, RHEL and Fedora only; other systems are planned."
   fi
-  if [[ "$os_id" != ubuntu ]]; then
-    die 1 "This script supports Ubuntu only; other systems are planned."
+}
+
+# install_command PACKAGE: the command that installs PACKAGE on this system.
+install_command() {
+  if [[ "${PAIR_OS:-ubuntu}" == rhel ]]; then
+    printf 'sudo dnf install %s\n' "$1"
+  else
+    printf 'sudo apt install %s\n' "$1"
   fi
 }
 
@@ -87,13 +108,15 @@ check_not_wsl() {
   root="$(env_root)"
   if [[ -n "${WSL_DISTRO_NAME:-}" ]] ||
     { [[ -r "$root/proc/version" ]] && grep -qi microsoft "$root/proc/version"; }; then
-    die 1 "WSL is not supported yet. Run this on a native Ubuntu PC."
+    die 1 "WSL is not supported yet. Run this on a native Ubuntu, RHEL or Fedora PC."
   fi
 }
 
 check_not_container() {
   local root
   root="$(env_root)"
+  # CI only: the RHEL and Fedora smoke tests run the script in a container.
+  [[ "${PAIR_ALLOW_CONTAINER:-0}" != 1 ]] || return 0
   if [[ -e "$root/.dockerenv" || -e "$root/run/.containerenv" ]] ||
     { [[ -r "$root/proc/1/cgroup" ]] &&
       grep -Eq 'docker|containerd|kubepods|lxc' "$root/proc/1/cgroup"; }; then
@@ -909,7 +932,7 @@ start_zenoh_router() {
 
 fastdds_warning() {
   say "Fast DDS may drop or delay Conduit's high-rate topics (camera, LiDAR) over Wi-Fi. CycloneDDS is recommended:"
-  say "  sudo apt install ros-${PAIR_DISTRO}-rmw-cyclonedds-cpp"
+  say "  $(install_command "ros-${PAIR_DISTRO}-rmw-cyclonedds-cpp")"
   say "  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
 }
 
@@ -918,7 +941,7 @@ tailscale_needs_zenoh() {
   say "  export RMW_IMPLEMENTATION=rmw_zenoh_cpp"
   say "  ros2 run rmw_zenoh_cpp rmw_zenohd    # in another terminal"
   say "If rmw_zenoh_cpp is missing:"
-  say "  sudo apt install ros-${PAIR_DISTRO}-rmw-zenoh-cpp"
+  say "  $(install_command "ros-${PAIR_DISTRO}-rmw-zenoh-cpp")"
   say "Then run this script again in that shell."
 }
 
@@ -1054,6 +1077,11 @@ ufw_enabled() {
   grep -Eq '^[[:space:]]*ENABLED[[:space:]]*=[[:space:]]*yes' "$(env_root)/etc/ufw/ufw.conf" 2> /dev/null
 }
 
+# firewalld (RHEL and Fedora) is on when firewall-cmd reports it running.
+firewalld_running() {
+  command -v firewall-cmd > /dev/null 2>&1 && [[ "$(firewall-cmd --state 2> /dev/null)" == running ]]
+}
+
 # causes STAGE (no_checkin|no_node|no_data): what to check, firewall first.
 causes() {
   local stage="$1" dds_port=$((7400 + 250 * PAIR_DOMAIN))
@@ -1072,6 +1100,17 @@ causes() {
       say "    sudo ufw allow 7447/tcp"
     else
       say "    sudo ufw allow $dds_port:$((dds_port + 249))/udp"
+    fi
+  fi
+  if firewalld_running; then
+    say "- The firewall (firewalld) is on. Allow Conduit's ports until the next reboot (add --permanent to keep them):"
+    if [[ "$stage" == no_checkin ]]; then
+      say "    sudo firewall-cmd --add-port=${PAIR_CHECKIN_PORT:-$PAIR_DEFAULT_CHECKIN_PORT}/tcp"
+    fi
+    if [[ "$PAIR_RMW" == zenoh ]]; then
+      say "    sudo firewall-cmd --add-port=7447/tcp"
+    else
+      say "    sudo firewall-cmd --add-port=$dds_port-$((dds_port + 249))/udp"
     fi
   fi
   case "$stage" in
