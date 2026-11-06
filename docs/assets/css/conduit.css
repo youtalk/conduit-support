@@ -740,6 +740,33 @@ body,
   box-shadow: none;
 }
 
+/* Drawer (below 76.25em the tabs become this menu). Material paints its
+   top bar and the repository row in the primary blue; give them the same
+   surface and hairline as the header instead. */
+@media screen and (max-width: 76.234375em) {
+  .md-nav--primary .md-nav__title,
+  .md-nav--primary .md-nav__title[for=__drawer] {
+    color: var(--conduit-label);
+    background-color: var(--conduit-bg-elevated);
+    box-shadow: inset 0 -0.5px 0 var(--conduit-separator);
+  }
+  .md-nav--primary .md-nav__title ~ .md-nav__list {
+    box-shadow: none;
+  }
+}
+@media screen and (max-width: 59.984375em) {
+  .md-nav__source {
+    color: var(--conduit-label);
+    background-color: var(--conduit-bg-elevated);
+    box-shadow: inset 0 -0.5px 0 var(--conduit-separator);
+  }
+}
+
+/* The logo is the app icon: give it the app icon's corners everywhere. */
+.md-logo img {
+  border-radius: 22.5%;
+}
+
 /* ----- 11. Footer ----- */
 
 .md-footer {
