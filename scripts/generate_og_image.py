@@ -1,202 +1,134 @@
 """Generate the OpenGraph share image (1200x630) for conduit.direct.
 
-Layout:
-- Plain white background — no tint, no gradient mesh, no glass card.
-- App icon on the left at its native rounded-square shape (no drop shadow).
-- "Conduit" rendered in the heaviest SF Pro Rounded weight available,
-  filled with the Apple Blue → Indigo gradient.
-- Subtitle and footer in muted dark gray.
+The card repeats the home page hero: the app name and one line of copy on the
+left, and on the right the ROS 2 host's terminal running `ros2 topic list`
+with an iPhone running Conduit in front of it.
 
-Output: docs/assets/img/og-card.png (committed; not part of MkDocs build).
+- Text is SF Pro, the terminal SF Mono, the same families as the site.
+- The topic list is read from the hero in scripts/sync_readme.py, so the card
+  and the page always show the same topics.
+- The iPhone is images/hero-iphone.png, the image the hero uses.
 
-Re-run after editing:
+Output: images/og-card.png (served as assets/img/og-card.png).
+Needs macOS for the system fonts and Pillow. Re-run after editing:
 
     python scripts/generate_og_image.py
 """
 from __future__ import annotations
 
-import os
+import re
+import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-ICON = ROOT / "docs" / "assets" / "img" / "app_icon.png"
-OUT = ROOT / "docs" / "assets" / "img" / "og-card.png"
+IMAGES = ROOT / "images"
+OUT = IMAGES / "og-card.png"
 
-WIDTH, HEIGHT = 1200, 630
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from sync_readme import _HERO_HTML  # noqa: E402
 
-# Apple system palette (matches docs/assets/css/conduit.css).
-BLUE   = (0, 122, 255)
-INDIGO = (88, 86, 214)
-LABEL  = (29, 29, 31)      # #1d1d1f
-LABEL2 = (110, 110, 115)   # SF secondary-label-ish
+# Drawn at 2x, saved at 1200x630.
+W, H = 2400, 1260
 
+# Colors from docs/assets/css/conduit.css.
+BG = (245, 245, 247)
+LABEL = (29, 29, 31)
+LABEL2 = (110, 110, 115)
+BLUE = (0, 122, 255)
+TERM_BG = (28, 28, 30)
+TERM_FG = (242, 242, 247)
+TERM_PROMPT = (48, 209, 88)
+LIGHTS = [(255, 95, 87), (254, 188, 46), (40, 200, 64)]
 
-def _font(size: int, weight: str = "Bold") -> ImageFont.FreeTypeFont:
-    """SF Pro Rounded at the requested named weight, with safe fallbacks.
-
-    On modern macOS the rounded family ships as a single variable font
-    (``SFNSRounded.ttf``) whose default variation is Regular — opening it
-    via ``ImageFont.truetype`` without selecting a named variation silently
-    gives Regular weight regardless of what the caller asked for. We pick
-    the matching named instance via ``set_variation_by_name``.
-    """
-    weight_chain = {
-        "Heavy":    ["Heavy", "Black", "Bold"],
-        "Black":    ["Black", "Heavy", "Bold"],
-        "Bold":     ["Bold", "Heavy"],
-        "Semibold": ["Semibold", "Bold"],
-        "Medium":   ["Medium", "Semibold", "Regular"],
-        "Regular":  ["Regular", "Medium"],
-    }
-    weights = weight_chain.get(weight, [weight])
-
-    # 1) Discrete OTF files (older Apple installs, custom installs).
-    for w in weights:
-        for path in (
-            f"/System/Library/Fonts/SF-Pro-Rounded-{w}.otf",
-            f"/Library/Fonts/SF-Pro-Rounded-{w}.otf",
-        ):
-            if os.path.exists(path):
-                try:
-                    return ImageFont.truetype(path, size)
-                except OSError:
-                    continue
-
-    # 2) Variable font with named instances (default on modern macOS).
-    for path in ("/System/Library/Fonts/SFNSRounded.ttf",
-                 "/System/Library/Fonts/SFCompactRounded.ttf"):
-        if not os.path.exists(path):
-            continue
-        try:
-            f = ImageFont.truetype(path, size)
-        except OSError:
-            continue
-        try:
-            names = {n.decode("ascii", "ignore") for n in f.get_variation_names()}
-        except (OSError, AttributeError):
-            names = set()
-        for w in weights:
-            if w in names:
-                try:
-                    f.set_variation_by_name(w)
-                except (OSError, AttributeError):
-                    pass
-                return f
-        return f
-
-    # 3) Last resort.
-    for fallback in ("/System/Library/Fonts/Helvetica.ttc",
-                     "/Library/Fonts/Arial Unicode.ttf"):
-        if os.path.exists(fallback):
-            try:
-                return ImageFont.truetype(fallback, size)
-            except OSError:
-                continue
-    return ImageFont.load_default()
+SF_PRO = "/System/Library/Fonts/SFNS.ttf"
+SF_MONO = "/System/Library/Fonts/SFNSMono.ttf"
 
 
-def _gradient_text(
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    color_start: tuple[int, int, int],
-    color_end: tuple[int, int, int],
-) -> Image.Image:
-    """Render `text` filled with a horizontal gradient.
+def font(path: str, size: int, weight: str = "Regular") -> ImageFont.FreeTypeFont:
+    """A system variable font at a named weight."""
+    f = ImageFont.truetype(path, size)
+    try:
+        f.set_variation_by_name(weight)
+    except (OSError, ValueError):
+        pass
+    return f
 
-    Returns a tight RGBA image just big enough to hold the glyphs.
-    """
-    # Probe the bounding box on a throwaway canvas.
-    probe = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
-    pd = ImageDraw.Draw(probe)
-    bbox = pd.textbbox((0, 0), text, font=font)
-    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    # Add a tiny pad so descenders / anti-aliasing aren't clipped.
-    pad_x, pad_y = 4, 6
-    canvas_w, canvas_h = w + pad_x * 2, h + pad_y * 2
 
-    # 1. Build the gradient fill.
-    grad = Image.new("RGB", (canvas_w, canvas_h))
-    g_px = grad.load()
-    for x in range(canvas_w):
-        t = x / max(canvas_w - 1, 1)
-        r = int(color_start[0] * (1 - t) + color_end[0] * t)
-        g = int(color_start[1] * (1 - t) + color_end[1] * t)
-        b = int(color_start[2] * (1 - t) + color_end[2] * t)
-        for y in range(canvas_h):
-            g_px[x, y] = (r, g, b)
+def topics() -> list[str]:
+    return re.findall(r"<li>([^<]+)</li>", _HERO_HTML)
 
-    # 2. Build the text alpha mask.
-    mask = Image.new("L", (canvas_w, canvas_h), 0)
-    md = ImageDraw.Draw(mask)
-    md.text((pad_x - bbox[0], pad_y - bbox[1]), text, font=font, fill=255)
 
-    # 3. Compose gradient + mask onto a transparent RGBA tile.
-    out = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
-    out.paste(grad, (0, 0), mask)
-    return out
+def rounded(img: Image.Image, radius: float) -> Image.Image:
+    mask = Image.new("L", img.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, img.width - 1, img.height - 1), radius=radius, fill=255)
+    img.putalpha(mask)
+    return img
+
+
+def place(canvas: Image.Image, img: Image.Image, x: int, y: int, shadow: float) -> None:
+    """Paste with a soft drop shadow, like the hero's drop-shadow filter."""
+    pad = 80
+    alpha = img.split()[3].point(lambda v: int(v * shadow))
+    sh = Image.new("RGBA", (img.width + 2 * pad, img.height + 2 * pad), (0, 0, 0, 0))
+    sh.paste((0, 0, 0, 255), (pad, pad), alpha)
+    sh = sh.filter(ImageFilter.GaussianBlur(28))
+    canvas.alpha_composite(sh, (x - pad, y - pad + 24))
+    canvas.alpha_composite(img, (x, y))
+
+
+def terminal(w: int, h: int) -> Image.Image:
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((0, 0, w - 1, h - 1), radius=36, fill=TERM_BG)
+    for i, color in enumerate(LIGHTS):
+        d.ellipse((44 + i * 44, 40, 68 + i * 44, 64), fill=color)
+    f = font(SF_MONO, 36)
+    x, y, step = 52, 112, 51
+    d.text((x, y), "$", font=f, fill=TERM_PROMPT)
+    d.text((x + 44, y), "ros2 topic list", font=f, fill=TERM_FG)
+    y += step + 8
+    for topic in topics():
+        if y > h - 70:
+            break
+        d.text((x + 44, y), topic, font=f, fill=TERM_FG)
+        y += step
+    return img
 
 
 def build() -> None:
-    bg = Image.new("RGBA", (WIDTH, HEIGHT), (255, 255, 255, 255))
+    canvas = Image.new("RGBA", (W, H), BG + (255,))
+    d = ImageDraw.Draw(canvas)
 
-    # ----- App icon (no shadow, no decorative frame) -----
-    icon_size = 220
-    icon = Image.open(ICON).convert("RGBA").resize(
-        (icon_size, icon_size), Image.LANCZOS
-    )
-    rmask = Image.new("L", (icon_size, icon_size), 0)
-    ImageDraw.Draw(rmask).rounded_rectangle(
-        (0, 0, icon_size, icon_size),
-        radius=int(icon_size * 0.225),
-        fill=255,
-    )
-    icon.putalpha(rmask)
-    icon_x, icon_y = 120, (HEIGHT - icon_size) // 2
-    bg.alpha_composite(icon, dest=(icon_x, icon_y))
+    # App icon and name
+    left, top = 130, 360
+    icon = rounded(Image.open(IMAGES / "app_icon.png").convert("RGBA").resize((158, 158), Image.LANCZOS), 158 * 0.225)
+    canvas.alpha_composite(icon, (left, top))
+    title = font(SF_PRO, 150, "Bold")
+    tb = d.textbbox((0, 0), "Conduit", font=title)
+    d.text((left + icon.width + 33 - tb[0], top + (icon.height - (tb[3] - tb[1])) // 2 - tb[1]),
+           "Conduit", font=title, fill=LABEL)
 
-    # ----- Text block -----
-    eyebrow_font = _font(28, "Semibold")
-    title_font   = _font(132, "Heavy")     # heaviest SF Rounded available
-    sub_font     = _font(34, "Regular")
-    foot_font    = _font(26, "Medium")
+    # One line of copy, in two rows
+    sub = font(SF_PRO, 50)
+    y = top + icon.height + 45
+    for line in ("Publish your iPhone, iPad and", "Mac sensors to ROS 2."):
+        lb = d.textbbox((0, 0), line, font=sub)
+        d.text((left - lb[0], y - lb[1]), line, font=sub, fill=LABEL2)
+        y += 65
 
-    text_x = 380
-    draw = ImageDraw.Draw(bg)
+    foot = font(SF_PRO, 40, "Semibold")
+    fb = d.textbbox((0, 0), "conduit.direct", font=foot)
+    d.text((left - fb[0], H - 170 - fb[1]), "conduit.direct", font=foot, fill=BLUE)
 
-    # Eyebrow — Apple Blue, uppercase.
-    draw.text(
-        (text_x, icon_y - 6),
-        "APPLE-NATIVE · ROS 2",
-        font=eyebrow_font,
-        fill=BLUE + (255,),
-    )
+    # The host's terminal, with the iPhone in front of it
+    place(canvas, terminal(980, 1000), 1100, 130, shadow=0.25)
+    phone = Image.open(IMAGES / "hero-iphone.png").convert("RGBA")
+    phone = phone.resize((round(phone.width * 1080 / phone.height), 1080), Image.LANCZOS)
+    place(canvas, phone, 1760, 90, shadow=0.18)
 
-    # Title — heavy weight, blue → indigo gradient.
-    title_img = _gradient_text("Conduit", title_font, BLUE, INDIGO)
-    bg.alpha_composite(title_img, dest=(text_x - 4, icon_y + 30))
-
-    # Subtitle — muted dark gray.
-    subtitle_y = icon_y + 30 + title_img.height + 10
-    draw.text(
-        (text_x, subtitle_y),
-        "Stream 13 real-time sensors from iPhone,\n"
-        "iPad, and Mac into ROS 2.",
-        font=sub_font,
-        fill=LABEL + (255,),
-        spacing=10,
-    )
-
-    # Footer URL — secondary gray.
-    draw.text(
-        (text_x, HEIGHT - 110),
-        "conduit.direct",
-        font=foot_font,
-        fill=LABEL2 + (255,),
-    )
-
-    bg.convert("RGB").save(OUT, "PNG", optimize=True)
+    canvas.convert("RGB").resize((1200, 630), Image.LANCZOS).save(OUT, "PNG", optimize=True)
     print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size // 1024} KB)")
 
 
