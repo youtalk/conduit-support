@@ -34,7 +34,8 @@ jobs:
           - { name: "RHEL 9", image: "rockylinux:9", release: el, distro: jazzy }
           - { name: "RHEL 9", image: "rockylinux:9", release: el, distro: kilted }
           - { name: "RHEL 10", image: "rockylinux/rockylinux:10", release: el, distro: lyrical }
-          - { name: "Fedora 43", image: "fedora:43", release: fc, distro: lyrical }
+          # As of 2026-11, Fedora's Lyrical packages are in ros2-testing only.
+          - { name: "Fedora 43", image: "fedora:43", release: fc, distro: lyrical, repo: ros2-testing }
         rmw: [rmw_cyclonedds_cpp, rmw_zenoh_cpp]
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +45,7 @@ jobs:
         env:
           RELEASE: ${{ matrix.target.release }}
           DISTRO: ${{ matrix.target.distro }}
+          EXTRA_REPO: ${{ matrix.target.repo }}
         run: |
           set -eux
           if [ "$RELEASE" = el ]; then
@@ -54,10 +56,12 @@ jobs:
           dnf install -y "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${version}/ros2-release-${version}-1.${RELEASE}.noarch.rpm"
           # The tools a desktop or server install already has.
           dnf install -y iproute hostname procps-ng util-linux findutils
-          dnf install -y "ros-${DISTRO}-ros-base" "ros-${DISTRO}-rmw-cyclonedds-cpp" "ros-${DISTRO}-rmw-zenoh-cpp"
+          dnf install -y ${EXTRA_REPO:+--enablerepo="$EXTRA_REPO"} \
+            "ros-${DISTRO}-ros-base" "ros-${DISTRO}-rmw-cyclonedds-cpp" "ros-${DISTRO}-rmw-zenoh-cpp"
 
       - name: Pair with a fake Conduit
         shell: bash
+        timeout-minutes: 15
         env:
           DISTRO: ${{ matrix.target.distro }}
           RMW_IMPLEMENTATION: ${{ matrix.rmw }}
