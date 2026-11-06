@@ -241,12 +241,6 @@ Common issues and solutions for Conduit.
 
 **Workaround**: Use an iPhone or iPad for those sensors. See [Platform notes](platform-notes.md).
 
-### Simulator: mock data only
-
-**Expected behavior**: Simulator generates synthetic sensor data.
-
-**Note**: Useful for development/testing, but not real sensor readings.
-
 ### `ros2 topic echo /conduit/audio` fails with "unknown type"
 
 **Problem**: `audio_common_msgs` package is not installed on the ROS 2 system.

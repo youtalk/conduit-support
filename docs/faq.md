@@ -173,10 +173,7 @@ Pick the release your host runs; there is no automatic detection.
 
 ### Can I use Conduit without a ROS 2 system?
 
-Yes:
-
-- **Record mode** works with no network at all. Choose **Record** next to the play button and Conduit writes the sensors to an `.mcap` file on the device. See [MCAP recording](#mcap-recording).
-- The iOS Simulator generates mock sensor data, so you can try the app without a device.
+Yes. **Record mode** works with no network at all. Choose **Record** next to the play button and Conduit writes the sensors to an `.mcap` file on the device. See [MCAP recording](#mcap-recording).
 
 To receive live data, you need a ROS 2 system (Humble, Jazzy, Kilted, Lyrical, or Rolling) with **one** of the supported transports:
 

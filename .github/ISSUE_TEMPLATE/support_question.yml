@@ -35,7 +35,6 @@ body:
         - iOS (iPhone)
         - iOS (iPad)
         - macOS (Mac Catalyst)
-        - iOS Simulator
     validations:
       required: true
 

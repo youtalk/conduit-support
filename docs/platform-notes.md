@@ -68,7 +68,3 @@ Keep Conduit in the foreground when you need data for a long time. See [Known is
 - **DDS** needs the device and the ROS 2 host on the same LAN. On iPhone and iPad, select **en0 (WiFi)** as the network interface (Settings → Discovery).
 
 See [Transports](transports.md).
-
-## iOS Simulator
-
-This applies only if you build Conduit from source. In the iOS Simulator, the sensors generate mock data, so you can try the app and your ROS 2 setup without a device.
