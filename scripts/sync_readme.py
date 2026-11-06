@@ -21,8 +21,9 @@ from pathlib import Path
 
 # ----- Link / asset rewrites -----
 
-# docs/UPPERCASE_WORDS.md  ->  lowercase-words.md  (anchor preserved)
-_DOCS_LINK_RE = re.compile(r"\bdocs/([A-Z][A-Z0-9_]*)\.md(#[^\s)\"']*)?")
+# docs/name.md or docs/UPPERCASE_WORDS.md  ->  name.md / uppercase-words.md
+# (anchor preserved)
+_DOCS_LINK_RE = re.compile(r"\bdocs/([A-Za-z][A-Za-z0-9_-]*)\.md(#[^\s)\"']*)?")
 # ](docker/README.md) -> ](https://github.com/youtalk/conduit-support/tree/main/docker)
 # Must run before the bare-uppercase rule below.
 _DOCKER_README_RE = re.compile(r"\]\(docker/README\.md\)")
@@ -44,6 +45,14 @@ _YT_THUMB_RE = re.compile(
     r"<img[^>]*>\s*<br>\s*"
     r"<b>([^<]+)</b>\s*</a>"
 )
+# The README's raw HTML <table>s are media grids (demo videos, screenshots).
+# GitHub needs a table to lay them out; on the site the class lets CSS turn
+# them into a responsive grid. Markdown tables are not raw <table> tags, so
+# they are not affected.
+_MEDIA_TABLE_RE = re.compile(r"<table>")
+# README <details> blocks hold Markdown (code, lists). Python-Markdown leaves
+# raw HTML alone unless it is marked with markdown="1" (md_in_html).
+_DETAILS_RE = re.compile(r"<details>")
 _YT_IFRAME_ALLOW = (
     "accelerometer; autoplay; clipboard-write; encrypted-media; "
     "gyroscope; picture-in-picture; web-share"
@@ -72,51 +81,54 @@ _HERO_BLOCK_RE = re.compile(
     r"<img src=\"images/app_icon\.png\"[^>]*>\s*"
     r"</a>\s*"
     r"#\s*Conduit\s*"
-    r"</div>\s*",
+    r"</div>\s*"
+    # The README's bold tagline repeats what the hero says; drop it too.
+    r"(?:\*\*[^*\n]+\*\*[ \t]*\n\s*)?",
     re.MULTILINE,
 )
 
 _HERO_HTML = """\
 <div class="conduit-hero" markdown="0">
-  <div class="conduit-hero__inner">
-    <a href="{app_url}" aria-label="Download Conduit on the App Store">
-      <img class="conduit-hero__icon" src="assets/img/app_icon.png"
-           alt="Conduit app icon" width="96" height="96">
-    </a>
-    <div class="conduit-hero__copy">
-      <span class="conduit-hero__eyebrow">Apple-native · ROS 2</span>
+  <div class="conduit-hero__copy">
+    <div class="conduit-hero__brand">
+      <a href="{app_url}" aria-label="Download Conduit on the App Store">
+        <img class="conduit-hero__icon" src="assets/img/app_icon.png"
+             alt="Conduit app icon" width="64" height="64">
+      </a>
       <h1 class="conduit-hero__title">Conduit</h1>
-      <p class="conduit-hero__subtitle">
-        Stream 12 real-time sensors from iPhone, iPad, Mac, and Apple Vision Pro
-        straight into your ROS 2 graph — Zenoh or DDS, no bridge required.
-      </p>
-      <div class="conduit-hero__cta">
-        <a class="conduit-btn conduit-btn--primary" href="{app_url}">
-          Download on the App Store
-        </a>
-        <a class="conduit-btn conduit-btn--ghost" href="#demo-videos">
-          Watch demos
-        </a>
-      </div>
-      <div class="conduit-stats" role="list">
-        <div class="conduit-stat" role="listitem">
-          <span class="conduit-stat__num">10,000+</span>
-          <span class="conduit-stat__label">ROS 2 developers</span>
-        </div>
-        <div class="conduit-stat" role="listitem">
-          <span class="conduit-stat__num">#4</span>
-          <span class="conduit-stat__label">Developer Tools, JP</span>
-        </div>
-        <div class="conduit-stat" role="listitem">
-          <span class="conduit-stat__num">12</span>
-          <span class="conduit-stat__label">sensor topics</span>
-        </div>
-        <div class="conduit-stat" role="listitem">
-          <span class="conduit-stat__num">Zenoh · DDS</span>
-          <span class="conduit-stat__label">native transports</span>
-        </div>
-      </div>
     </div>
+    <p class="conduit-hero__subtitle">
+      Publish <strong>13 sensors</strong> of your iPhone, iPad or Mac to ROS 2:
+      camera, LiDAR, IMU, GPS and more, over Zenoh or DDS, with no bridge.
+    </p>
+    <div class="conduit-hero__cta">
+      <a class="conduit-btn conduit-btn--primary" href="{app_url}">Download on the App Store</a>
+      <a class="conduit-btn conduit-btn--tinted" href="pair/">Connect with a QR code</a>
+    </div>
+    <p class="conduit-hero__note">
+      Downloaded over 10,000 times. Ranked as high as #4 in Developer Tools
+      on the Japanese App Store.
+    </p>
+  </div>
+  <div class="conduit-terminal" role="img" aria-label="ros2 topic list on the ROS 2 host shows Conduit's topics">
+    <span class="conduit-terminal__prompt">ros2 topic list</span>
+    <ol>
+      <li>/conduit/audio</li>
+      <li>/conduit/barometer</li>
+      <li>/conduit/battery_state</li>
+      <li>/conduit/camera/wide/image_raw/compressed</li>
+      <li>/conduit/fix</li>
+      <li>/conduit/illuminance</li>
+      <li>/conduit/imu</li>
+      <li>/conduit/joy</li>
+      <li>/conduit/magnetic_field</li>
+      <li>/conduit/points</li>
+      <li>/conduit/pose</li>
+      <li>/conduit/range</li>
+      <li>/conduit/temperature</li>
+      <li>/tf</li>
+      <li>/tf_static</li>
+    </ol>
   </div>
 </div>
 
@@ -141,12 +153,12 @@ def rewrite(text: str) -> str:
     def _yt_repl(match: re.Match[str]) -> str:
         video_id, title = match.group(1), match.group(2)
         return (
-            f'<iframe width="100%" height="170" '
+            f'<div class="conduit-video"><iframe '
             f'src="https://www.youtube.com/embed/{video_id}" '
-            f'title="{title}" frameborder="0" '
+            f'title="{title}" loading="lazy" '
             f'allow="{_YT_IFRAME_ALLOW}" '
             f'referrerpolicy="strict-origin-when-cross-origin" '
-            f"allowfullscreen></iframe><br>\n"
+            f"allowfullscreen></iframe></div>\n"
             f"<b>{title}</b>"
         )
 
@@ -160,6 +172,8 @@ def rewrite(text: str) -> str:
     text = _HTML_ATTR_RE.sub(r'\1assets/img/', text)
     text = _MD_INLINE_RE.sub("](assets/img/", text)
     text = _YT_THUMB_RE.sub(_yt_repl, text)
+    text = _MEDIA_TABLE_RE.sub('<table class="conduit-media">', text)
+    text = _DETAILS_RE.sub('<details markdown="1">', text)
     return text
 
 
@@ -171,4 +185,10 @@ def on_pre_build(config) -> None:  # type: ignore[no-untyped-def]
         return
     docs_dir.mkdir(parents=True, exist_ok=True)
     text = readme.read_text(encoding="utf-8")
-    (docs_dir / "index.md").write_text(rewrite(text), encoding="utf-8", newline="\n")
+    index = docs_dir / "index.md"
+    new = rewrite(text)
+    # Write only on change: `mkdocs serve` watches docs/, so rewriting an
+    # unchanged index.md would trigger a rebuild loop.
+    if index.exists() and index.read_text(encoding="utf-8") == new:
+        return
+    index.write_text(new, encoding="utf-8", newline="\n")

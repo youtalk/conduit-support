@@ -104,7 +104,9 @@ def test_replaces_centered_hero_block():
         '\n'
         '</div>\n'
         '\n'
-        '**Transform your Apple devices**'
+        '**Your iPhone as a ROS 2 sensor**\n'
+        '\n'
+        'Conduit publishes sensors.'
     )
     out = sync_readme.rewrite(readme_opening)
     assert 'class="conduit-hero"' in out
@@ -112,8 +114,9 @@ def test_replaces_centered_hero_block():
     assert "\n# Conduit\n" not in out
     # The App Store URL must be carried into the hero.
     assert "apps.apple.com/app/id6757171237" in out
-    # Body content after the hero must survive.
-    assert "**Transform your Apple devices**" in out
+    # The bold tagline repeats the hero and is dropped; the body survives.
+    assert "**Your iPhone as a ROS 2 sensor**" not in out
+    assert "Conduit publishes sensors." in out
 
 
 def test_hero_replacement_only_runs_once():
