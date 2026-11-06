@@ -233,7 +233,7 @@ STUB
   run wait_for_data 5
   [ "$status" -eq 0 ]
   grep -qx 'PYTHONUNBUFFERED=1' "$BATS_TEST_TMPDIR/ros2.log"
-  grep -q -- '^timeout --foreground 5 ros2 topic echo' "$BATS_TEST_TMPDIR/ros2.log"
+  grep -q -- '^timeout --foreground -k 5 5 ros2 topic echo' "$BATS_TEST_TMPDIR/ros2.log"
 }
 
 @test "firewalld state" {
@@ -277,5 +277,19 @@ STUB
   [[ "$output" == *"sudo firewall-cmd --add-port=38150-38399/udp"* ]]
   [[ "$output" != *"7449/tcp"* ]]
   [[ "$output" != *"7447/tcp"* ]]
+}
+
+@test "wait_for_data kills a ros2 that ignores SIGTERM" {
+  cat > "$STUBS/ros2" << 'STUB'
+#!/usr/bin/env bash
+trap '' TERM
+echo 'frame_id: conduit_base_link'
+while :; do sleep 1; done
+STUB
+  chmod +x "$STUBS/ros2"
+  SECONDS=0
+  run wait_for_data 1
+  [ "$status" -eq 0 ]
+  ((SECONDS < 15))
 }
 

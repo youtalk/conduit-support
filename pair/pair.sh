@@ -1065,8 +1065,9 @@ wait_for_data() {
   local status=()
   {
     # Unbuffered so the first message reaches grep at once; --foreground keeps
-    # ros2 in this terminal's process group so Ctrl-C ends the wait.
-    PYTHONUNBUFFERED=1 timeout --foreground "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
+    # ros2 in this terminal's process group so Ctrl-C ends the wait. -k: under
+    # rmw_zenoh_cpp, ros2 may not exit on SIGTERM, so SIGKILL it 5 s later.
+    PYTHONUNBUFFERED=1 timeout --foreground -k 5 "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
       /tf_static tf2_msgs/msg/TFMessage 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link'
     status=("${PIPESTATUS[@]}")
   } || true

@@ -74,11 +74,19 @@ def publish_tf_static(seconds):
     transform.header.frame_id = "conduit_base_link"
     transform.child_frame_id = "imu_link"
     transform.transform.rotation.w = 1.0
-    publisher.publish(TFMessage(transforms=[transform]))
+    message = TFMessage(transforms=[transform])
+    # Like Conduit's StaticTFPublisher: latched, and sent again every second.
+    publisher.publish(message)
+    node.create_timer(1.0, lambda: publisher.publish(message))
     print("fake_conduit: /%s/%s publishes /tf_static" % (NAMESPACE, NODE), flush=True)
     deadline = time.monotonic() + seconds
-    while rclpy.ok() and time.monotonic() < deadline:
-        rclpy.spin_once(node, timeout_sec=0.5)
+    try:
+        while rclpy.ok() and time.monotonic() < deadline:
+            rclpy.spin_once(node, timeout_sec=0.5)
+    except Exception:  # noqa: BLE001 - run.sh's SIGINT shuts the context down mid-spin
+        if rclpy.ok():
+            raise
+        return
     node.destroy_node()
     rclpy.shutdown()
 
