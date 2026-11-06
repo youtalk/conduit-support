@@ -1,107 +1,99 @@
 # Privacy Policy
 
-**Last Updated: December 20, 2025**
+**Last Updated: November 5, 2026**
 
-Conduit is a developer tool that publishes sensor data from Apple devices (iOS / iPadOS / macOS / visionOS) to ROS 2 (Robot Operating System 2) networks. It is built on top of the open-source [swift-ros2](https://github.com/youtalk/swift-ros2) Swift client library, which speaks the ROS 2 wire formats directly over Zenoh or DDS — without any Conduit-operated cloud service in between. This privacy policy explains what data the app collects, how it's used, and your rights.
+Conduit is a developer tool that publishes sensor data from iPhone, iPad and Mac to ROS 2 (Robot Operating System 2) networks. It is built on the open-source [swift-ros2](https://github.com/swift-ros2/swift-ros2) library, which speaks the ROS 2 wire formats directly over Zenoh or DDS. There is no Conduit-operated server in between. This policy explains what data the app uses, where it goes, and your choices.
 
 **Developer**: Yutaka Kondo (youtalk) · [LinkedIn](https://www.linkedin.com/in/youtalk) · [Website](https://youtalk.jp)
 
-## Data Collection
+## Sensor data
 
-### Sensor Data (User-Controlled)
+Conduit reads a sensor **only after you turn that sensor on**. All sensors are off by default. Depending on what you turn on, this can include:
 
-The app may access, transmit, and (when MCAP recording is enabled) write the following sensor data to local files **only when you explicitly enable each sensor**:
+- **Motion**: accelerometer, gyroscope and magnetometer (IMU, Magnetic Field)
+- **Location**: GPS position
+- **Camera**: images from the device cameras
+- **Depth and pose**: LiDAR depth and the device's position and orientation from ARKit (on supported devices)
+- **Audio**: microphone samples
+- **Environment**: air pressure (Barometer) and a brightness estimate from the camera (Illuminance)
+- **Proximity**: the near/far reading of the proximity sensor
+- **Device state**: battery level and thermal state
+- **Game controller input**: buttons and sticks of a connected controller
 
-- **Motion Data**: Accelerometer, gyroscope, magnetometer readings (IMU)
-- **Location Data**: GPS coordinates (only while app is in use)
-- **Camera Data**: Images from device cameras
-- **Environmental Data**: Barometer, ambient light sensor
-- **Device State**: Battery level, thermal state
-- **LiDAR Data**: Depth sensing (on supported devices)
-- **Game Controller Input**: Button and joystick data
-- **Audio Data**: Microphone samples (when the Microphone sensor is enabled)
-- **Proximity Data**: Front-facing proximity sensor reading
+Where it goes:
 
-**Important Notes**:
+- **Live publishing**: Conduit sends sensor data **only to the Zenoh router or DDS peers you configure**, usually on your own network. It is not sent to us or to any third party.
+- **Recordings**: when you record, Conduit writes the same sensor messages to an `.mcap` file on the device. Recordings stay on the device unless you share them (for example through the share sheet, Files or AirDrop). Conduit never uploads them.
+- **Location** access is "While Using the App" only. Conduit reads your location only while the GPS sensor is on.
 
-- All sensor data collection is **opt-in**. Sensors are disabled by default.
-- Data is transmitted **only to the Zenoh router or DDS subscriber you configure** (typically on your local network — under your control, not ours).
-- **No sensor data is sent to our servers** or any third-party servers. Conduit operates no backend; the app is a wire-level publisher only.
-- **Background GPS tracking is not supported** due to privacy constraints. Location data is only collected while the app is active.
+## Connecting with a QR code
 
-### Analytics Data
+When you scan a pairing QR code from the Conduit pairing script ([Connect with a QR code](pair.md)):
 
-The app uses Firebase Analytics to collect:
+- The connection settings are in the part of the link after `#`. If the link opens in a browser, the browser does not send that part to the web server; the page only passes it to Conduit.
+- After Conduit applies the settings, it sends one line of JSON over TCP to the pairing script on your computer, at the address in the QR code. The line contains:
+    - the one-time token from the QR code,
+    - the device's name (as set in iOS or iPadOS Settings),
+    - the Conduit version,
+    - the ROS 2 node name and namespace set in Conduit.
 
-- **Device Information**: Device model, OS version
-- **App Usage**: Feature usage, error occurrences
-- **Anonymous Identifiers**: Non-personal device identifiers
+- The script uses this to confirm that the device checked in. Nothing is sent anywhere else.
 
-This data is used solely to improve app functionality and user experience.
+## Usage statistics
 
-## How Data Is Used
+Conduit uses Firebase Analytics (Google) to collect anonymous usage statistics:
 
-**Sensor Data:**
+- **Device information**: device model, OS version
+- **App usage**: for example which sensors are turned on or off, connection starts, stops and errors, and settings changes
+- **Anonymous identifiers**: an app instance identifier generated by Firebase
 
-- Transmitted directly to your configured ROS 2 system over Zenoh (`rmw_zenoh_cpp`) or DDS (`rmw_cyclonedds_cpp`)
-- Used for robotics development, research, and testing
-- Never stored on our servers
-- Never shared with third parties
+Conduit does not send sensor values, recordings, or the addresses and names you enter in Settings. Firebase may derive a coarse location, such as the country, from the network connection. We use these statistics only to find bugs and improve the app. They are processed by Google under the [Firebase privacy information](https://firebase.google.com/support/privacy) and [Google's Privacy Policy](https://policies.google.com/privacy).
 
-**Analytics Data:**
+To turn them off, open Settings in Conduit → **About & Help** → **Privacy** and turn off **Send Usage Statistics**.
 
-- Used to identify bugs and improve app performance
-- Aggregated and anonymized
-- Processed by Google Firebase Analytics (see their [privacy policy](https://firebase.google.com/support/privacy))
+## Data stored on the device
 
-## Data Storage and Security
-
-- **Sensor data (live publishing)**: Not stored by the app. Transmitted in real-time to your ROS 2 system.
-- **MCAP recordings (opt-in)**: When you start a recording, the app writes the same sensor messages to a local `.mcap` file in the app's Documents directory. Recordings stay on-device and are never uploaded by Conduit. You can browse, delete, or share them via the iOS / macOS share sheet (e.g. Files, AirDrop, mail) — Conduit hands the file off to the system from there.
-- **Configuration settings**: Stored locally on your device using iOS Keychain and UserDefaults. The 16-byte ROS 2 publisher GID is generated once and persisted to Keychain so the same publisher identity survives app launches.
-- **Network transmission**: Data is sent over your local network to the Zenoh router or DDS subscriber you configure.
-- **Firebase Analytics**: Collects anonymous usage statistics. Subject to [Google's Privacy Policy](https://policies.google.com/privacy). You can opt out by disabling analytics in iOS Settings → Privacy → Analytics & Improvements.
+- **Settings** (connection, sensors, rates and so on) are stored on the device.
+- **Recordings** stay on the device until you delete them in Conduit or in Files, or delete the app.
+- Earlier versions of Conduit stored a random 16-byte ROS 2 publisher ID in the Keychain. Current versions do not use it.
 
 ## Permissions
 
 | Permission | Purpose | Required |
 |---|---|---|
-| Camera | Publish camera images to ROS 2 | Optional |
-| Microphone | Publish audio samples to ROS 2 | Optional |
-| Location (When In Use) | Publish GPS data to ROS 2 | Optional |
-| Motion & Fitness | Access IMU sensors | Optional |
-| Local Network | Connect to Zenoh router or DDS subscriber on your network | Required |
+| Local Network | Connect to the Zenoh router or DDS peers on your network, and to the pairing script | Yes, to publish |
+| Camera | Camera images; also used by LiDAR, Device Pose and Illuminance | Optional |
+| Microphone | Audio samples | Optional |
+| Location (While Using the App) | GPS position | Optional |
+| Motion & Fitness | IMU and magnetometer | Optional |
 
-**Note**: All permissions except Local Network are optional. You can selectively enable only the sensors you need.
-
-## Your Rights
-
-You have the right to:
-
-- **Control sensor access**: Enable/disable any sensor at any time
-- **Delete app data**: Uninstall the app to remove all local data
-- **Opt out of analytics**: Disable analytics in iOS Settings
+Conduit asks for a permission when you first turn on a sensor that needs it. You can change permissions at any time in iOS Settings → Privacy & Security.
 
 ## In-App Purchases
 
-Some advanced features (Camera, LiDAR, Game Controller, Background publishing, MCAP Recording) are gated behind one-time In-App Purchases via Apple's StoreKit. Purchase processing, receipt validation, and refund handling are performed by Apple — Conduit only sees the resulting entitlement state and does not collect, store, or transmit payment information. See Apple's [App Store & Privacy](https://www.apple.com/legal/privacy/data/en/app-store/) policy for details.
+Some features are one-time In-App Purchases through Apple's App Store: Back Cameras (Wide, Ultra Wide and Telephoto; the front camera is free), LiDAR, Game Controller, Background Mode and Recording Export. Apple handles payment, receipts and refunds. Conduit only learns which features you have unlocked; it does not see or store payment information. See Apple's [App Store & Privacy](https://www.apple.com/legal/privacy/data/en/app-store/) page.
 
-## Data Retention
+## Your choices
 
-- **Sensor data (live publishing)**: Not retained by the app (transmitted in real-time)
-- **MCAP recordings**: Kept on-device until you delete them from within Conduit, delete them from Files, or uninstall the app. Conduit never uploads them.
-- **Configuration data**: Stored until app is uninstalled
-- **Analytics data**: Retained by Firebase per [their retention policy](https://support.google.com/firebase/answer/7029846)
+- **Sensors**: turn any sensor on or off at any time.
+- **Usage statistics**: turn off **Send Usage Statistics** in Conduit's Settings → About & Help.
+- **Recordings**: delete them in Conduit at any time.
+- **All app data**: delete the app to remove its settings and recordings.
 
-## Policy Updates
+## Data retention
 
-We may update this privacy policy from time to time. Changes will be posted on this page with an updated "Last Updated" date.
+- **Live sensor data**: not kept by the app; it is sent as it is captured.
+- **Recordings**: kept on the device until you delete them or delete the app.
+- **Settings**: kept until you delete the app.
+- **Usage statistics**: kept by Firebase under [its retention policy](https://support.google.com/firebase/answer/7029846).
+
+## Policy updates
+
+We may update this policy. Changes are posted on this page with a new "Last Updated" date.
 
 ## Contact
-
-For questions or concerns:
 
 - **LinkedIn**: https://www.linkedin.com/in/youtalk
 - **Website**: https://youtalk.jp
 
-**Note**: This app is designed for developers and researchers. It is not intended for children under 13.
+**Note**: Conduit is designed for developers and researchers. It is not intended for children under 13.

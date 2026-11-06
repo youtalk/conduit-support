@@ -1,181 +1,74 @@
-# Platform-Specific Notes
+# Platform notes
 
-Information about sensor availability and limitations on different Apple platforms.
+Conduit runs on iPhone and iPad (iOS and iPadOS 16 or later) and on Mac (macOS 13 or later, as a Mac Catalyst app). The sensors you can use depend on the device. For every topic, message type and rate, see [Sensors and topics](sensors.md).
 
-## iOS / iPadOS
+## Sensors by platform
 
-**Supported Sensors**: All 12 sensors
+| Sensor | iPhone | iPad | Mac |
+|---|---|---|---|
+| IMU | ✅ | ✅ | ❌ |
+| Magnetic Field | ✅ | ✅ | ❌ |
+| Barometer | ✅ | ✅ | ❌ |
+| Illuminance | ✅ | ✅ | ❌ |
+| GPS | ✅ | ✅ | ❌ |
+| Proximity | ✅ | ❌ | ❌ |
+| Device Pose (Conduit 3) | ✅ | ✅ | ❌ |
+| Camera | ✅ | ✅ | ✅ built-in camera only |
+| LiDAR | ✅ iPhone 12 Pro and later Pro models | ✅ iPad Pro (2020 and later) | ❌ |
+| Microphone | ✅ | ✅ | ✅ |
+| Battery | ✅ | ✅ | ✅ |
+| Thermal | ✅ | ✅ | ✅ |
+| Game Controller | ✅ | ✅ | ✅ |
 
-| Sensor | iPhone | iPad | Notes |
-|--------|--------|------|-------|
-| IMU | ✅ | ✅ | All iOS devices |
-| GPS | ✅ | ✅ | WiFi/Cellular required |
-| Magnetic Field | ✅ | ✅ | Built-in compass |
-| Proximity | ✅ | ❌ | iPhone only |
-| Camera | ✅ | ✅ | Multiple cameras on Pro models |
-| LiDAR | ✅* | ✅* | Pro models 2020+ |
-| Microphone | ✅ | ✅ | 16 kHz, mono, S16LE |
-| Battery | ✅ | ✅ | All devices |
-| Thermal | ✅ | ✅ | All devices |
-| Barometer | ✅ | ✅ | iPhone 6+, all iPads |
-| Illuminance | ✅ | ✅ | Via camera ambient light sensor |
-| Game Controller | ✅ | ✅ | MFi controllers via Bluetooth |
+A sensor the device does not have shows as **Not Available**. Tap it to see the reason.
 
-*LiDAR availability:
-- iPhone: 12 Pro, 13 Pro, 14 Pro, 15 Pro series
-- iPad: Pro 11" (2020+), Pro 12.9" (2020+)
+## iPhone
 
-**Background Mode**:
-- ✅ IMU, Magnetometer, Barometer, Battery, Thermal
-- ✅ GPS (foreground only - "When In Use" permission)
-- ❌ Camera, LiDAR, Microphone (iOS restriction)
-- ⚠️ Background processing mode available for continuous streaming
+iPhone has all 13 sensors.
 
-**DDS Transport on iOS:**
-- The app must bind to the `en0` (WiFi) interface for DDS discovery; cellular and VPN interfaces are not supported.
-- Multicast discovery may fail on consumer WiFi access points with "AP isolation" enabled — use Unicast or Hybrid mode.
-- DDS does not cross NAT or subnet boundaries; use Zenoh for cross-subnet scenarios.
+- **LiDAR** needs an iPhone 12 Pro or a later Pro model.
+- **Cameras**: the front camera and the back cameras your model has (Wide, Ultra Wide, Telephoto). While LiDAR is on, only the Wide camera streams, because ARKit provides only that camera.
+- **Illuminance** is estimated from the camera's exposure, so it cannot run together with a camera stream, LiDAR or Device Pose.
+- **Device Pose** (Conduit 3) uses ARKit world tracking and publishes only while tracking is normal.
 
----
+## iPad
 
-## visionOS (Apple Vision Pro)
+iPad has every sensor except Proximity.
 
-**Supported Sensors**: Camera, IMU, Game Controller
+- **LiDAR** needs an iPad Pro (2020 or later).
+- **GPS**: iPad models without cellular have no GPS receiver. Location then comes from Wi-Fi and is less accurate.
+- **Cameras**: an iPad with Center Stage shows its front camera once, as the front camera.
 
-| Sensor | Available | Notes |
-|--------|-----------|-------|
-| IMU | ✅ | Head motion tracking |
-| GPS | ❌ | Indoor device |
-| Magnetic Field | ⚠️ | May be available (untested) |
-| Proximity | ❌ | Not applicable |
-| Camera | ✅ | Multiple cameras available |
-| LiDAR | ✅ | Depth sensing via cameras |
-| Microphone | ❌ | Not available on visionOS |
-| Battery | ✅ | Battery status |
-| Thermal | ✅ | Thermal state |
-| Barometer | ❌ | Not available |
-| Illuminance | ⚠️ | May be via camera (untested) |
-| Game Controller | ✅ | Bluetooth controllers |
+## Mac (Mac Catalyst)
 
-**Future Features** (not yet implemented):
-- Hand tracking → sensor_msgs/Joy or custom message
-- Eye tracking → custom message type
-- Spatial mapping → sensor_msgs/PointCloud2
+On a Mac, Conduit can use:
 
-**Limitations**:
-- No GPS (Vision Pro is designed for indoor use)
-- Different camera configuration than iPhone/iPad
-- Spatial computing features not yet exposed
+- **Camera**: the built-in FaceTime HD camera. External cameras and Continuity Camera are not listed.
+- **Microphone**
+- **Battery**: on a Mac with a battery.
+- **Thermal**
+- **Game Controller**
 
----
+Macs have no motion sensors, GPS, barometer or LiDAR, so those sensors show as **Not Available**.
 
-## tvOS (Apple TV)
+In [Robots](robots.md) (Conduit 3), the robot arm view only watches on a Mac; moving the arm needs an iPhone or iPad.
 
-**Supported Sensors**: Game Controller only
+## Background publishing
 
-| Sensor | Available | Notes |
-|--------|-----------|-------|
-| Game Controller | ✅ | Siri Remote + MFi controllers |
-| Microphone | ❌ | Not available on tvOS |
-| All others | ❌ | Apple TV is stationary without sensors |
+Settings → Publishing → **Background Publishing** keeps sensors publishing after you leave the app. It needs the Background Mode In-App Purchase.
 
-**Use Cases for tvOS**:
-- Remote robot control using Siri Remote or game controller
-- Button input for ROS 2 teleop
-- Testing controller input without iOS device
+- Camera and LiDAR stop in the background (iOS restriction).
+- The other sensors keep publishing until iOS suspends the app, which it can do at any time.
 
-**Limitations**:
-- No motion sensors (Apple TV doesn't move)
-- No location sensors (stationary device)
-- No camera (no camera hardware)
+Keep Conduit in the foreground when you need data for a long time. See [Known issues](known-issues.md).
 
----
+## Network
 
-## macOS (Mac Catalyst)
+- **Zenoh** works over any network that can reach the router over TCP, including a Tailscale tailnet.
+- **DDS** needs the device and the ROS 2 host on the same LAN. On iPhone and iPad, select **en0 (WiFi)** as the network interface (Settings → Discovery).
 
-**Supported Sensors**: Camera, Battery, Game Controller (limited)
-
-| Sensor | Available | Notes |
-|--------|-----------|-------|
-| IMU | ❌ | Macs don't have accelerometer |
-| GPS | ❌ | Desktop device |
-| Magnetic Field | ❌ | No magnetometer |
-| Proximity | ❌ | Not applicable |
-| Camera | ✅ | FaceTime HD Camera |
-| LiDAR | ❌ | No LiDAR on Macs |
-| Microphone | ❌ | Not available on macOS |
-| Battery | ✅ | MacBook only |
-| Thermal | ✅ | CPU temperature |
-| Barometer | ❌ | Not available |
-| Illuminance | ⚠️ | May be via ambient light sensor |
-| Game Controller | ✅ | Bluetooth controllers |
-
-**Limitations**:
-- No motion sensors (desktop device)
-- Single camera (FaceTime HD)
-- WiFi positioning only (no GPS)
-
-**Use Cases**:
-- Development and testing
-- Camera streaming from Mac
-- Game controller input testing
-
----
+See [Transports](transports.md).
 
 ## iOS Simulator
 
-**Behavior**: All sensors generate **mock data** for testing.
-
-**Mock Data Characteristics**:
-- IMU: Sine wave patterns
-- GPS: Fixed location with small variations
-- Camera: Colored test patterns
-- Battery: Simulated charging cycles
-- All others: Realistic but synthetic values
-
-**Purpose**:
-- App development without ROS 2
-- UI/UX testing
-- Feature verification before device testing
-
-**Limitations**:
-- Not real sensor readings
-- Cannot test actual hardware behavior
-- Network connectivity required for ROS 2 integration
-
----
-
-## Comparison Table
-
-| Feature | iOS | visionOS | tvOS | macOS |
-|---------|-----|----------|------|-------|
-| Motion Sensors | ✅ Full | ✅ IMU only | ❌ | ❌ |
-| Location | ✅ GPS | ❌ | ❌ | ⚠️ WiFi only |
-| Cameras | ✅ Multi | ✅ Multi | ❌ | ✅ Single |
-| LiDAR | ✅* | ✅ | ❌ | ❌ |
-| Microphone | ✅ | ❌ | ❌ | ❌ |
-| Environmental | ✅ Full | ⚠️ Limited | ❌ | ⚠️ Limited |
-| Game Controller | ✅ | ✅ | ✅ | ✅ |
-| Background Mode | ✅ | ⚠️ | N/A | N/A |
-
-*Pro models only
-
----
-
-## Platform-Specific Recommendations
-
-### iOS/iPadOS
-**Best for**: Full sensor suite, mobile robotics, outdoor use
-**Recommended**: Primary platform for production use
-
-### visionOS
-**Best for**: Spatial computing, AR research, camera/depth sensing
-**Note**: Indoor use only (no GPS)
-
-### tvOS
-**Best for**: Robot remote control, game controller input
-**Note**: Very limited sensor availability
-
-### macOS
-**Best for**: Development, testing, stationary camera
-**Note**: Limited sensor set, development purposes mainly
+This applies only if you build Conduit from source. In the iOS Simulator, the sensors generate mock data, so you can try the app and your ROS 2 setup without a device.

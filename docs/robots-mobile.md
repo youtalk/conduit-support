@@ -5,6 +5,11 @@ description: Drive a ROS 2 mobile robot from Conduit with teleop_twist_joy and a
 
 # Drive a mobile robot
 
+!!! info "Coming in Conduit 3"
+    Robots is part of Conduit 3, which is not on the App Store yet. The Conduit on the App Store
+    today (2.x) publishes sensors but has no robot button. This page describes Robots as it will
+    ship in Conduit 3.
+
 Conduit sends `sensor_msgs/Joy` at 50 Hz while the drive view is open and the robot link is up,
 reliable with KEEP_LAST 1, on the profile's **Joy output** topic (default `/joy`). The layout is
 that of the ROS 2 `joy` package's `game_controller_node`, so `teleop_twist_joy` reads it as it
