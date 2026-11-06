@@ -14,6 +14,17 @@ setup() {
   PAIR_DISTRO=jazzy
   PAIR_CHECKIN_PORT=7449
   PAIR_VIA=lan
+  firewalld_state "not running"
+}
+
+# firewalld_state STATE: a firewall-cmd stub whose --state prints STATE.
+firewalld_state() {
+  cat > "$STUBS/firewall-cmd" << STUB
+#!/usr/bin/env bash
+[[ "\$1" == --state ]] && echo "$1"
+[[ "$1" == running ]]
+STUB
+  chmod +x "$STUBS/firewall-cmd"
 }
 
 ufw_on() {
@@ -222,5 +233,63 @@ STUB
   run wait_for_data 5
   [ "$status" -eq 0 ]
   grep -qx 'PYTHONUNBUFFERED=1' "$BATS_TEST_TMPDIR/ros2.log"
-  grep -q -- '^timeout --foreground 5 ros2 topic echo' "$BATS_TEST_TMPDIR/ros2.log"
+  grep -q -- '^timeout --foreground -k 5 5 ros2 topic echo' "$BATS_TEST_TMPDIR/ros2.log"
 }
+
+@test "firewalld state" {
+  run firewalld_running
+  [ "$status" -ne 0 ]
+  firewalld_state running
+  run firewalld_running
+  [ "$status" -eq 0 ]
+  rm "$STUBS/firewall-cmd"
+  PATH="$STUBS:/usr/bin:/bin" run firewalld_running
+  [ "$status" -ne 0 ]
+}
+
+@test "no_checkin causes with firewalld on (Zenoh)" {
+  firewalld_state running
+  PAIR_RMW=zenoh
+  run causes no_checkin
+  [[ "$output" == *"firewalld"* ]]
+  [[ "$output" == *"sudo firewall-cmd --add-port=7449/tcp"* ]]
+  [[ "$output" == *"sudo firewall-cmd --add-port=7447/tcp"* ]]
+  [[ "$output" == *"--permanent"* ]]
+  [[ "$output" != *"/udp"* ]]
+  [[ "$output" != *"sudo ufw"* ]]
+}
+
+@test "firewalld lines come first and only when firewalld is running" {
+  PAIR_RMW=cyclonedds
+  run causes no_checkin
+  [[ "$output" != *"firewall-cmd"* ]]
+  firewalld_state running
+  run causes no_checkin
+  fw_line=$(grep -n 'sudo firewall-cmd' <<< "$output" | head -n1 | cut -d: -f1)
+  wifi_line=$(grep -n 'same Wi-Fi' <<< "$output" | head -n1 | cut -d: -f1)
+  ((fw_line < wifi_line))
+}
+
+@test "firewalld DDS port range (domain 123)" {
+  firewalld_state running
+  PAIR_RMW=cyclonedds
+  run causes no_data
+  [[ "$output" == *"sudo firewall-cmd --add-port=38150-38399/udp"* ]]
+  [[ "$output" != *"7449/tcp"* ]]
+  [[ "$output" != *"7447/tcp"* ]]
+}
+
+@test "wait_for_data kills a ros2 that ignores SIGTERM" {
+  cat > "$STUBS/ros2" << 'STUB'
+#!/usr/bin/env bash
+trap '' TERM
+echo 'frame_id: conduit_base_link'
+while :; do sleep 1; done
+STUB
+  chmod +x "$STUBS/ros2"
+  SECONDS=0
+  run wait_for_data 1
+  [ "$status" -eq 0 ]
+  ((SECONDS < 15))
+}
+

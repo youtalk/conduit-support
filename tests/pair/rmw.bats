@@ -188,3 +188,14 @@ setup() {
   ROS_STATIC_PEERS='192.168.1.5' run --separate-stderr host_peer_config 192.168.1.50
   [ "$output" = "export ROS_STATIC_PEERS='192.168.1.5;192.168.1.50'" ]
 }
+
+@test "install commands use dnf on RHEL and Fedora" {
+  PAIR_OS=rhel PAIR_DISTRO=humble
+  run fastdds_warning
+  [[ "$output" == *"sudo dnf install ros-humble-rmw-cyclonedds-cpp"* ]]
+  [[ "$output" != *"apt"* ]]
+  run tailscale_needs_zenoh
+  [[ "$output" == *"sudo dnf install ros-humble-rmw-zenoh-cpp"* ]]
+  [[ "$output" != *"apt"* ]]
+}
+

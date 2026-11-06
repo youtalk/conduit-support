@@ -29,6 +29,9 @@ jobs:
       - run: python -m pytest tests/ -v
       - run: shellcheck pair/pair.sh
       - run: bats tests/pair
+      # ROS 2 Humble on RHEL 8 runs the embedded Python on Python 3.6.
+      - name: Embedded Python runs on Python 3.6 (RHEL 8)
+        run: docker run --rm -v "$PWD:/w:ro" -w /w rockylinux:8 /usr/libexec/platform-python tests/pair/smoke/embedded_py36.py pair/pair.sh
       - name: Test conduit_teleop (pure Python, no ROS)
         working-directory: ros/conduit_teleop
         run: python -m pytest test -v

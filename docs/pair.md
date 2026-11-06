@@ -31,7 +31,17 @@ A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Condu
 
 ## Requirements
 
-- Ubuntu (native, not inside a container) with ROS 2 Humble, Jazzy, Kilted, Lyrical or Rolling, sourced in the shell you run the script from.
+- A native PC (not WSL, not inside a container) running Ubuntu, RHEL or Fedora, with ROS 2 sourced in the shell you run the script from:
+
+    | System | ROS 2 |
+    |---|---|
+    | Ubuntu | Humble, Jazzy, Kilted, Lyrical, Rolling |
+    | RHEL 8 | Humble |
+    | RHEL 9 | Jazzy, Kilted |
+    | RHEL 10 | Lyrical |
+    | Fedora | Lyrical |
+
+    RHEL rebuilds such as Rocky Linux and AlmaLinux count as RHEL. Install ROS 2 with the [official instructions](https://docs.ros.org/en/lyrical/Get-Started/Installation.html). Windows is not supported yet.
 - `RMW_IMPLEMENTATION` set to `rmw_zenoh_cpp` or `rmw_cyclonedds_cpp`. Fast DDS (the default when it is unset) works, but may drop or delay high-rate topics such as the camera and LiDAR.
 - The iPhone and the PC on the same Wi-Fi, or on the same Tailscale tailnet.
 
@@ -70,7 +80,7 @@ If nothing happens after you scan the QR code, the script prints what to check. 
 
 **Conduit never checks in**
 
-- If the firewall (`ufw`) is on, allow the check-in port (7449 by default, TCP) and Conduit's ports: TCP 7447 for Zenoh, or UDP `7400 + 250 x domain` through the next 249 ports for DDS.
+- If the firewall (`ufw` on Ubuntu, `firewalld` on RHEL and Fedora) is on, allow the check-in port (7449 by default, TCP) and Conduit's ports: TCP 7447 for Zenoh, or UDP `7400 + 250 x domain` through the next 249 ports for DDS. The script prints the exact commands when the iPhone does not show up.
 - The iPhone must be on the same Wi-Fi as the PC. Guest and office Wi-Fi often isolate clients from each other; try another network or a hotspot.
 - Allow Local Network access for Conduit: iPhone Settings > Privacy & Security > Local Network.
 - With Tailscale, open the Tailscale app on the iPhone and connect it to the same tailnet as the PC.
