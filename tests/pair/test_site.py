@@ -21,7 +21,27 @@ def test_association_file():
 def test_pair_page():
     text = (ROOT / "docs/pair.md").read_text()
     assert "curl -fsSL https://conduit.direct/pair.sh | bash" in text
-    assert "https://apps.apple.com/app/id6757171237" in text
+    # Downloads from the site count under the conduit-direct campaign.
+    assert (
+        "https://apps.apple.com/app/apple-store/id6757171237?pt=1392401&amp;ct=conduit-direct&amp;mt=8"
+        in text
+    )
+    assert "apps.apple.com/app/id6757171237" not in text
+
+
+def test_pair_page_download_is_the_app_store_badge():
+    text = (ROOT / "docs/pair.md").read_text()
+    assert 'src="../assets/img/app-store-badge.svg"' in text
+    assert 'alt="Download on the App Store"' in text
+
+
+def test_app_store_badge_is_apples_artwork():
+    # Apple's badge, unaltered: plain vector paths, nothing that loads or runs.
+    svg = (ROOT / "docs/assets/img/app-store-badge.svg").read_text()
+    assert svg.startswith("<svg")
+    assert "Download_on_the_App_Store_Badge" in svg
+    for active in ("<script", "href", "<foreignObject", "url("):
+        assert active not in svg
 
 
 def test_open_in_conduit_button():

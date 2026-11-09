@@ -158,3 +158,35 @@ def test_non_youtube_anchor_with_image_is_untouched():
         "<b>Not a video</b>\n</a>"
     )
     assert sync_readme.rewrite(src) == src
+
+
+_README_OPENING = (
+    '<div align="center">\n'
+    '\n'
+    '<a href="https://apps.apple.com/app/apple-store/id6757171237'
+    '?pt=1392401&amp;ct=conduit-direct&amp;mt=8">\n'
+    '<img src="images/app_icon.png" width="128" height="128" alt="x">\n'
+    '</a>\n'
+    '\n'
+    '# Conduit\n'
+    '\n'
+    '</div>\n'
+)
+
+
+def test_hero_download_is_the_app_store_badge():
+    out = sync_readme.rewrite(_README_OPENING)
+    assert '<img class="conduit-badge__img" src="assets/img/app-store-badge.svg"' in out
+    assert 'alt="Download on the App Store"' in out
+    # The text button it replaces is gone.
+    assert ">Download on the App Store</a>" not in out
+
+
+def test_hero_carries_the_campaign_link_as_written():
+    """The README's link is already HTML-escaped; the hero must not escape it again."""
+    out = sync_readme.rewrite(_README_OPENING)
+    assert (
+        'href="https://apps.apple.com/app/apple-store/id6757171237'
+        '?pt=1392401&amp;ct=conduit-direct&amp;mt=8"'
+    ) in out
+    assert "&amp;amp;" not in out

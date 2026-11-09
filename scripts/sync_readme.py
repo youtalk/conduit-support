@@ -64,7 +64,7 @@ _YT_IFRAME_ALLOW = (
 #
 #   <div align="center">
 #
-#   <a href="https://apps.apple.com/app/id6757171237">
+#   <a href="https://apps.apple.com/app/apple-store/id6757171237?pt=…&amp;ct=…">
 #   <img src="images/app_icon.png" width="128" height="128" alt="…">
 #   </a>
 #
@@ -102,7 +102,10 @@ _HERO_HTML = """\
       camera, LiDAR, IMU, GPS and more, over Zenoh or DDS, with no bridge.
     </p>
     <div class="conduit-hero__cta">
-      <a class="conduit-btn conduit-btn--primary" href="{app_url}">Download on the App Store</a>
+      <a class="conduit-badge" href="{app_url}">
+        <img class="conduit-badge__img" src="assets/img/app-store-badge.svg"
+             alt="Download on the App Store" width="120" height="40">
+      </a>
       <a class="conduit-btn conduit-btn--tinted" href="pair/">Connect with a QR code</a>
     </div>
     <p class="conduit-hero__note">

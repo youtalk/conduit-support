@@ -350,6 +350,18 @@ body,
 }
 .md-typeset a.conduit-btn--tinted:hover { filter: brightness(0.97); }
 
+/* Apple's App Store badge, shown unaltered at the buttons' height (Apple asks
+   for at least 40 px on screen). */
+.md-typeset a.conduit-badge {
+  display: inline-flex;
+  align-items: center;
+}
+.md-typeset img.conduit-badge__img {
+  display: block;
+  height: 2.616rem;
+  width: auto;
+}
+
 /* Material's own buttons (used on the QR pairing page) get the same shape. */
 .md-typeset .md-button {
   border-radius: 12px;

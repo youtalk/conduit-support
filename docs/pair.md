@@ -1,7 +1,7 @@
 # Connect with a QR code
 
-<a href="https://apps.apple.com/app/id6757171237">
-<img src="../assets/img/app_icon.png" width="96" height="96" alt="Download Conduit on the App Store">
+<a class="conduit-badge" href="https://apps.apple.com/app/apple-store/id6757171237?pt=1392401&amp;ct=conduit-direct&amp;mt=8">
+<img class="conduit-badge__img" src="../assets/img/app-store-badge.svg" width="120" height="40" alt="Download on the App Store">
 </a>
 
 <div id="open-in-conduit" hidden>
@@ -25,7 +25,7 @@
   })();
 </script>
 
-**Conduit not installed?** Install Conduit 2.6.0 or later from the [App Store](https://apps.apple.com/app/id6757171237), then scan the QR code again. The script on your PC keeps waiting.
+**Conduit not installed?** Install Conduit 2.6.0 or later from the [App Store](https://apps.apple.com/app/apple-store/id6757171237?pt=1392401&ct=conduit-direct&mt=8), then scan the QR code again. The script on your PC keeps waiting.
 
 A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Conduit to check in. Scan the code with the iPhone's Camera app and Conduit fills in the connection settings for you.
 

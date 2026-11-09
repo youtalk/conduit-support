@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://apps.apple.com/app/id6757171237">
+<a href="https://apps.apple.com/app/apple-store/id6757171237?pt=1392401&amp;ct=conduit-direct&amp;mt=8">
 <img src="images/app_icon.png" width="128" height="128" alt="Download Conduit on the App Store">
 </a>
 
@@ -20,7 +20,7 @@ Conduit has been downloaded over 10,000 times and has ranked as high as **#4 in 
 
 ## Get started
 
-1. **Install** Conduit from the [App Store](https://apps.apple.com/app/id6757171237).
+1. **Install** Conduit from the [App Store](https://apps.apple.com/app/apple-store/id6757171237?pt=1392401&ct=conduit-direct&mt=8).
 2. **On your ROS 2 PC** (Ubuntu, RHEL or Fedora, with ROS 2 sourced), run:
     ```bash
     curl -fsSL https://conduit.direct/pair.sh | bash
@@ -312,5 +312,5 @@ All of Conduit's ROS 2 work (Zenoh and DDS transports, the CDR codec, the Humble
 ## Links
 
 - [Website](https://conduit.direct)
-- [Conduit on the App Store](https://apps.apple.com/app/id6757171237)
+- [Conduit on the App Store](https://apps.apple.com/app/apple-store/id6757171237?pt=1392401&ct=conduit-direct&mt=8)
 - [swift-ros2](https://github.com/swift-ros2/swift-ros2)
