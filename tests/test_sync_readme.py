@@ -112,8 +112,8 @@ def test_replaces_centered_hero_block():
     assert 'class="conduit-hero"' in out
     # The bare `# Conduit` heading must be gone — replaced by the hero title.
     assert "\n# Conduit\n" not in out
-    # The hero links to the App Store through the site's campaign link.
-    assert "apps.apple.com/app/apple-store/id6757171237?pt=1392401" in out
+    # The App Store URL must be carried into the hero.
+    assert "apps.apple.com/app/id6757171237" in out
     # The bold tagline repeats the hero and is dropped; the body survives.
     assert "**Your iPhone as a ROS 2 sensor**" not in out
     assert "Conduit publishes sensors." in out
@@ -163,15 +163,14 @@ def test_non_youtube_anchor_with_image_is_untouched():
 _README_OPENING = (
     '<div align="center">\n'
     '\n'
-    '<a href="https://apps.apple.com/app/id6757171237">\n'
+    '<a href="https://apps.apple.com/app/apple-store/id6757171237'
+    '?pt=1392401&amp;ct=conduit-direct&amp;mt=8">\n'
     '<img src="images/app_icon.png" width="128" height="128" alt="x">\n'
     '</a>\n'
     '\n'
     '# Conduit\n'
     '\n'
     '</div>\n'
-    '\n'
-    'Install Conduit from the [App Store](https://apps.apple.com/app/id6757171237).\n'
 )
 
 
@@ -183,26 +182,11 @@ def test_hero_download_is_the_app_store_badge():
     assert ">Download on the App Store</a>" not in out
 
 
-def test_site_app_store_links_carry_the_campaign():
-    """conduit.direct counts its downloads under ct=conduit-direct; README links stay plain on GitHub."""
+def test_hero_carries_the_campaign_link_as_written():
+    """The README's link is already HTML-escaped; the hero must not escape it again."""
     out = sync_readme.rewrite(_README_OPENING)
-    # Raw HTML (the hero) escapes the ampersands; Markdown links keep them.
     assert (
         'href="https://apps.apple.com/app/apple-store/id6757171237'
         '?pt=1392401&amp;ct=conduit-direct&amp;mt=8"'
     ) in out
-    assert (
-        "[App Store](https://apps.apple.com/app/apple-store/id6757171237"
-        "?pt=1392401&ct=conduit-direct&mt=8)"
-    ) in out
-    assert "apps.apple.com/app/id6757171237" not in out
-
-
-def test_campaign_rewrite_is_idempotent():
-    once = sync_readme.rewrite(_README_OPENING)
-    assert sync_readme.rewrite(once) == once
-
-
-def test_other_app_store_urls_are_untouched():
-    src = "[Other](https://apps.apple.com/app/id6757171237?ct=x)"
-    assert sync_readme.rewrite(src) == src
+    assert "&amp;amp;" not in out

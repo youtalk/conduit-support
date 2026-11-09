@@ -1,6 +1,6 @@
 """MkDocs on_pre_build hook: regenerate docs/index.md from README.md.
 
-Five responsibilities:
+Four responsibilities:
 
 1. Rewrite image paths (``images/`` → ``assets/img/``) so the same Markdown
    source works as both the GitHub README and the MkDocs home page.
@@ -13,26 +13,11 @@ Five responsibilities:
    page) into inline ``<iframe>`` players: GitHub strips ``<iframe>`` from
    README markup, so the README keeps the clickable thumbnails while the
    MkDocs site gets real embedded players.
-5. Point App Store links at the site's campaign link, so App Store Connect
-   counts downloads from conduit.direct under ``ct=conduit-direct``. The
-   README on GitHub keeps the plain link.
 """
 from __future__ import annotations
 
-import html
 import re
 from pathlib import Path
-
-# ----- App Store campaign -----
-
-# Downloads that follow this link count under the conduit-direct campaign in
-# App Store Connect (pt is the provider token, ct the campaign).
-SITE_APP_STORE_URL = (
-    "https://apps.apple.com/app/apple-store/id6757171237"
-    "?pt=1392401&ct=conduit-direct&mt=8"
-)
-# The README's plain app link; a link that already carries a query is left alone.
-_APP_STORE_LINK_RE = re.compile(r"https://apps\.apple\.com/app/id6757171237(?![?/\w])")
 
 # ----- Link / asset rewrites -----
 
@@ -79,7 +64,7 @@ _YT_IFRAME_ALLOW = (
 #
 #   <div align="center">
 #
-#   <a href="https://apps.apple.com/app/id6757171237">
+#   <a href="https://apps.apple.com/app/apple-store/id6757171237?pt=…&amp;ct=…">
 #   <img src="images/app_icon.png" width="128" height="128" alt="…">
 #   </a>
 #
@@ -171,8 +156,7 @@ def rewrite(text: str) -> str:
         return f"]({slug}.md{anchor})"
 
     def _hero_repl(match: re.Match[str]) -> str:
-        # The hero is raw HTML: the campaign link's ampersands become &amp;.
-        return _HERO_HTML.format(app_url=html.escape(match.group("app_url")))
+        return _HERO_HTML.format(app_url=match.group("app_url"))
 
     def _yt_repl(match: re.Match[str]) -> str:
         video_id, title = match.group(1), match.group(2)
@@ -186,7 +170,6 @@ def rewrite(text: str) -> str:
             f"<b>{title}</b>"
         )
 
-    text = _APP_STORE_LINK_RE.sub(lambda _: SITE_APP_STORE_URL, text)
     text = _HERO_BLOCK_RE.sub(_hero_repl, text, count=1)
     text = _DOCS_LINK_RE.sub(_docs_repl, text)
     text = _DOCKER_README_RE.sub(
