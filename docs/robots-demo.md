@@ -92,10 +92,16 @@ demo robots too. If you say yes, the demo joins the PC's own ROS 2 graph, with t
 domain, and the QR code carries the PC's settings. The demo image matches the PC's distribution
 (Rolling uses the Lyrical image).
 
-The demo uses the usual names of a real robot, such as `/map`, `/odom`, `/scan`, `/camera/image_raw`,
-`/joint_states` and `/tf`. If your PC's graph already uses one of them, for example a robot that
-already publishes `/map`, the script prints the names that collide, skips the demo and carries
-on with pairing. Your robot is never mixed with the demo.
+The demo uses the usual names of a real robot, such as `/map`, `/odom`, `/scan`,
+`/camera/image_raw` and `/joint_states`, and the usual frames, such as `map`, `odom` and
+`base_link`. `/tf`, `/tf_static` and `/diagnostics` are shared and never collide; on `/tf` and
+`/tf_static`, frames with the same name do. If your PC's graph already uses one of the demo's
+names, for example a robot that already publishes `/map`, the script prints the names that
+collide, skips the demo and carries on with pairing.
+
+The demo checks the names once, when it starts. Stop it before you start your own robot on the
+same PC (`docker stop -t 30 conduit-demo`, see [Stop the demo](#stop-the-demo)); otherwise both
+use the same names.
 
 ## Stop the demo
 
