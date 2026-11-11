@@ -27,50 +27,6 @@ setup() {
   stub_ros2 '/conduit/conduit_node' 'frame_id: conduit_base_link'
 }
 
-stub_ip() {
-  printf '%s\n' "$1" > "$BATS_TEST_TMPDIR/route.out"
-  printf '%s\n' "$2" > "$BATS_TEST_TMPDIR/addr.out"
-  cat > "$STUBS/ip" << STUB
-#!/usr/bin/env bash
-case "\$*" in
-  *route*) cat "$BATS_TEST_TMPDIR/route.out" ;;
-  *addr*) cat "$BATS_TEST_TMPDIR/addr.out" ;;
-esac
-STUB
-  chmod +x "$STUBS/ip"
-}
-
-# stub_listener LINE: python3 stand-in for the check-in listener. It reports
-# the port it was asked for, prints LINE, then waits for the script to exit.
-stub_listener() {
-  printf '%s\n' "$1" > "$BATS_TEST_TMPDIR/checkin.out"
-  cat > "$STUBS/python3" << STUB
-#!/usr/bin/env bash
-echo "\$\$" > "$BATS_TEST_TMPDIR/listener.pid"
-echo "PORT=\$5"
-cat "$BATS_TEST_TMPDIR/checkin.out"
-exec cat > /dev/null
-STUB
-  chmod +x "$STUBS/python3"
-}
-
-# stub_ros2 NODES ECHO: fake `ros2 node list` / `ros2 topic echo`. Records the
-# peer variables each call saw.
-stub_ros2() {
-  printf '%s\n' "$1" > "$BATS_TEST_TMPDIR/nodes.out"
-  printf '%s\n' "$2" > "$BATS_TEST_TMPDIR/echo.out"
-  cat > "$STUBS/ros2" << STUB
-#!/usr/bin/env bash
-echo "\$* CYCLONEDDS_URI=\${CYCLONEDDS_URI:-} ROS_STATIC_PEERS=\${ROS_STATIC_PEERS:-}" >> "$BATS_TEST_TMPDIR/ros2.log"
-case "\$*" in
-  "node list --help") echo "  --spin-time SPIN_TIME" ;;
-  "node list"*) cat "$BATS_TEST_TMPDIR/nodes.out" ;;
-  "topic echo"*) cat "$BATS_TEST_TMPDIR/echo.out" ;;
-esac
-STUB
-  chmod +x "$STUBS/ros2"
-}
-
 @test "--help exits 0" {
   run main --help
   [ "$status" -eq 0 ]
