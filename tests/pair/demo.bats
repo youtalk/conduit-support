@@ -438,6 +438,83 @@ joined_demo() {
   printf '%s\n' RMW_IMPLEMENTATION=rmw_zenoh_cpp "ROS_DOMAIN_ID=$1" > "$DOCKER_STUB/env"
 }
 
+@test "a joined demo's next steps say to stop it before starting a robot here" {
+  run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  has "Connected to iPhone."
+  has "checked this PC's ROS 2 names once, when it started"
+  has "Stop the demo (docker stop -t 30 conduit-demo) before you start your own robot on this PC."
+  # Printed once, by the next steps.
+  [ "$(grep -c 'docker stop -t 30 conduit-demo' <<< "$output")" -eq 2 ]
+}
+
+@test "the demo path's next steps do not ask to stop the demo first" {
+  no_ros
+  run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  has "docker stop -t 30 conduit-demo"
+  lacks "before you start your own robot"
+}
+
+@test "a joined demo left running when no data arrives (exit 2) gets the stop hint" {
+  stub_ros2 '/conduit/conduit_node' 'frame_id: map'
+  run main --demo --no-qr
+  [ "$status" -eq 2 ]
+  lacks "Add robot"
+  has "The demo keeps running (container conduit-demo). To stop it: docker stop -t 30 conduit-demo"
+}
+
+@test "a demo left running when the listener goes away (exit 2) gets the stop hint" {
+  no_ros
+  cat > "$STUBS/python3" << 'STUB'
+#!/usr/bin/env bash
+echo "PORT=$5"
+STUB
+  run main --demo --no-qr
+  [ "$status" -eq 2 ]
+  lacks "Add robot"
+  has "The demo keeps running (container conduit-demo). To stop it: docker stop -t 30 conduit-demo"
+}
+
+# sigint_trappable: 0 when a shell here can trap SIGINT. One started with
+# SIGINT ignored (bats run in the background) cannot, so Ctrl-C never reaches
+# the script's trap.
+sigint_trappable() {
+  local status=0
+  (
+    trap 'exit 7' INT
+    sh -c 'kill -INT $PPID'
+    sleep 1
+  ) || status=$?
+  [ "$status" -eq 7 ]
+}
+
+@test "a demo left running at Ctrl-C (exit 130) gets the stop hint" {
+  if ! sigint_trappable; then skip "SIGINT is ignored in this shell (bats run in the background)"; fi
+  no_ros
+  # The listener reports its port, then the user presses Ctrl-C. If SIGINT
+  # cannot reach the script, the listener ends and the run exits 2 instead.
+  cat > "$STUBS/python3" << 'STUB'
+#!/usr/bin/env bash
+echo "PORT=$5"
+kill -INT "$PPID"
+exec sleep 5 > /dev/null 2>&1
+STUB
+  run main --demo --no-qr
+  [ "$status" -eq 130 ]
+  lacks "Add robot"
+  has "The demo keeps running (container conduit-demo). To stop it: docker stop -t 30 conduit-demo"
+}
+
+@test "no stop hint when the demo this run started was removed" {
+  echo 3 > "$DOCKER_STUB/join_exit"
+  echo 'CONFLICT /map' > "$DOCKER_STUB/join_log"
+  stub_ros2 '/conduit/conduit_node' 'frame_id: map'
+  run main --demo --no-qr
+  [ "$status" -eq 2 ]
+  lacks "To stop it"
+}
+
 @test "a running joined demo is reused on the native path" {
   joined_demo 123
   run main --demo --no-qr

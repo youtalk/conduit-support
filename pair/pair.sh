@@ -850,7 +850,7 @@ start_checkin() {
   fi
   "${PAIR_PYTHON[@]}" -u -c "$CHECKIN_PY" "$token" "$port" < "$PAIR_CHECKIN_DIR/in" > "$PAIR_CHECKIN_DIR/out" &
   CHECKIN_PID=$!
-  trap stop_checkin EXIT
+  trap pair_exit EXIT
   # Each open waits for the listener to open the other end.
   exec 8> "$PAIR_CHECKIN_DIR/in" 9< "$PAIR_CHECKIN_DIR/out"
   rm -rf "$PAIR_CHECKIN_DIR"
@@ -859,6 +859,13 @@ start_checkin() {
   read -r line <&"$PAIR_CHECKIN_FD" || die 1 "The check-in listener did not start."
   [[ "$line" =~ ^PORT=([0-9]+)$ ]] || die 1 "The check-in listener did not report a port."
   PAIR_CHECKIN_PORT="${BASH_REMATCH[1]}"
+}
+
+# pair_exit: the EXIT trap. Stops the check-in listener, and says how to stop the
+# demo when this run started or used it and ends before its next steps.
+pair_exit() {
+  stop_checkin
+  demo_exit_hint
 }
 
 stop_checkin() {
@@ -1441,6 +1448,9 @@ demo_causes() {
   say "- Scan the QR again if Conduit did not open from it."
 }
 
+# demo_next_steps [joined]: adding the demo robots in Conduit, and how to stop
+# them. `joined`: the demo runs on this PC's graph, whose names it checked only
+# when it started.
 demo_next_steps() {
   say ""
   say "Next, add the two demo robots in Conduit: Add robot, then Start fills in each profile."
@@ -1449,6 +1459,22 @@ demo_next_steps() {
   say "  3. Open either robot to drive it."
   say "The demo keeps running after this script ends. To stop it:"
   say "  $PAIR_DEMO_STOP"
+  if [[ "${1:-}" == joined ]]; then
+    say "The demo checked this PC's ROS 2 names once, when it started."
+    say "Stop the demo ($PAIR_DEMO_STOP) before you start your own robot on this PC."
+  fi
+  PAIR_DEMO_HINTED=1
+}
+
+# demo_exit_hint: when this run started or used the demo container
+# (PAIR_DEMO_IN_USE), the script ends before the next steps and the container
+# still runs, says how to stop it.
+demo_exit_hint() {
+  [[ "${PAIR_DEMO_IN_USE:-0}" == 1 && "${PAIR_DEMO_HINTED:-0}" != 1 ]] || return 0
+  PAIR_DEMO_HINTED=1
+  if [[ "$(demo_container_state)" == true* ]]; then
+    say "The demo keeps running (container $PAIR_DEMO_CONTAINER). To stop it: $PAIR_DEMO_STOP"
+  fi
 }
 
 # show_pairing LINK NO_QR: the QR code (unless NO_QR) and the link, and what to do.
@@ -1483,6 +1509,7 @@ demo_path() {
     fi
     if [[ -n "$router" && -n "$checkin" ]]; then
       say "The demo is already running (container $PAIR_DEMO_CONTAINER); pairing with it."
+      PAIR_DEMO_IN_USE=1
     elif [[ "$running" == true ]]; then
       die 1 "Another $PAIR_DEMO_CONTAINER container is running ($cimage). Stop it ($PAIR_DEMO_STOP) and run this script again."
     else
@@ -1499,6 +1526,7 @@ demo_path() {
     demo_run -d --name "$PAIR_DEMO_CONTAINER" -p "$router:7447" -p "$checkin:7449" "$image" standalone ||
       die 1 "The demo container did not start: $PAIR_DEMO_RUN_ERROR"
     started=1
+    PAIR_DEMO_IN_USE=1
   fi
   if ! demo_wait_router; then
     # A container this run started goes; a reused one is the user's to stop.
@@ -1507,6 +1535,7 @@ demo_path() {
       say "Removed the demo container this run started."
     elif [[ "$(demo_container_state)" == true* ]]; then
       say "The demo container keeps running. To stop it: $PAIR_DEMO_STOP"
+      PAIR_DEMO_HINTED=1
     fi
     exit 1
   fi
@@ -1607,6 +1636,7 @@ demo_join() {
       "$(demo_container_env ROS_DOMAIN_ID)" == "$PAIR_DOMAIN" ]]; then
       say "The demo robots are already running on this PC's graph (container $PAIR_DEMO_CONTAINER)."
       PAIR_DEMO_ADDED=1
+      PAIR_DEMO_IN_USE=1
       return 0
     elif [[ "$running" == true ]]; then
       say "A $PAIR_DEMO_CONTAINER container is running, but not on this PC's graph with $image."
@@ -1642,6 +1672,7 @@ demo_join() {
     say "The demo robots were not added."
     return 0
   fi
+  PAIR_DEMO_IN_USE=1
   demo_wait_join
 }
 
@@ -1787,6 +1818,7 @@ main() {
     shift
   done
   trap 'exit 130' INT
+  trap pair_exit EXIT
 
   if ((demo)) && demo_takes_container_path; then
     demo_path "$link_style" "$no_qr" "$checkin_port"
@@ -1846,7 +1878,7 @@ main() {
   fi
   say "Connected to $PAIR_DEVICE."
   if [[ "${PAIR_DEMO_ADDED:-0}" == 1 ]]; then
-    demo_next_steps
+    demo_next_steps joined
   fi
   exit 0
 }
