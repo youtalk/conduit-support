@@ -127,6 +127,16 @@ setup() {
   [ "$ROS_STATIC_PEERS" = "it's;192.168.1.50" ]
 }
 
+@test "export_line round-trips quotes and ampersands through eval" {
+  [ "$(export_line V "a'&b")" = "export V='a'\\''&b'" ]
+  for value in "it's" 'a&b' "a'&b" "'&'" '&&' "file:///tmp/it's & co/peer.xml" "x'\\''y"; do
+    line="$(export_line CONDUIT_ROUND_TRIP "$value")"
+    unset CONDUIT_ROUND_TRIP
+    eval "$line"
+    [ "$CONDUIT_ROUND_TRIP" = "$value" ]
+  done
+}
+
 @test "quote in HOME is escaped in the CycloneDDS export" {
   PAIR_RMW=cyclonedds PAIR_DISTRO=jazzy
   HOME="$BATS_TEST_TMPDIR/o'home"
