@@ -4,7 +4,8 @@
 
   The links, joints, limits and inertials are moveit_resources_panda_description's
   panda.urdf.xacro, with every name unchanged, so MoveIt's moveit_resources_panda
-  configuration (SRDF, kinematics, joint limits) applies as it is. Added here:
+  configuration (SRDF, kinematics, joint limits) applies as it is. Two finger values
+  differ, for grasping (see the fingers below). Added here:
   - world -> panda_link0 (fixed), which also fixes the arm in Gazebo;
   - wrist_camera_link on panda_hand, looking along the fingers, with a visual only
     (no collision, so the SRDF's collision matrix needs no entry), and
@@ -180,7 +181,15 @@
     </inertial>
   </xacro:panda_link>
 
-  <!-- Fingers: their collision geometry and friction are what grasping depends on. -->
+  <!-- Fingers. gz_ros2_control drives panda_finger_joint1 with a velocity toward its
+       position command and, as Gazebo's DART has no mimic constraint, panda_finger_joint2
+       with a velocity toward panda_finger_joint1's position; each pushes with up to its
+       effort limit. Closed on a cube, finger1 squeezes with its 20 N. With 20 N on finger2
+       too, the two forces cancel at any position, so the cube slid sideways in the grip
+       (finger2 to its limit, finger1 reading nearly closed) in 6 of 9 lifts. finger2's
+       40 N holds it at finger1's position instead: the cube stays centred and finger1 reads
+       half the real opening, as on the real hand, whose fingers are geared together. The
+       right finger's mass is 0.015 kg like the left's (upstream has 0.15, a typo). -->
   <link name="panda_leftfinger">
     <visual>
       <xacro:panda_visual mesh="finger" color="dark"/>
@@ -209,7 +218,7 @@
     </collision>
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="0.15"/>
+      <mass value="0.015"/>
       <inertia ixx="2.375E-6" iyy="2.375E-6" izz="7.5E-7" ixy="0" ixz="0" iyz="0"/>
     </inertial>
   </link>
@@ -226,7 +235,7 @@
     <child link="panda_rightfinger"/>
     <origin rpy="0 0 0" xyz="0 0 0.0584"/>
     <axis xyz="0 -1 0"/>
-    <limit effort="20" lower="0.0" upper="0.04" velocity="0.2"/>
+    <limit effort="40" lower="0.0" upper="0.04" velocity="0.2"/>
     <mimic joint="panda_finger_joint1"/>
     <dynamics damping="0.3"/>
   </joint>

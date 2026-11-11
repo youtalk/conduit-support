@@ -47,7 +47,9 @@ panda_hand_controller:
       - velocity
     # Position control only (the finger joint has no effort or velocity command
     # interface); the force a closing finger applies is the joint's effort limit in the
-    # URDF. A finger that stops on an object for stall_timeout ends the goal as stalled.
+    # URDF: 20 N, with the mimic finger panda_finger_joint2 holding with up to 40 N so a
+    # gripped cube stays centred (see urdf/panda_gz.urdf.xacro). A finger that stops on an
+    # object for stall_timeout ends the goal as stalled.
     allow_stalling: true
     stall_velocity_threshold: 0.001
     stall_timeout: 0.5

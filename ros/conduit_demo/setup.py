@@ -12,7 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
-        ('share/' + package_name + '/scripts', glob('scripts/*.sh')),
+        ('share/' + package_name + '/scripts', glob('scripts/*.sh') + glob('scripts/*.py')),
         ('share/' + package_name + '/urdf', glob('urdf/*.xacro')),
         ('share/' + package_name + '/worlds', glob('worlds/*.sdf')),
         ('share/' + package_name + '/config', glob('config/*.yaml') + glob('config/*.srdf')),
