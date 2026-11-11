@@ -1,0 +1,229 @@
+name: Robots demo image
+
+# The Conduit Robots demo image (docker/demo/Dockerfile) for each ROS 2 distribution the
+# demo is offered on, published to ghcr.io/<owner>/conduit-demo:
+#   <distro>-<version>  pinned by pair.sh
+#   <distro>            the latest release for that distribution
+# for linux/amd64 and linux/arm64.
+#
+# - Pull request touching the demo: build the Lyrical image for linux/amd64, no push.
+# - Tag demo-v<version> (for example demo-v0.1.0), or a manual run with that version:
+#   build every distribution natively on an amd64 and an arm64 runner, push each image
+#   by digest, then merge the two digests of each distribution into one multi-platform
+#   tag set.
+on:
+  pull_request:
+    paths:
+      - "docker/demo/**"
+      - "ros/conduit_demo/**"
+      - "ros/conduit_teleop/**"
+      - ".github/workflows/demo-image.yml"
+  push:
+    tags:
+      - "demo-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Demo version without the demo-v prefix, for example 0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-image-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/${{ github.repository_owner }}/conduit-demo
+
+jobs:
+  check:
+    name: Build lyrical linux/amd64 (no push)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image is about 7 GB; the hosted runner's preinstalled SDKs leave too little
+      # room for the build next to it.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/demo/Dockerfile
+          platforms: linux/amd64
+          build-args: ROS_DISTRO=lyrical
+          push: false
+
+  version:
+    name: Version
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Version from the tag or the input
+        id: version
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            version="$INPUT_VERSION"
+          else
+            version="${REF_NAME#demo-v}"
+          fi
+          if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::'${version}' is not a version such as 0.1.0 (tag demo-v0.1.0)"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.distro }} ${{ matrix.platform }}
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [jazzy, kilted, lyrical]
+        platform: [linux/amd64, linux/arm64]
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+
+      - name: Platform pair
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: echo "PLATFORM_PAIR=${PLATFORM//\//-}" >> "$GITHUB_ENV"
+
+      - name: Labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.title=Conduit Robots demo (${{ matrix.distro }})
+            org.opencontainers.image.version=${{ needs.version.outputs.version }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/demo/Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: ROS_DISTRO=${{ matrix.distro }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export the digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/digests"
+          touch "${RUNNER_TEMP}/digests/${DIGEST#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.distro }}-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Publish ${{ matrix.distro }}
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [jazzy, kilted, lyrical]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-${{ matrix.distro }}-*
+          merge-multiple: true
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=${{ matrix.distro }}-${{ needs.version.outputs.version }}
+            type=raw,value=${{ matrix.distro }}
+
+      - name: Create the multi-platform tags
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          refs=()
+          for digest in *; do
+            refs+=("${IMAGE}@sha256:${digest}")
+          done
+          if [ "${#refs[@]}" -ne 2 ]; then
+            echo "::error::expected the amd64 and arm64 digests, found ${#refs[@]}"
+            exit 1
+          fi
+          args=()
+          while IFS= read -r tag; do
+            args+=(-t "$tag")
+          done < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          docker buildx imagetools create "${args[@]}" \
+            --annotation "index:org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --annotation "index:org.opencontainers.image.description=Conduit Robots demo: a TurtleBot3 on Nav2 and a Panda in Gazebo" \
+            "${refs[@]}"
+
+      - name: Inspect
+        env:
+          TAG: ${{ env.IMAGE }}:${{ matrix.distro }}-${{ needs.version.outputs.version }}
+        run: docker buildx imagetools inspect "$TAG"
