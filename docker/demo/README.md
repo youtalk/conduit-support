@@ -32,9 +32,9 @@ Launch arguments: `gpu:=true` raises the wrist camera to 640 x 480 at 15 Hz with
 visuals (needs a GPU in the container); the default light setting is 320 x 240 at 10 Hz,
 rendered in software.
 
-`docker stop -t 30` stops it (the image's stop signal is SIGINT; a full demo takes 6 to
-10 s). Gazebo's own transport stays in the container: `GZ_PARTITION=conduit_demo` and
-`GZ_IP=127.0.0.1` are set in the image.
+`docker stop -t 30 conduit-demo` stops it (the image's stop signal is SIGINT; the full demo
+takes up to about 20 s to shut down). Gazebo's own transport stays in the container:
+`GZ_PARTITION=conduit_demo` and `GZ_IP=127.0.0.1` are set in the image.
 
 ```bash
 docker run -d --name conduit-demo -p 7447:7447 conduit-demo:lyrical-dev
