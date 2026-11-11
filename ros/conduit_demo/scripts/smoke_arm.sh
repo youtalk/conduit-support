@@ -18,8 +18,12 @@
 #   - /robot_description_semantic (transient local) has the panda_arm states
 #     `extended` and `ready`;
 #   - the launch switched Servo to TWIST commands;
-#   - GripperCommand goals to 0.0 and 0.04 move panda_finger_joint1 within 0.005 m;
-#   - MoveGroup goals to the SRDF states `extended` and `ready` succeed (error code 1);
+#   - GripperCommand goals to 0.0 and 0.04 succeed with result.position within 0.005 m of
+#     the target and move panda_finger_joint1 there;
+#   - a goal to 0.0, a second to 0.04 about 100 ms later, then a cancel of the first: the
+#     first ends aborted (or canceled), the second succeeds at 0.04, the finger ends at 0.04;
+#   - MoveGroup goals to the SRDF states `extended`, `transport` and `ready` succeed
+#     (error code 1);
 #   - no ROS 2 daemon was started.
 # Prints `SMOKE ARM PASS` or `SMOKE ARM FAIL: <check>`; exit 0 on pass. Both containers
 # are removed on exit. SMOKE_STARTUP_S (default 300) bounds the wait for the graph.
@@ -228,7 +232,8 @@ def poses(node, names):
     return None
 
 
-def gripper(node, targets, tolerance=0.005):
+def gripper_client(node):
+    """(client, finger position list, error): the GripperCommand client and /joint_states."""
     from control_msgs.action import GripperCommand
     from rclpy.action import ActionClient
     from sensor_msgs.msg import JointState
@@ -239,30 +244,88 @@ def gripper(node, targets, tolerance=0.005):
     node.create_subscription(JointState, '/joint_states', on_joints, qos_profile_sensor_data)
     client = ActionClient(node, GripperCommand, '/panda_hand_controller/gripper_cmd')
     if not client.wait_for_server(timeout_sec=30.0):
-        return '/panda_hand_controller/gripper_cmd server not available within 30 s'
+        return None, None, '/panda_hand_controller/gripper_cmd server not available within 30 s'
     if not spin_until(node, lambda: position, 10.0):
-        return f'no {FINGER} in /joint_states within 10 s'
+        return None, None, f'no {FINGER} in /joint_states within 10 s'
+    return client, position, None
+
+
+def send_gripper_goal(node, client, target):
+    """The accepted goal handle for a GripperCommand goal to `target`, or None."""
+    from control_msgs.action import GripperCommand
+    goal = GripperCommand.Goal()
+    goal.command.position = target
+    goal.command.max_effort = 20.0
+    future = client.send_goal_async(goal)
+    rclpy.spin_until_future_complete(node, future, timeout_sec=10.0)
+    handle = future.result()
+    return handle if handle is not None and handle.accepted else None
+
+
+def gripper_result(node, handle, timeout_s=20.0):
+    future = handle.get_result_async()
+    rclpy.spin_until_future_complete(node, future, timeout_sec=timeout_s)
+    return future.result() if future.done() else None
+
+
+def gripper(node, targets, tolerance=0.005):
+    from action_msgs.msg import GoalStatus
+    client, position, error = gripper_client(node)
+    if error:
+        return error
     for target in targets:
-        goal = GripperCommand.Goal()
-        goal.command.position = target
-        goal.command.max_effort = 20.0
         start = time.monotonic()
-        future = client.send_goal_async(goal)
-        rclpy.spin_until_future_complete(node, future, timeout_sec=10.0)
-        handle = future.result()
-        if handle is None or not handle.accepted:
+        handle = send_gripper_goal(node, client, target)
+        if handle is None:
             return f'GripperCommand goal {target} rejected'
-        result = handle.get_result_async()
-        rclpy.spin_until_future_complete(node, result, timeout_sec=20.0)
-        if not result.done():
+        reply = gripper_result(node, handle)
+        if reply is None:
             return f'GripperCommand goal {target} not finished within 20 s'
-        reply = result.result()
         reached = spin_until(node, lambda: abs(position[0] - target) <= tolerance, 5.0)
         print(f'GripperCommand to {target}: status {reply.status}, result position '
               f'{reply.result.position:.4f}, {FINGER} {position[0]:.4f} after '
               f'{time.monotonic() - start:.1f} s')
+        if reply.status != GoalStatus.STATUS_SUCCEEDED:
+            return f'GripperCommand goal {target} ended with status {reply.status}'
+        if abs(reply.result.position - target) > tolerance:
+            return f'result.position {reply.result.position:.4f} not within {tolerance} of {target}'
         if not reached:
             return f'{FINGER} at {position[0]:.4f}, not within {tolerance} of {target}'
+    return None
+
+
+def gripper_preempt(node, first, second, tolerance=0.005):
+    """A goal to `first`, one to `second` 100 ms later, then a cancel of the first."""
+    from action_msgs.msg import GoalStatus
+    client, position, error = gripper_client(node)
+    if error:
+        return error
+    handle_first = send_gripper_goal(node, client, first)
+    if handle_first is None:
+        return f'GripperCommand goal {first} rejected'
+    spin_until(node, lambda: False, 0.1)
+    handle_second = send_gripper_goal(node, client, second)
+    if handle_second is None:
+        return f'GripperCommand goal {second} rejected'
+    cancel = handle_first.cancel_goal_async()
+    rclpy.spin_until_future_complete(node, cancel, timeout_sec=5.0)
+    reply_first = gripper_result(node, handle_first)
+    reply_second = gripper_result(node, handle_second)
+    if reply_first is None or reply_second is None:
+        return 'GripperCommand goals not finished within 20 s'
+    reached = spin_until(node, lambda: abs(position[0] - second) <= tolerance, 5.0)
+    print(f'GripperCommand {first} then {second} 100 ms later, first cancelled: first status '
+          f'{reply_first.status}, second status {reply_second.status}, result position '
+          f'{reply_second.result.position:.4f}, {FINGER} {position[0]:.4f}')
+    if reply_first.status not in (GoalStatus.STATUS_ABORTED, GoalStatus.STATUS_CANCELED):
+        return f'first goal ended with status {reply_first.status}, not aborted or canceled'
+    if reply_second.status != GoalStatus.STATUS_SUCCEEDED:
+        return f'second goal ended with status {reply_second.status}'
+    if abs(reply_second.result.position - second) > tolerance:
+        return (f'second result.position {reply_second.result.position:.4f} not within '
+                f'{tolerance} of {second}')
+    if not reached:
+        return f'{FINGER} at {position[0]:.4f}, not within {tolerance} of {second}'
     return None
 
 
@@ -283,6 +346,8 @@ def main():
             error = poses(node, args)
         elif name == 'gripper':
             error = gripper(node, [float(arg) for arg in args])
+        elif name == 'gripper_preempt':
+            error = gripper_preempt(node, float(args[0]), float(args[1]))
         else:
             error = f'unknown check {name}'
     finally:
@@ -354,11 +419,13 @@ until docker logs "$ROBOT" 2>&1 | grep -q 'Servo command type set to TWIST'; do
 done
 echo "Servo command type: TWIST"
 
-# 5. The gripper: closed, then fully open.
+# 5. The gripper: closed, then fully open; then a goal preempted by a newer one (as a
+#    drag in Conduit's gripper arc does) and cancelled after it.
 check 80 gripper 0.0 0.04 || fail "GripperCommand"
+check 80 gripper_preempt 0.0 0.04 || fail "GripperCommand preempted"
 
-# 6. The SRDF pose menu: MoveGroup goals to two panda_arm states.
-check 200 poses extended ready || fail "MoveGroup"
+# 6. The SRDF pose menu: MoveGroup goals to the panda_arm states.
+check 260 poses extended transport ready || fail "MoveGroup"
 
 # 7. No ROS 2 daemon: the client shares the host network, so a daemon there would
 #    serve the host's ros2 CLI. The daemon's command line holds `_ros2_daemon` (Jazzy)

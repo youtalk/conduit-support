@@ -43,6 +43,11 @@ def joint_value(names, values, joint):
     return 0.0
 
 
+def _can_end(goal_handle):
+    """True when the goal may take a terminal state (rcl_action: from EXECUTING or CANCELING)."""
+    return goal_handle.status in (GoalStatus.STATUS_EXECUTING, GoalStatus.STATUS_CANCELING)
+
+
 def parallel_command(joint, position, max_effort):
     """The ParallelGripperCommand goal for one GripperCommand goal."""
     goal = ParallelGripperCommand.Goal()
@@ -88,11 +93,14 @@ class GripperCommandServer(Node):
             self._joint_state = message
 
     def on_accepted(self, goal_handle):
+        # execute() moves the goal from ACCEPTED to EXECUTING (it only schedules the
+        # execute callback), inside the lock, so _active never holds an ACCEPTED goal: a
+        # goal can end only from EXECUTING or CANCELING.
         with self._lock:
             previous, self._active = self._active, goal_handle
-            if previous is not None and previous.is_active:
+            if previous is not None and _can_end(previous):
                 previous.abort()
-        goal_handle.execute()
+            goal_handle.execute()
 
     def _finish(self, goal_handle, end):
         """Ends the goal with `end` ('succeed', 'abort' or 'canceled') unless it has ended.
@@ -100,7 +108,7 @@ class GripperCommandServer(Node):
         Under the lock, because a newer goal aborts this one from another thread.
         """
         with self._lock:
-            if goal_handle.is_active:
+            if _can_end(goal_handle):
                 getattr(goal_handle, end)()
 
     def _result(self, state, stalled=False, reached_goal=False):

@@ -15,9 +15,10 @@ mock-hardware Servo harness), so a Conduit arm profile fills itself in:
 - MoveIt Servo (servo_node) with moveit_servo's panda_simulated_config.yaml and
   conduit_teleop's config/servo_overlay.yaml last, switched to TWIST commands by
   servo_twist_mode once it is up;
-- move_group with moveit_resources_panda's SRDF (published on
-  /robot_description_semantic; its panda_arm states are Conduit's pose menu), OMPL, and
-  execution on panda_arm_controller (/move_action).
+- move_group with config/panda.srdf, moveit_resources_panda's SRDF with one allowed
+  collision more so its `transport` state plans (published on /robot_description_semantic;
+  its panda_arm states are Conduit's pose menu), OMPL, and execution on
+  panda_arm_controller (/move_action).
 
 Arguments:
   gpu           false (default): the light setting, camera 320 x 240 at 10 Hz, low-poly
@@ -66,7 +67,7 @@ def launch_setup(context):
         .robot_description(
             file_path=os.path.join(share, 'urdf', 'panda_gz.urdf.xacro'),
             mappings={'gpu': 'true' if gpu else 'false'})
-        .robot_description_semantic(file_path='config/panda.srdf')
+        .robot_description_semantic(file_path=os.path.join(share, 'config', 'panda.srdf'))
         .joint_limits(file_path='config/hard_joint_limits.yaml')
         .planning_scene_monitor(
             publish_robot_description=False, publish_robot_description_semantic=True)

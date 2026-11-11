@@ -15,7 +15,7 @@ setup(
         ('share/' + package_name + '/scripts', glob('scripts/*.sh')),
         ('share/' + package_name + '/urdf', glob('urdf/*.xacro')),
         ('share/' + package_name + '/worlds', glob('worlds/*.sdf')),
-        ('share/' + package_name + '/config', glob('config/*.yaml')),
+        ('share/' + package_name + '/config', glob('config/*.yaml') + glob('config/*.srdf')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
