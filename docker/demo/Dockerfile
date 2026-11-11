@@ -1,7 +1,10 @@
 # Conduit Robots demo: a TurtleBot3 on Nav2's loopback simulator with a camera drawn
 # from the map, and a Panda in Gazebo with a wrist camera, MoveIt Servo and move_group,
-# behind their own Zenoh router or on a PC's ROS 2 graph. Built from the repository root:
-#   docker build -f docker/demo/Dockerfile -t conduit-demo:lyrical-dev .
+# behind their own Zenoh router or on a PC's ROS 2 graph. One Dockerfile for every
+# distribution the demo is offered on (jazzy, kilted, lyrical: the same package names;
+# Gazebo Harmonic, Ionic and Jetty come with each one's ros_gz). Built from the repository
+# root (docker/demo/README.md):
+#   docker build -f docker/demo/Dockerfile --build-arg ROS_DISTRO=lyrical -t conduit-demo:lyrical-dev .
 # Run (see docker/demo/entrypoint.sh for the modes):
 #   docker run --rm -p 7447:7447 conduit-demo:lyrical-dev standalone   # both robots
 #   docker run --rm --network host -e RMW_IMPLEMENTATION -e ROS_DOMAIN_ID \
@@ -61,7 +64,11 @@ RUN . /opt/ros/${ROS_DISTRO}/setup.sh \
 ENV RMW_IMPLEMENTATION=rmw_zenoh_cpp
 # Gazebo's own transport finds its peers by multicast. On the host network (join) it would
 # reach a Gazebo the PC runs; a partition of its own keeps the demo's Gazebo to itself.
+# On a Docker bridge network it would reach the Gazebo of another demo container on the
+# same host (the second one's world then fails to start); the loopback interface keeps it
+# inside the container (inside the host on the host network).
 ENV GZ_PARTITION=conduit_demo
+ENV GZ_IP=127.0.0.1
 COPY docker/demo/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

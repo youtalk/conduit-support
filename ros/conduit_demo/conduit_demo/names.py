@@ -5,8 +5,8 @@ reads that graph and compares it with these names. A name the PC already uses me
 demo would disturb the PC's own robot (a second publisher on its topics, its frames in a
 merged TF tree, a second /clock, the phone's Joy driving it), so the demo does not start.
 
-The lists are what a standalone run of the demo has on its graph, as `check_conflicts
---list` prints it against that run: every topic, action and TF frame (seen on /tf and
+The lists are what standalone runs of the demo have on their graphs, as `check_conflicts
+--list` prints it against each run: every topic, action and TF frame (seen on /tf and
 /tf_static), and every service, except
 - SHARED: /tf and /tf_static carry both robots' frames (the frames themselves count),
   /diagnostics is shared by convention, and every graph has /rosout and
@@ -19,7 +19,10 @@ the namespace's first part, the node or namespace that offers it (DEMO_SERVICE_P
 /panda_ stands for both Panda controllers, /move_group/ for move_group's own), and a
 topic or an action under one of those prefixes counts too; the services at the top level
 (MoveIt's capabilities, Nav2's /is_path_valid, the waypoint follower's /fromLL client) are
-listed by name (DEMO_SERVICES). Listed from the Lyrical image on 2026-11-11.
+listed by name (DEMO_SERVICES). Listed from the Jazzy, Kilted and Lyrical images on
+2026-11-11; the lists are their union, so a name the demo has on one distribution only (Nav2's
+lifecycle managers, for example: lifecycle_manager_navigation and the map server's before
+Lyrical, lifecycle_manager_nav2 on Lyrical) counts on every distribution.
 """
 
 from collections.abc import Iterable
@@ -94,6 +97,7 @@ DEMO_TOPICS = frozenset({
     '/goal_checker_selector',
     '/goal_pose',
     '/initialpose',
+    '/joint_state_broadcaster/dynamic_joint_states',
     '/joint_state_broadcaster/joint_states',
     '/joint_state_broadcaster/transition_event',
     '/joint_states',
@@ -118,6 +122,7 @@ DEMO_TOPICS = frozenset({
     '/map_server/transition_event',
     '/monitored_planning_scene',
     '/odom',
+    '/optimal_trajectory',
     '/panda_arm_controller/controller_state',
     '/panda_arm_controller/joint_trajectory',
     '/panda_arm_controller/speed_scaling_input',
@@ -150,6 +155,7 @@ DEMO_TOPICS = frozenset({
     '/speed_limit',
     '/staging_pose',
     '/tracking_feedback',
+    '/trajectories',
     '/trajectory_execution_event',
     '/transformed_global_plan',
     '/turtlebot3/joint_states',
@@ -197,7 +203,9 @@ DEMO_SERVICE_PREFIXES = (
     '/docking_server/',
     '/following_server/',
     '/global_costmap/',
+    '/lifecycle_manager_map_server/',
     '/lifecycle_manager_nav2/',
+    '/lifecycle_manager_navigation/',
     '/local_costmap/',
     '/loopback_simulator/',
     '/map_server/',

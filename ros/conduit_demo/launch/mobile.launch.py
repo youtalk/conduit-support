@@ -15,6 +15,13 @@ changed for the Conduit Robots demo:
 - map_camera (/camera/image_raw), battery (/battery_state) and teleop_twist_joy
   (/joy -> /cmd_vel, with Conduit's Joy layout) are added. The model's camera_link
   is the map camera's frame.
+
+Distributions (ROS_DISTRO), as in each one's tb3_loopback_simulation launch:
+- Jazzy and Kilted: nav2_bringup without localization serves no map, so map_server and
+  lifecycle_manager_map_server are started here, and the loopback simulator is a plain
+  node. Lyrical: nav2_bringup serves the map (serve_static_map) and the loopback
+  simulator is a lifecycle node.
+- Nav2's cmd_vel is geometry_msgs/Twist on Jazzy, TwistStamped from Kilted on.
 """
 
 import os
@@ -32,8 +39,11 @@ START_X = -2.0
 START_Y = -0.5
 START_YAW = 0.0
 
+DISTRO = os.environ.get('ROS_DISTRO', '')
 # Nav2 takes geometry_msgs/TwistStamped on cmd_vel from Kilted on, Twist before.
-STAMPED_CMD_VEL = os.environ.get('ROS_DISTRO', '') not in ('humble', 'jazzy')
+STAMPED_CMD_VEL = DISTRO not in ('humble', 'jazzy')
+# Before Lyrical: no map from nav2_bringup without localization, a plain loopback node.
+NAV2_BEFORE_LYRICAL = DISTRO in ('humble', 'jazzy', 'kilted')
 
 
 def generate_launch_description():
@@ -56,27 +66,51 @@ def generate_launch_description():
         ],
     )
 
-    loopback_simulator = LifecycleNode(
-        package='nav2_loopback_sim',
-        executable='loopback_simulator',
-        name='loopback_simulator',
-        namespace='',
-        output='screen',
-        autostart=True,
-        parameters=[
-            ParameterFile(
-                RewrittenYaml(
-                    source_file=params_file, root_key='', param_rewrites={},
-                    convert_types=True),
-                allow_substs=True),
+    map_yaml = os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml')
+    nav2_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file, root_key='', param_rewrites={}, convert_types=True),
+        allow_substs=True)
+
+    loopback = {
+        'package': 'nav2_loopback_sim',
+        'executable': 'loopback_simulator',
+        'name': 'loopback_simulator',
+        'namespace': '',
+        'output': 'screen',
+        'parameters': [
+            nav2_params,
             {'scan_frame_id': 'base_scan', 'use_sim_time': False, 'publish_clock': False},
         ],
-    )
+    }
+    if NAV2_BEFORE_LYRICAL:
+        loopback_simulator = Node(**loopback)
+    else:
+        loopback_simulator = LifecycleNode(autostart=True, **loopback)
+
+    # Before Lyrical, the map server of tb3_loopback_simulation, on wall time.
+    map_server = [
+        Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name='map_server',
+            output='screen',
+            parameters=[nav2_params, {'yaml_filename': map_yaml, 'use_sim_time': False}],
+        ),
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_map_server',
+            output='screen',
+            parameters=[{'autostart': True, 'node_names': ['map_server'],
+                         'use_sim_time': False}],
+        ),
+    ] if NAV2_BEFORE_LYRICAL else []
 
     nav2 = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'bringup_launch.py')),
         launch_arguments={
-            'map': os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
+            'map': map_yaml,
             'graph': os.path.join(bringup_dir, 'graphs', 'turtlebot3_graph.geojson'),
             'params_file': params_file,
             'use_sim_time': 'False',
@@ -128,6 +162,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         robot_state_publisher,
+        *map_server,
         loopback_simulator,
         nav2,
         initial_pose,

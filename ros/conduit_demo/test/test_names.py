@@ -68,6 +68,18 @@ def test_the_names_the_demo_uses_conflict():
         topics + services + actions + frames)
 
 
+def test_names_the_demo_uses_on_jazzy_and_kilted_conflict():
+    # Nav2's lifecycle managers before Lyrical (navigation, and the demo's map server's),
+    # the broadcaster's dynamic joint states and Jazzy's MPPI debug topics.
+    topics = ['/joint_state_broadcaster/dynamic_joint_states', '/optimal_trajectory',
+              '/trajectories']
+    services = [
+        '/lifecycle_manager_navigation/manage_nodes', '/lifecycle_manager_navigation/is_active',
+        '/lifecycle_manager_map_server/manage_nodes', '/lifecycle_manager_map_server/is_active',
+    ]
+    assert find_conflicts(topics, services, [], []) == sorted(topics + services)
+
+
 def test_exact_names_are_listed_without_shared_ones():
     assert not (DEMO_TOPICS | DEMO_ACTIONS) & SHARED
     assert {'/map', '/clock', '/initialpose'} <= DEMO_TOPICS

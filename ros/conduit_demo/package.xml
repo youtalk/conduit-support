@@ -31,7 +31,9 @@
   <exec_depend>moveit_simple_controller_manager</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_common</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>nav2_loopback_sim</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_minimal_tb3_sim</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>parallel_gripper_controller</exec_depend>
