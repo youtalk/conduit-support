@@ -109,6 +109,8 @@ STUB
 #   env        its environment, NAME=VALUE lines (docker run -e adds)
 #   ports      "<container port> <host address>:<host port>" lines (docker port)
 #   logs       its log
+#   logs_first when present, the next `docker logs` prints it instead of the
+#              log and removes it (a log read before the container exited)
 #   join_exit  how `docker run ... join` ends: 0 (no conflicts), or that exit
 #              status with join_log as the log
 #   run_error  when present, `docker run` fails with this message
@@ -159,7 +161,14 @@ case "$1" in
     esac
     ;;
   port) awk -v p="${3%/tcp}" '$1 == p { print $2 }' "$d/ports" ;;
-  logs) cat "$d/logs" 2> /dev/null ;;
+  logs)
+    if [ -e "$d/logs_first" ]; then
+      cat "$d/logs_first"
+      rm -f "$d/logs_first"
+    else
+      cat "$d/logs" 2> /dev/null
+    fi
+    ;;
   rm)
     if [ "$2" != -f ] && grep -q '^true ' "$d/container" 2> /dev/null; then
       echo "Error response from daemon: cannot remove container: container is running: stop the container before removing or force remove" >&2

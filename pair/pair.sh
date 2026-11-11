@@ -1578,6 +1578,8 @@ demo_wait_join() {
     state="$(bounded 20 docker inspect --format '{{.State.Status}} {{.State.ExitCode}}' "$PAIR_DEMO_CONTAINER" 2> /dev/null || true)"
     case "$state" in
       exited* | dead*)
+        # The log read above may predate the exit: read the whole of it now.
+        log="$(demo_logs)"
         if [[ "${state##* }" == 3 ]]; then
           say "This PC's ROS 2 graph already uses these names of the demo robots:"
           while IFS= read -r line; do

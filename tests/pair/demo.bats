@@ -375,6 +375,19 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   called "run -d --name conduit-demo --network host -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp -e ROS_DOMAIN_ID=123 $JAZZY_IMAGE join"
 }
 
+@test "a conflict logged as the container exits is listed in full" {
+  echo 3 > "$DOCKER_STUB/join_exit"
+  printf '%s\n' 'CONFLICT /map' \
+    'check_conflicts: this graph already uses 1 name(s) of the Conduit Robots demo' > "$DOCKER_STUB/join_log"
+  # The first log read happens before the name check has printed anything.
+  echo "starting" > "$DOCKER_STUB/logs_first"
+  run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  has "already uses these names of the demo robots:"
+  has "  /map"
+  has "The demo robots were not added"
+}
+
 @test "a conflict skips the demo and pairing continues" {
   echo 3 > "$DOCKER_STUB/join_exit"
   printf '%s\n' 'CONFLICT /map' 'CONFLICT /odom' \
