@@ -3,7 +3,8 @@ name: Build and Push Docker Images
 on:
   push:
     branches: [main]
-    paths: ['docker/**']
+    # docker/demo/ holds the Robots demo images; they have their own workflow.
+    paths: ['docker/**', '!docker/demo/**']
   workflow_dispatch:
 
 env:
