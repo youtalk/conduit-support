@@ -7,10 +7,11 @@ name: Robots demo image
 # for linux/amd64 and linux/arm64.
 #
 # - Pull request touching the demo: build the Lyrical image for linux/amd64, no push.
-# - Tag demo-v<version> (for example demo-v0.1.0), or a manual run with that version:
-#   build every distribution natively on an amd64 and an arm64 runner, push each image
-#   by digest, then merge the two digests of each distribution into one multi-platform
-#   tag set.
+# - Tag demo-v<version> (for example demo-v0.1.0), or a manual run with that version on
+#   main: build every distribution natively on an amd64 and an arm64 runner, push each
+#   image by digest, then merge the two digests of each distribution into one
+#   multi-platform tag set. A manual run on any other branch fails, and a published
+#   <distro>-<version> is never overwritten: pair.sh pins it.
 on:
   pull_request:
     paths:
@@ -72,9 +73,24 @@ jobs:
     name: Version
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
+      - name: Publish only from main or a demo-v tag
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          case "$REF" in
+            refs/heads/main | refs/tags/demo-v*) ;;
+            *)
+              echo "::error::the demo images are published from main or a demo-v* tag only, not ${REF}"
+              exit 1
+              ;;
+          esac
+
       - name: Version from the tag or the input
         id: version
         env:
@@ -93,9 +109,37 @@ jobs:
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Fails early, before the builds; the publish job checks again right before it tags.
+      # Before the first publish the package does not exist, and the registry may refuse
+      # the lookup instead of answering "not found": then only the publish job decides.
+      - name: Refuse a version that is already published
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          for distro in jazzy kilted lyrical; do
+            tag="${IMAGE}:${distro}-${VERSION}"
+            if out=$(docker buildx imagetools inspect "$tag" 2>&1); then
+              echo "::error::${tag} is already published; pair.sh pins it, so it is never overwritten. Release a new version."
+              exit 1
+            elif grep -q 'not found' <<< "$out"; then
+              echo "${tag}: not published yet"
+            else
+              echo "::warning::could not look up ${tag} (${out}); the publish job checks again before it tags"
+            fi
+          done
+
   build:
     name: Build ${{ matrix.distro }} ${{ matrix.platform }}
     needs: version
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/demo-v')
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     permissions:
@@ -171,6 +215,7 @@ jobs:
   merge:
     name: Publish ${{ matrix.distro }}
     needs: [version, build]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/demo-v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -202,6 +247,21 @@ jobs:
           tags: |
             type=raw,value=${{ matrix.distro }}-${{ needs.version.outputs.version }}
             type=raw,value=${{ matrix.distro }}
+
+      # The build jobs pushed this distribution's images by digest, so the package exists
+      # and a missing tag is "not found"; any other answer stops the publish.
+      - name: Refuse to overwrite ${{ matrix.distro }}-${{ needs.version.outputs.version }}
+        env:
+          TAG: ${{ env.IMAGE }}:${{ matrix.distro }}-${{ needs.version.outputs.version }}
+        run: |
+          if out=$(docker buildx imagetools inspect "$TAG" 2>&1); then
+            echo "::error::${TAG} is already published; pair.sh pins it, so it is never overwritten. Release a new version."
+            exit 1
+          elif ! grep -q 'not found' <<< "$out"; then
+            echo "::error::could not check whether ${TAG} is published: ${out}"
+            exit 1
+          fi
+          echo "${TAG}: not published yet"
 
       - name: Create the multi-platform tags
         working-directory: ${{ runner.temp }}/digests
