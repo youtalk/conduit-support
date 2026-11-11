@@ -23,7 +23,6 @@ setup(
     entry_points={
         'console_scripts': [
             'fake_mobile_robot = conduit_robot_harness.fake_mobile_robot:main',
-            'conduit_gripper_server = conduit_robot_harness.gripper_server:main',
         ],
     },
 )
