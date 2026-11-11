@@ -25,7 +25,7 @@ You do not need a robot to try [Robots](robots.md). The same command that
 - A Mac, or a Linux PC. On a Mac install [Docker Desktop](https://www.docker.com/products/docker-desktop/);
   on Linux install Docker Engine and add your user to the `docker` group.
 - An iPhone with Conduit 3 on the same Wi-Fi as the computer.
-- Disk space and patience: the demo images are several GB, so the first start downloads for a
+- Disk space and patience: the demo images are several GB (5.4 GB for Jazzy and Kilted, 7.3 GB for Lyrical), so the first start downloads for a
   while. Later starts reuse them.
 
 ROS 2 is not needed. If your Linux PC has ROS 2 (Jazzy, Kilted, Lyrical or Rolling), the demo
@@ -78,9 +78,8 @@ themselves in. See [Robots](robots.md#create-a-profile).
 - The pose menu lists the arm's named poses (ready, extended and transport) and sends the arm
   there.
 - The gripper arc opens and closes the fingers, and shows how far they are open.
-- The wrist camera shows what the hand sees. On a computer without a GPU it runs at a low
-  resolution and rate, and the arm may move slower than real time; HOLD, Servo and the gripper stay
-  usable.
+- The wrist camera shows what the hand sees, at about 10 Hz and 320 x 240 by design. The arm
+  moves at normal speed, and no GPU is needed.
 - Three small cubes (red, green and blue) and a tray are on a table within reach: try to pick one
   up and put it in the tray.
 
@@ -106,7 +105,7 @@ The demo keeps running after the script ends. Stop it with:
 docker stop -t 30 conduit-demo
 ```
 
-The container shuts down in about 20 seconds. Start it again by running the one-liner.
+The container takes up to about 20 seconds to shut down. Start it again by running the one-liner.
 
 ## Troubleshooting
 
@@ -118,7 +117,6 @@ The container shuts down in about 20 seconds. Start it again by running the one-
 - **Conduit never checks in.** See [Connect with a QR code](pair.md#troubleshooting). On a Mac,
   if the macOS firewall is on, let Docker accept incoming connections in System Settings > Network >
   Firewall > Options.
-- **"No topics found" after Start.** Wait a few seconds for the demo to finish starting and tap
-  Start again; the first start takes longer while the images download.
-- **The wrist camera is slow.** The demo draws it in software by default. That is expected on a
-  computer without a GPU.
+- **"No topics found" right after pairing.** The QR code appears as soon as the demo's router is
+  ready, but the robots take about 20 to 30 seconds more to come up. Wait about half a minute and
+  tap Start again.
