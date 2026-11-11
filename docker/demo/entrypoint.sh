@@ -3,6 +3,11 @@
 #
 #   mobile   a Zenoh router on port 7447 inside the container, then the TurtleBot3
 #            on Nav2's loopback simulator with the map camera (mobile.launch.py)
+#   arm      the router, then the Panda in Gazebo with the wrist camera, MoveIt Servo
+#            and move_group (arm.launch.py; arguments such as gpu:=true go to it)
+#   all      the router, then both robots (mobile.launch.py and arm.launch.py; the
+#            arguments go to arm.launch.py). Ctrl-C (SIGINT, Docker's stop signal)
+#            stops both; either launch ending stops the other.
 #
 # Anything else runs as a command with ROS 2 and the demo workspace sourced, for
 # example: docker run --rm -it conduit-demo:lyrical-dev bash
@@ -29,8 +34,25 @@ start_router() {
   exit 1
 }
 
+# Runs mobile.launch.py and arm.launch.py side by side until one of them ends or a
+# SIGINT / SIGTERM arrives, then stops both with SIGINT (their Ctrl-C shutdown). A
+# non-interactive shell starts background commands with SIGINT ignored, which ros2
+# launch would keep; env --default-signal=INT gives it back.
+run_all() {
+  env --default-signal=INT ros2 launch conduit_demo mobile.launch.py &
+  local mobile=$!
+  env --default-signal=INT ros2 launch conduit_demo arm.launch.py "$@" &
+  local arm=$!
+  trap 'kill -INT "$mobile" "$arm" 2>/dev/null || true' INT TERM
+  local status=0
+  wait -n "$mobile" "$arm" || status=$?
+  kill -INT "$mobile" "$arm" 2>/dev/null || true
+  wait "$mobile" "$arm" || true
+  return "$status"
+}
+
 if [ $# -eq 0 ]; then
-  echo "usage: entrypoint.sh mobile [launch arguments...] | <command>" >&2
+  echo "usage: entrypoint.sh mobile|arm|all [launch arguments...] | <command>" >&2
   exit 2
 fi
 
@@ -40,6 +62,16 @@ case "$mode" in
     shift
     start_router
     exec ros2 launch conduit_demo mobile.launch.py "$@"
+    ;;
+  arm)
+    shift
+    start_router
+    exec ros2 launch conduit_demo arm.launch.py "$@"
+    ;;
+  all)
+    shift
+    start_router
+    run_all "$@"
     ;;
   *)
     exec "$@"

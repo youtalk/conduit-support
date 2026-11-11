@@ -1,0 +1,319 @@
+<?xml version="1.0"?>
+<!--
+  The Franka Emika Panda in Gazebo for the Conduit Robots demo.
+
+  The links, joints, limits and inertials are moveit_resources_panda_description's
+  panda.urdf.xacro, with every name unchanged, so MoveIt's moveit_resources_panda
+  configuration (SRDF, kinematics, joint limits) applies as it is. Added here:
+  - world -> panda_link0 (fixed), which also fixes the arm in Gazebo;
+  - wrist_camera_link on panda_hand, looking along the fingers, with a visual only
+    (no collision, so the SRDF's collision matrix needs no entry), and
+    wrist_camera_optical_frame (REP-103: z forward, x right, y down);
+  - the Gazebo camera sensor on /wrist_camera/image_raw and /wrist_camera/camera_info;
+  - one ros2_control system on gz_ros2_control for the seven arm joints and the hand
+    (panda_finger_joint2 mimics panda_finger_joint1, as in the description).
+
+  Argument gpu (default false): false is the light setting (camera 320 x 240 at 10 Hz,
+  the low-poly collision meshes as visuals, for software rendering); true is the GPU
+  setting (640 x 480 at 15 Hz, the full visual meshes).
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
+  <xacro:arg name="gpu" default="false"/>
+  <xacro:property name="gpu" value="$(arg gpu)"/>
+
+  <!-- Wrist camera: placement on panda_hand and the light / GPU settings. -->
+  <xacro:property name="camera_x" value="0.045"/>        <!-- beside the hand's front face (x 0.032) -->
+  <xacro:property name="camera_z" value="0.03"/>
+  <xacro:property name="camera_tilt" value="0.33"/>      <!-- toward the fingers' axis, rad -->
+  <xacro:property name="camera_hfov" value="1.2"/>
+  <xacro:property name="camera_width" value="${640 if gpu else 320}"/>
+  <xacro:property name="camera_height" value="${480 if gpu else 240}"/>
+  <xacro:property name="camera_rate" value="${15 if gpu else 10}"/>
+
+  <!-- Visual meshes: the full ones on a GPU, the collision meshes (200-300 triangles a
+       link) otherwise. -->
+  <xacro:property name="mesh_dir" value="file://$(find moveit_resources_panda_description)/meshes"/>
+  <xacro:macro name="panda_visual" params="mesh color">
+    <xacro:if value="${gpu}">
+      <geometry>
+        <mesh filename="${mesh_dir}/visual/${mesh}.dae"/>
+      </geometry>
+    </xacro:if>
+    <xacro:unless value="${gpu}">
+      <geometry>
+        <mesh filename="${mesh_dir}/collision/${mesh}.stl"/>
+      </geometry>
+      <material name="panda_${color}">
+        <xacro:if value="${color == 'white'}"><color rgba="0.92 0.92 0.92 1"/></xacro:if>
+        <xacro:if value="${color == 'dark'}"><color rgba="0.25 0.25 0.27 1"/></xacro:if>
+      </material>
+    </xacro:unless>
+  </xacro:macro>
+
+  <xacro:macro name="panda_link" params="name mesh color *inertial">
+    <link name="${name}">
+      <visual>
+        <xacro:panda_visual mesh="${mesh}" color="${color}"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="${mesh_dir}/collision/${mesh}.stl"/>
+        </geometry>
+      </collision>
+      <xacro:insert_block name="inertial"/>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="panda_joint" params="name parent child xyz rpy lower upper effort velocity soft_lower soft_upper">
+    <joint name="${name}" type="revolute">
+      <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="${soft_lower}" soft_upper_limit="${soft_upper}"/>
+      <origin rpy="${rpy}" xyz="${xyz}"/>
+      <parent link="${parent}"/>
+      <child link="${child}"/>
+      <axis xyz="0 0 1"/>
+      <limit effort="${effort}" lower="${lower}" upper="${upper}" velocity="${velocity}"/>
+      <dynamics damping="0.003" friction="0.0"/>
+    </joint>
+  </xacro:macro>
+
+  <link name="world"/>
+  <joint name="world_joint" type="fixed">
+    <parent link="world"/>
+    <child link="panda_link0"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
+
+  <xacro:panda_link name="panda_link0" mesh="link0" color="white">
+    <inertial>
+      <origin xyz="-0.041018 -0.00014 0.049974" rpy="0 0 0"/>
+      <mass value="0.629769"/>
+      <inertia ixx="0.00315" iyy="0.00388" izz="0.004285" ixy="8.2904E-7" ixz="0.00015" iyz="8.2299E-6"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_link name="panda_link1" mesh="link1" color="white">
+    <inertial>
+      <origin xyz="0.003875 0.002081 -0.04762" rpy="0 0 0"/>
+      <mass value="4.970684"/>
+      <inertia ixx="0.70337" iyy="0.70661" izz="0.009117" ixy="-0.000139" ixz="0.006772" iyz="0.019169"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_joint name="panda_joint1" parent="panda_link0" child="panda_link1"
+                     xyz="0 0 0.333" rpy="0 0 0" lower="-2.9671" upper="2.9671" effort="87" velocity="2.3925"
+                     soft_lower="-2.8973" soft_upper="2.8973"/>
+  <xacro:panda_link name="panda_link2" mesh="link2" color="white">
+    <inertial>
+      <origin xyz="-0.003141 -0.02872 0.003495" rpy="0 0 0"/>
+      <mass value="0.646926"/>
+      <inertia ixx="0.007962" iyy="2.811E-2" izz="2.5995E-2" ixy="-3.925E-3" ixz="1.0254E-2" iyz="7.04E-4"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_joint name="panda_joint2" parent="panda_link1" child="panda_link2"
+                     xyz="0 0 0" rpy="-1.57079632679 0 0" lower="-1.8326" upper="1.8326" effort="87" velocity="2.3925"
+                     soft_lower="-1.7628" soft_upper="1.7628"/>
+  <xacro:panda_link name="panda_link3" mesh="link3" color="white">
+    <inertial>
+      <origin xyz="2.7518E-2 3.9252E-2 -6.6502E-2" rpy="0 0 0"/>
+      <mass value="3.228604"/>
+      <inertia ixx="3.7242E-2" iyy="3.6155E-2" izz="1.083E-2" ixy="-4.761E-3" ixz="-1.1396E-2" iyz="-1.2805E-2"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_joint name="panda_joint3" parent="panda_link2" child="panda_link3"
+                     xyz="0 -0.316 0" rpy="1.57079632679 0 0" lower="-2.9671" upper="2.9671" effort="87" velocity="2.3925"
+                     soft_lower="-2.8973" soft_upper="2.8973"/>
+  <xacro:panda_link name="panda_link4" mesh="link4" color="white">
+    <inertial>
+      <origin xyz="-5.317E-2 1.04419E-1 2.7454E-2" rpy="0 0 0"/>
+      <mass value="3.587895"/>
+      <inertia ixx="2.5853E-2" iyy="1.9552E-2" izz="2.8323E-2" ixy="7.796E-3" ixz="-1.332E-3" iyz="8.641E-3"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_joint name="panda_joint4" parent="panda_link3" child="panda_link4"
+                     xyz="0.0825 0 0" rpy="1.57079632679 0 0" lower="-3.1416" upper="0.0873" effort="87" velocity="2.3925"
+                     soft_lower="-3.0718" soft_upper="0.0175"/>
+  <xacro:panda_link name="panda_link5" mesh="link5" color="white">
+    <inertial>
+      <origin xyz="-1.1953E-2 4.1065E-2 -3.8437E-2" rpy="0 0 0"/>
+      <mass value="1.225946"/>
+      <inertia ixx="3.5549E-2" iyy="2.9474E-2" izz="8.627E-3" ixy="-2.117E-3" ixz="-4.037E-3" iyz="2.29E-4"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_joint name="panda_joint5" parent="panda_link4" child="panda_link5"
+                     xyz="-0.0825 0.384 0" rpy="-1.57079632679 0 0" lower="-2.9671" upper="2.9671" effort="12" velocity="2.8710"
+                     soft_lower="-2.8973" soft_upper="2.8973"/>
+  <xacro:panda_link name="panda_link6" mesh="link6" color="white">
+    <inertial>
+      <origin xyz="6.0149E-2 -1.4117E-2 -1.0517E-2" rpy="0 0 0"/>
+      <mass value="1.666555"/>
+      <inertia ixx="1.964E-3" iyy="4.354E-3" izz="5.433E-3" ixy="1.09E-4" ixz="-1.158E-3" iyz="3.41E-4"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_joint name="panda_joint6" parent="panda_link5" child="panda_link6"
+                     xyz="0 0 0" rpy="1.57079632679 0 0" lower="-0.0873" upper="3.8223" effort="12" velocity="2.8710"
+                     soft_lower="-0.0175" soft_upper="3.7525"/>
+  <xacro:panda_link name="panda_link7" mesh="link7" color="dark">
+    <inertial>
+      <origin xyz="1.0517E-2 -4.252E-3 6.1597E-2" rpy="0 0 0"/>
+      <mass value="7.35522E-1"/>
+      <inertia ixx="1.2516E-2" iyy="1.0027E-2" izz="4.815E-3" ixy="-4.28E-4" ixz="-1.19E-3" iyz="-7.41E-4"/>
+    </inertial>
+  </xacro:panda_link>
+  <xacro:panda_joint name="panda_joint7" parent="panda_link6" child="panda_link7"
+                     xyz="0.088 0 0" rpy="1.57079632679 0 0" lower="-2.9671" upper="2.9671" effort="12" velocity="2.8710"
+                     soft_lower="-2.8973" soft_upper="2.8973"/>
+
+  <link name="panda_link8"/>
+  <joint name="panda_joint8" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.107"/>
+    <parent link="panda_link7"/>
+    <child link="panda_link8"/>
+  </joint>
+  <joint name="panda_hand_joint" type="fixed">
+    <parent link="panda_link8"/>
+    <child link="panda_hand"/>
+    <origin rpy="0 0 -0.785398163397" xyz="0 0 0"/>
+  </joint>
+  <xacro:panda_link name="panda_hand" mesh="hand" color="white">
+    <inertial>
+      <origin xyz="-0.01 0 0.03" rpy="0 0 0"/>
+      <mass value="0.73"/>
+      <inertia ixx="0.001" iyy="0.0025" izz="0.0017" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </xacro:panda_link>
+
+  <!-- Fingers: their collision geometry and friction are what grasping depends on. -->
+  <link name="panda_leftfinger">
+    <visual>
+      <xacro:panda_visual mesh="finger" color="dark"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="${mesh_dir}/collision/finger.stl"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.015"/>
+      <inertia ixx="2.375E-6" iyy="2.375E-6" izz="7.5E-7" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <link name="panda_rightfinger">
+    <visual>
+      <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
+      <xacro:panda_visual mesh="finger" color="dark"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="${mesh_dir}/collision/finger.stl"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.15"/>
+      <inertia ixx="2.375E-6" iyy="2.375E-6" izz="7.5E-7" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="panda_finger_joint1" type="prismatic">
+    <parent link="panda_hand"/>
+    <child link="panda_leftfinger"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0584"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="20" lower="0.0" upper="0.04" velocity="0.2"/>
+    <dynamics damping="0.3"/>
+  </joint>
+  <joint name="panda_finger_joint2" type="prismatic">
+    <parent link="panda_hand"/>
+    <child link="panda_rightfinger"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0584"/>
+    <axis xyz="0 -1 0"/>
+    <limit effort="20" lower="0.0" upper="0.04" velocity="0.2"/>
+    <mimic joint="panda_finger_joint1"/>
+    <dynamics damping="0.3"/>
+  </joint>
+
+  <!-- Wrist camera. x of wrist_camera_link is the viewing direction (Gazebo's camera
+       convention): along the hand's z, tilted by camera_tilt toward the fingers, with
+       the image's up away from the fingers, so the jaws show at the bottom. -->
+  <link name="wrist_camera_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.012 0 0"/>
+      <geometry>
+        <box size="0.024 0.06 0.025"/>
+      </geometry>
+      <material name="wrist_camera_black">
+        <color rgba="0.08 0.08 0.08 1"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="wrist_camera_joint" type="fixed">
+    <parent link="panda_hand"/>
+    <child link="wrist_camera_link"/>
+    <origin rpy="${pi} ${-(pi / 2 + camera_tilt)} 0" xyz="${camera_x} 0 ${camera_z}"/>
+  </joint>
+  <link name="wrist_camera_optical_frame"/>
+  <joint name="wrist_camera_optical_joint" type="fixed">
+    <parent link="wrist_camera_link"/>
+    <child link="wrist_camera_optical_frame"/>
+    <origin rpy="${-pi / 2} 0 ${-pi / 2}" xyz="0 0 0"/>
+  </joint>
+
+  <gazebo reference="wrist_camera_link">
+    <sensor name="wrist_camera" type="camera">
+      <always_on>true</always_on>
+      <update_rate>${camera_rate}</update_rate>
+      <topic>wrist_camera/image_raw</topic>
+      <!-- The images' frame: frame_id from Gazebo Jetty (ROS 2 Lyrical) on, gz_frame_id
+           before (Harmonic, Ionic). Each release warns about the other one. -->
+      <frame_id>wrist_camera_optical_frame</frame_id>
+      <gz_frame_id>wrist_camera_optical_frame</gz_frame_id>
+      <camera>
+        <camera_info_topic>wrist_camera/camera_info</camera_info_topic>
+        <horizontal_fov>${camera_hfov}</horizontal_fov>
+        <image>
+          <width>${camera_width}</width>
+          <height>${camera_height}</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.01</near>
+          <far>5.0</far>
+        </clip>
+      </camera>
+    </sensor>
+  </gazebo>
+
+  <!-- ros2_control on Gazebo. The arm starts at the SRDF's `ready` state and the hand
+       at its `open` state. -->
+  <xacro:macro name="arm_joint_interfaces" params="name initial">
+    <joint name="${name}">
+      <command_interface name="position"/>
+      <state_interface name="position">
+        <param name="initial_value">${initial}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+    </joint>
+  </xacro:macro>
+  <ros2_control name="PandaGazeboSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <xacro:arm_joint_interfaces name="panda_joint1" initial="0.0"/>
+    <xacro:arm_joint_interfaces name="panda_joint2" initial="-0.785"/>
+    <xacro:arm_joint_interfaces name="panda_joint3" initial="0.0"/>
+    <xacro:arm_joint_interfaces name="panda_joint4" initial="-2.356"/>
+    <xacro:arm_joint_interfaces name="panda_joint5" initial="0.0"/>
+    <xacro:arm_joint_interfaces name="panda_joint6" initial="1.571"/>
+    <xacro:arm_joint_interfaces name="panda_joint7" initial="0.785"/>
+    <xacro:arm_joint_interfaces name="panda_finger_joint1" initial="0.035"/>
+    <joint name="panda_finger_joint2">
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find conduit_demo)/config/panda_gz_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+</robot>

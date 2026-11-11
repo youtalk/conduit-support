@@ -3,26 +3,46 @@
 <package format="3">
   <name>conduit_demo</name>
   <version>0.1.0</version>
-  <description>The Conduit Robots demo: a TurtleBot3 on Nav2's loopback simulator with a first-person map camera drawn from the occupancy map and the robot pose, a simulated battery and Joy teleoperation.</description>
+  <description>The Conduit Robots demo: a TurtleBot3 on Nav2's loopback simulator with a first-person map camera drawn from the occupancy map and the robot pose, a simulated battery and Joy teleoperation; and a Panda in Gazebo with a wrist camera, MoveIt Servo, move_group and a gripper.</description>
   <maintainer email="yutaka.kondo@youtalk.jp">Yutaka Kondo</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>action_msgs</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>conduit_teleop</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>gz_ros2_control</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>joint_trajectory_controller</exec_depend>
   <exec_depend>launch</exec_depend>
+  <exec_depend>launch_param_builder</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>moveit_configs_utils</exec_depend>
+  <exec_depend>moveit_kinematics</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>moveit_planners_ompl</exec_depend>
+  <exec_depend>moveit_resources_panda_description</exec_depend>
+  <exec_depend>moveit_resources_panda_moveit_config</exec_depend>
+  <exec_depend>moveit_ros_move_group</exec_depend>
+  <exec_depend>moveit_servo</exec_depend>
+  <exec_depend>moveit_simple_controller_manager</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_common</exec_depend>
   <exec_depend>nav2_loopback_sim</exec_depend>
   <exec_depend>nav2_minimal_tb3_sim</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>parallel_gripper_controller</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>teleop_twist_joy</exec_depend>
   <exec_depend>tf2_ros_py</exec_depend>
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>python3-pytest</test_depend>
 

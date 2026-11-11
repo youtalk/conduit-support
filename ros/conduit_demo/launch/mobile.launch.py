@@ -3,11 +3,13 @@
 Starts what nav2_bringup's tb3_loopback_simulation_launch.py starts, without RViz,
 changed for the Conduit Robots demo:
 
-- Everything runs on wall time (use_sim_time false) and the loopback simulator
-  publishes no /clock, so a simulator's /clock on the same graph stays the only one.
-- robot_state_publisher's robot_description and joint_states are renamed to
-  /turtlebot3/robot_description and /turtlebot3/joint_states, because
-  /robot_description and /joint_states belong to the demo arm.
+- Everything runs on wall time (use_sim_time false, set on every node: the demo arm
+  brings Gazebo's /clock into the same graph) and the loopback simulator publishes no
+  /clock, so Gazebo's stays the only one.
+- robot_state_publisher, named turtlebot3_state_publisher, has its robot_description
+  and joint_states renamed to /turtlebot3/robot_description and
+  /turtlebot3/joint_states, because robot_state_publisher, /robot_description and
+  /joint_states belong to the demo arm.
 - initial_pose places the robot at tb3_sandbox's spawn point: the loopback simulator
   publishes no odometry, scan or transforms until it has an initial pose.
 - map_camera (/camera/image_raw), battery (/battery_state) and teleop_twist_joy
@@ -45,7 +47,7 @@ def generate_launch_description():
     robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
-        name='robot_state_publisher',
+        name='turtlebot3_state_publisher',
         output='screen',
         parameters=[{'use_sim_time': False, 'robot_description': robot_description}],
         remappings=[
@@ -93,7 +95,7 @@ def generate_launch_description():
         executable='initial_pose',
         name='initial_pose',
         output='screen',
-        parameters=[{'x': START_X, 'y': START_Y, 'yaw': START_YAW}],
+        parameters=[{'x': START_X, 'y': START_Y, 'yaw': START_YAW, 'use_sim_time': False}],
     )
 
     map_camera = Node(
@@ -101,7 +103,7 @@ def generate_launch_description():
         executable='map_camera',
         name='map_camera',
         output='screen',
-        parameters=[{'rate_hz': 10.0, 'width': 320, 'height': 240}],
+        parameters=[{'rate_hz': 10.0, 'width': 320, 'height': 240, 'use_sim_time': False}],
     )
 
     battery = Node(
@@ -109,6 +111,7 @@ def generate_launch_description():
         executable='battery',
         name='battery',
         output='screen',
+        parameters=[{'use_sim_time': False}],
     )
 
     teleop = Node(
@@ -118,7 +121,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             os.path.join(teleop_dir, 'config', 'teleop_twist_joy.yaml'),
-            {'publish_stamped_twist': STAMPED_CMD_VEL, 'frame': 'base_link'},
+            {'publish_stamped_twist': STAMPED_CMD_VEL, 'frame': 'base_link', 'use_sim_time': False},
         ],
         remappings=[('joy', '/joy'), ('cmd_vel', '/cmd_vel')],
     )
