@@ -22,6 +22,14 @@ controller_manager:
     panda_hand_controller:
       type: parallel_gripper_action_controller/GripperActionController
 
+# The broadcaster publishes on /joint_state_broadcaster/joint_states (and
+# /joint_state_broadcaster/dynamic_joint_states), stamped on Gazebo's clock; arm_clock
+# republishes the joint states on /joint_states stamped with the wall clock (see
+# launch/arm.launch.py).
+joint_state_broadcaster:
+  ros__parameters:
+    use_local_topics: true
+
 panda_arm_controller:
   ros__parameters:
     joints:
