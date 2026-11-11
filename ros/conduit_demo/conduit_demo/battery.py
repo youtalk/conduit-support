@@ -35,6 +35,7 @@ def main():
 
     from sensor_msgs.msg import BatteryState
     import rclpy
+    from rclpy.clock import Clock, ClockType
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
 
@@ -43,15 +44,17 @@ def main():
         def __init__(self):
             super().__init__('battery')
             self._period_s = self.declare_parameter('period_s', 1800.0).value
+            # Wall time whatever use_sim_time says: stamps and the timer ignore /clock.
+            self._clock = Clock(clock_type=ClockType.SYSTEM_TIME)
             self._start = time.monotonic()
             self._pub = self.create_publisher(BatteryState, '/battery_state', 10)
-            self.create_timer(1.0, self._tick)
+            self.create_timer(1.0, self._tick, clock=self._clock)
 
         def _tick(self):
             t = time.monotonic() - self._start
             fraction = battery_fraction(t, self._period_s)
             msg = BatteryState()
-            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.header.stamp = self._clock.now().to_msg()
             msg.percentage = float(fraction)
             msg.voltage = float(voltage(fraction))
             msg.present = True

@@ -9,6 +9,7 @@ import math
 
 from nav_msgs.msg import OccupancyGrid
 import rclpy
+from rclpy.clock import Clock, ClockType
 from rclpy.duration import Duration
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
@@ -29,6 +30,8 @@ class MapCamera(Node):
         self._height = int(self.declare_parameter('height', 240).value)
         self._fov_deg = self.declare_parameter('fov_deg', 70.0).value
         self._grid = None
+        # Wall time whatever use_sim_time says: stamps and the timer ignore /clock.
+        self._clock = Clock(clock_type=ClockType.SYSTEM_TIME)
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
         map_qos = QoSProfile(
@@ -36,7 +39,7 @@ class MapCamera(Node):
             durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(OccupancyGrid, '/map', self._on_map, map_qos)
         self._pub = self.create_publisher(Image, '/camera/image_raw', 1)
-        self.create_timer(1.0 / rate_hz, self._tick)
+        self.create_timer(1.0 / rate_hz, self._tick, clock=self._clock)
 
     def _on_map(self, msg):
         info = msg.info
@@ -60,7 +63,7 @@ class MapCamera(Node):
             return
         image = render(self._grid, pose, self._width, self._height, self._fov_deg)
         msg = Image()
-        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.stamp = self._clock.now().to_msg()
         msg.header.frame_id = 'camera_link'
         msg.height, msg.width = image.shape[:2]
         msg.encoding = 'rgb8'
