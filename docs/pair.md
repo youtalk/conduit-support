@@ -103,4 +103,6 @@ If nothing happens after you scan the QR code, the script prints what to check. 
 - With Fast DDS, switch to CycloneDDS: `export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`.
 - If the iPhone's address changed, run the script again.
 
+No robot to try Robots with? See [Try Robots with the demo](robots-demo.md).
+
 See also [Zenoh or DDS](transports.md) and [Troubleshooting](troubleshooting.md).
