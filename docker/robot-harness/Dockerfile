@@ -1,5 +1,5 @@
 # Conduit robot harness (ROS 2 Jazzy): a fake mobile robot behind conduit_teleop,
-# MoveIt Servo Panda on mock hardware with a gripper action server, and
+# MoveIt Servo Panda on mock hardware with its hand controller, and
 # conduit_gate_probe. Built from the repository root:
 #   docker build -f docker/robot-harness/Dockerfile -t conduit-robot-harness:jazzy .
 # Linux hosts only (host networking for DDS).

@@ -1,7 +1,10 @@
-"""MoveIt Servo Panda on mock hardware with Conduit's Servo overlay and a gripper server.
+"""MoveIt Servo Panda on mock hardware with Conduit's Servo overlay and the Panda hand.
 
 Follows moveit_servo's Jazzy demo_ros_api.launch.py (ros2_control mock hardware,
 panda_arm_controller, standalone servo_node), without RViz unless use_rviz:=true.
+The hand is the Panda's own panda_hand_controller (a GripperActionController on
+panda_finger_joint1, from moveit_resources_panda_moveit_config), so its
+GripperCommand action moves the finger joint in /joint_states, as on a real Panda.
 The overlay (conduit_teleop's config/servo_overlay.yaml, the same file users
 load on real robots) is the last parameter source, so its values win.
 """
@@ -54,6 +57,11 @@ def generate_launch_description():
             arguments=['panda_arm_controller', '-c', '/controller_manager'],
         ),
         Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['panda_hand_controller', '-c', '/controller_manager'],
+        ),
+        Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
             parameters=[moveit_config.robot_description],
@@ -79,7 +87,6 @@ def generate_launch_description():
                 overlay,
             ],
         ),
-        Node(package='conduit_robot_harness', executable='conduit_gripper_server', output='screen'),
         Node(
             package='rviz2',
             executable='rviz2',
