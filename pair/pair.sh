@@ -1364,6 +1364,29 @@ demo_remove() {
   bounded 20 docker rm "$PAIR_DEMO_CONTAINER" > /dev/null 2>&1 || true
 }
 
+# demo_force_remove: remove the demo container this run started, running or not.
+demo_force_remove() {
+  bounded 30 docker rm -f "$PAIR_DEMO_CONTAINER" > /dev/null 2>&1 || true
+}
+
+# demo_run ARGS...: `docker run ARGS...` for the demo container, stopped after
+# PAIR_DOCKER_RUN_SECONDS (60). On failure, sets PAIR_DEMO_RUN_ERROR and
+# force-removes what the run may have left (a created container, or one the
+# daemon started after the time ran out), unless the name belongs to another
+# container.
+demo_run() {
+  local limit="${PAIR_DOCKER_RUN_SECONDS:-60}" err status=0
+  err="$(bounded "$limit" docker run "$@" 2>&1 > /dev/null)" || status=$?
+  ((status)) || return 0
+  if ((status == 124)); then
+    PAIR_DEMO_RUN_ERROR="docker run did not finish within $limit seconds"
+  else
+    PAIR_DEMO_RUN_ERROR="${err:-docker run failed}"
+  fi
+  [[ "$err" == *"is already in use"* ]] || demo_force_remove
+  return 1
+}
+
 # demo_pull IMAGE: 0 once IMAGE is on this PC, downloading it the first time.
 demo_pull() {
   if bounded 20 docker image inspect "$1" > /dev/null 2>&1; then
@@ -1396,7 +1419,8 @@ demo_wait_router() {
     first=0
     sleep 1
   done
-  say "The demo's Zenoh router did not start within $limit seconds (docker logs $PAIR_DEMO_CONTAINER)."
+  say "The demo's Zenoh router did not start within $limit seconds. The end of its log:"
+  tail -n 5 <<< "$log" | sed 's/^/  /'
   return 1
 }
 
@@ -1441,7 +1465,7 @@ show_pairing() {
 # here or already running (no ROS 2 on this PC). Exits.
 demo_path() {
   local link_style="$1" no_qr="$2" first_checkin="$3" image state running="" cimage="" net=""
-  local router="" checkin="" token link err
+  local router="" checkin="" token link started=0
   PAIR_DEMO_PATH=1
   PAIR_RMW=zenoh
   PAIR_DOMAIN=0
@@ -1472,13 +1496,20 @@ demo_path() {
     checkin="$(free_port "$first_checkin" $((first_checkin + 10)) "$router")" ||
       die 1 "Ports $first_checkin-$((first_checkin + 10)) are all in use on this PC. Free one and run this script again."
     say "Starting the demo robots (container $PAIR_DEMO_CONTAINER)..."
-    if ! err="$(bounded 60 docker run -d --name "$PAIR_DEMO_CONTAINER" -p "$router:7447" -p "$checkin:7449" \
-      "$image" standalone 2>&1 > /dev/null)"; then
-      demo_remove
-      die 1 "The demo container did not start: $err"
-    fi
+    demo_run -d --name "$PAIR_DEMO_CONTAINER" -p "$router:7447" -p "$checkin:7449" "$image" standalone ||
+      die 1 "The demo container did not start: $PAIR_DEMO_RUN_ERROR"
+    started=1
   fi
-  demo_wait_router || exit 1
+  if ! demo_wait_router; then
+    # A container this run started goes; a reused one is the user's to stop.
+    if ((started)); then
+      demo_force_remove
+      say "Removed the demo container this run started."
+    elif [[ "$(demo_container_state)" == true* ]]; then
+      say "The demo container keeps running. To stop it: $PAIR_DEMO_STOP"
+    fi
+    exit 1
+  fi
   # The iPhone reaches the router at this PC's address, so this PC must too.
   if ! bounded 3 tcp_open "$PAIR_HOST" "$router"; then
     say "This PC could not connect to the demo at $PAIR_HOST:$router, so the iPhone cannot either:"
@@ -1501,9 +1532,10 @@ demo_path() {
   exit 0
 }
 
-# demo_wait_join: wait for the joined demo's name check. A conflict (exit 3)
-# or a failure to join (exit 1) removes the container and says why; sets
-# PAIR_DEMO_ADDED=1 once the check passes.
+# demo_wait_join: wait for the joined demo's name check. A conflict (exit 3),
+# a failure to join (exit 1) or no result within PAIR_DEMO_START_SECONDS (90)
+# removes the container and says why; sets PAIR_DEMO_ADDED=1 once the check
+# passes.
 demo_wait_join() {
   local limit="${PAIR_DEMO_START_SECONDS:-90}" deadline first=1 log state line
   deadline=$((SECONDS + limit))
@@ -1537,16 +1569,18 @@ demo_wait_join() {
     first=0
     sleep 1
   done
-  say "The demo's name check did not finish within $limit seconds; it goes on in the background."
-  say "  Log:  docker logs $PAIR_DEMO_CONTAINER"
-  say "  Stop: $PAIR_DEMO_STOP"
+  say "The demo's name check did not finish within $limit seconds. The end of its log:"
+  tail -n 5 <<< "$log" | sed 's/^/  /'
+  # demo_join started this container: it goes.
+  demo_force_remove
+  say "The demo robots were not added (their container was removed)."
 }
 
 # demo_join: --demo on a PC with ROS 2. Starts the demo robots on this PC's
 # graph: host network, this PC's RMW and domain, and on Zenoh a client of this
 # PC's router. Never stops the pairing: a problem skips the demo and says why.
 demo_join() {
-  local distro image state running="" cimage="" net="" rmw err args entry rest
+  local distro image state running="" cimage="" net="" rmw args entry rest
   PAIR_DEMO_ADDED=0
   distro="$(demo_distro "$PAIR_DISTRO")"
   if [[ -z "$distro" ]]; then
@@ -1586,7 +1620,7 @@ demo_join() {
     say "Could not download the demo image $image. The demo robots were not added."
     return 0
   fi
-  args=(run -d --name "$PAIR_DEMO_CONTAINER" --network host -e "RMW_IMPLEMENTATION=$rmw" -e "ROS_DOMAIN_ID=$PAIR_DOMAIN")
+  args=(-d --name "$PAIR_DEMO_CONTAINER" --network host -e "RMW_IMPLEMENTATION=$rmw" -e "ROS_DOMAIN_ID=$PAIR_DOMAIN")
   if [[ "$PAIR_RMW" == zenoh ]]; then
     args+=(-e 'ZENOH_CONFIG_OVERRIDE=mode="client";connect/endpoints=["tcp/127.0.0.1:7447"]')
   elif [[ "$PAIR_RMW" == cyclonedds && -n "${CYCLONEDDS_URI:-}" ]]; then
@@ -1603,9 +1637,8 @@ demo_join() {
   fi
   args+=("$image" join)
   say "Starting the demo robots on this PC's ROS 2 graph (container $PAIR_DEMO_CONTAINER)..."
-  if ! err="$(bounded 60 docker "${args[@]}" 2>&1 > /dev/null)"; then
-    demo_remove
-    say "The demo container did not start: $err"
+  if ! demo_run "${args[@]}"; then
+    say "The demo container did not start: $PAIR_DEMO_RUN_ERROR"
     say "The demo robots were not added."
     return 0
   fi

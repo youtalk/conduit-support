@@ -113,6 +113,10 @@ STUB
 #              status with join_log as the log
 #   run_error  when present, `docker run` fails with this message
 #   crash_log  when present, a standalone container exits at once with this log
+#   never_ready  when present, the container runs but never logs its router
+#              (standalone) or its name check's result (join)
+#   run_hang   when present, `docker run` creates the running container and
+#              then never returns
 #   calls      every call, one line each
 stub_docker() {
   export DOCKER_STUB="$BATS_TEST_TMPDIR/docker"
@@ -156,7 +160,13 @@ case "$1" in
     ;;
   port) awk -v p="${3%/tcp}" '$1 == p { print $2 }' "$d/ports" ;;
   logs) cat "$d/logs" 2> /dev/null ;;
-  rm) rm -f "$d/container" "$d/status" "$d/ports" "$d/logs" "$d/env" ;;
+  rm)
+    if [ "$2" != -f ] && grep -q '^true ' "$d/container" 2> /dev/null; then
+      echo "Error response from daemon: cannot remove container: container is running: stop the container before removing or force remove" >&2
+      exit 1
+    fi
+    rm -f "$d/container" "$d/status" "$d/ports" "$d/logs" "$d/env"
+    ;;
   exec)
     shift 3
     exec "$@"
@@ -181,7 +191,12 @@ case "$1" in
     fi
     echo "true $1 $net" > "$d/container"
     echo "running 0" > "$d/status"
-    if [ "$2" != join ] && [ -e "$d/crash_log" ]; then
+    if [ -e "$d/run_hang" ]; then
+      echo "starting" > "$d/logs"
+      exec sleep 30
+    elif [ -e "$d/never_ready" ]; then
+      echo "starting" > "$d/logs"
+    elif [ "$2" != join ] && [ -e "$d/crash_log" ]; then
       echo "false $1 $net" > "$d/container"
       echo "exited 1" > "$d/status"
       cat "$d/crash_log" > "$d/logs"

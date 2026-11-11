@@ -218,6 +218,32 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   [ "$status" -eq 1 ]
   has "did not start within 2 seconds"
   lacks "conduit.direct/pair"
+  # Not this run's container: it stays, and the user is told how to stop it.
+  not_called '^rm'
+  has "docker stop -t 30 conduit-demo"
+}
+
+@test "a container this run started whose router never starts is removed" {
+  no_ros
+  touch "$DOCKER_STUB/never_ready"
+  PAIR_DEMO_START_SECONDS=2 run main --demo --no-qr
+  [ "$status" -eq 1 ]
+  has "did not start within 2 seconds"
+  has "Removed the demo container"
+  called "rm -f conduit-demo"
+  [ ! -e "$DOCKER_STUB/container" ]
+  lacks "conduit.direct/pair"
+}
+
+@test "a docker run that does not finish is force-removed" {
+  no_ros
+  touch "$DOCKER_STUB/run_hang"
+  PAIR_DOCKER_RUN_SECONDS=2 run main --demo --no-qr
+  [ "$status" -eq 1 ]
+  has "did not finish within 2 seconds"
+  called "rm -f conduit-demo"
+  [ ! -e "$DOCKER_STUB/container" ]
+  lacks "conduit.direct/pair"
 }
 
 @test "CONDUIT_DEMO_IMAGE overrides the image, which is not pulled when present" {
@@ -361,6 +387,29 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   called "rm conduit-demo"
   has "Connected to iPhone."
   lacks "Add robot"
+}
+
+@test "a joined demo whose name check never ends is removed and pairing continues" {
+  touch "$DOCKER_STUB/never_ready"
+  PAIR_DEMO_START_SECONDS=2 run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  has "did not finish within 2 seconds"
+  has "The demo robots were not added"
+  called "rm -f conduit-demo"
+  [ ! -e "$DOCKER_STUB/container" ]
+  lacks "Add robot"
+  has "Connected to iPhone."
+}
+
+@test "a join docker run that does not finish is force-removed and pairing continues" {
+  touch "$DOCKER_STUB/run_hang"
+  PAIR_DOCKER_RUN_SECONDS=2 run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  has "did not finish within 2 seconds"
+  has "The demo robots were not added"
+  called "rm -f conduit-demo"
+  [ ! -e "$DOCKER_STUB/container" ]
+  has "Connected to iPhone."
 }
 
 @test "a demo that cannot join the graph is skipped and pairing continues" {
