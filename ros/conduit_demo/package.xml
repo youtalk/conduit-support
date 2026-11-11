@@ -3,14 +3,25 @@
 <package format="3">
   <name>conduit_demo</name>
   <version>0.1.0</version>
-  <description>Nodes for the Conduit Robots demo: a first-person map camera drawn from the occupancy map and the robot pose, and a simulated battery.</description>
+  <description>The Conduit Robots demo: a TurtleBot3 on Nav2's loopback simulator with a first-person map camera drawn from the occupancy map and the robot pose, a simulated battery and Joy teleoperation.</description>
   <maintainer email="yutaka.kondo@youtalk.jp">Yutaka Kondo</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>conduit_teleop</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>nav2_common</exec_depend>
+  <exec_depend>nav2_loopback_sim</exec_depend>
+  <exec_depend>nav2_minimal_tb3_sim</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>teleop_twist_joy</exec_depend>
   <exec_depend>tf2_ros_py</exec_depend>
 
   <test_depend>python3-pytest</test_depend>

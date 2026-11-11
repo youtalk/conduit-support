@@ -1,3 +1,5 @@
+from glob import glob
+
 from setuptools import find_packages, setup
 
 package_name = 'conduit_demo'
@@ -9,18 +11,21 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
+        ('share/' + package_name + '/scripts', glob('scripts/*.sh')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Yutaka Kondo',
     maintainer_email='yutaka.kondo@youtalk.jp',
-    description='Map camera and battery nodes for the Conduit Robots demo',
+    description='The Conduit Robots demo: TurtleBot3 launch, map camera, battery and initial pose',
     license='Apache-2.0',
     extras_require={'test': ['pytest']},
     entry_points={
         'console_scripts': [
             'map_camera = conduit_demo.map_camera:main',
             'battery = conduit_demo.battery:main',
+            'initial_pose = conduit_demo.initial_pose:main',
         ],
     },
 )
