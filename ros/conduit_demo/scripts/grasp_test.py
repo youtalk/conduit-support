@@ -119,7 +119,7 @@ def wait_future(future, timeout_s):
     return future.done()
 
 
-class RobotClock:
+class JointStatesClock:
     """The robot's clock as Conduit estimates it: wall time plus the largest recent offset of
     /joint_states header stamps from wall time (the smallest transport delay)."""
 
@@ -206,7 +206,7 @@ class GraspTest:
         self.args = args
         self.verbose = args.verbose
         self.node = rclpy.create_node('conduit_demo_grasp_test')
-        self.clock = RobotClock()
+        self.clock = JointStatesClock()
         self.joints = {}
         self.node.create_subscription(
             JointState, '/joint_states', self._on_joints, qos_profile_sensor_data)

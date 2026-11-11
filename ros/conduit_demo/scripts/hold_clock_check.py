@@ -6,14 +6,14 @@ the twists it sends to MoveIt Servo on that clock; Servo ages each twist as its 
 minus the twist's header.stamp and drops it after incoming_command_timeout (0.5 s in
 conduit_teleop's servo_overlay.yaml). This script copies the app's rules:
 
-- ClockOffsetEstimator: a /joint_states message stamped s, received at uptime u, gives the
+- The app's clock estimate: a /joint_states message stamped s, received at uptime u, gives the
   sample s - u (the robot epoch, early by that message's latency); the estimate is the
   largest sample of the last 10 s, trusted after 10 samples; a sample more than 0.1 s below
   a stored one drops the stored ones above it (a step back); 3 stamps in a row more than
   86 400 s from the wall clock make the clock "not wall time", which refuses HOLD.
-- ArmTeleopController polls the newest /joint_states message at 10 Hz and adds one sample
-  per new message.
-- ClutchController stamps each twist robot epoch + uptime, and a clock that stops being an
+- The app polls the newest /joint_states message at 10 Hz and adds one sample per new
+  message.
+- The app's HOLD stamps each twist robot epoch + uptime, and a clock that stops being an
   epoch while HOLD is held stops HOLD.
 
 It exits 0 when
@@ -27,8 +27,8 @@ It exits 0 when
    later than 0.6 s after the last twist, and the arm comes to rest within the 2 s it is
    watched (every arm joint within 0.002 rad of where it ends up, for at least the last
    0.5 s). No zero twist is sent at the end, as when the phone's link drops: Servo's command
-   timeout (0.5 s) stops the arm, and 0.6 s is the app's bound for that (0.5 s plus
-   ClockOffsetEstimator.stepTolerance). The 0.6 s is Servo's: after its last command the
+   timeout (0.5 s) stops the arm, and 0.6 s is the app's bound for that (0.5 s plus the
+   clock estimate's 0.1 s step tolerance). The 0.6 s is Servo's: after its last command the
    controller still finishes that command's trajectory (it reaches max_expected_latency,
    0.1 s, ahead) and the joints settle, about 0.8 s in all at real time; that time is
    printed too.
@@ -64,7 +64,7 @@ TWIST_TOPIC = '/servo_node/delta_twist_cmds'
 SERVO_COMMAND_TYPE = '/servo_node/switch_command_type'
 SERVO_STATUS = '/servo_node/status'
 TWIST_RATE = 60.0       # Hz, Device Pose's frame rate
-POLL_PERIOD = 0.1       # s, ArmTeleopController's heartbeat poll
+POLL_PERIOD = 0.1       # s, the app's /joint_states poll
 MOVE_THRESHOLD = 0.01   # rad
 MOVE_WITHIN = 1.0       # s after the first twist
 STOP_WITHIN = 0.6       # s from the last twist to Servo's last command
@@ -73,7 +73,7 @@ REST_WINDOW = 0.5       # s at the end of the observation the arm must be at res
 OBSERVE_AFTER = 2.0     # s of joint states recorded after the last twist
 COMMAND_TOPIC = '/panda_arm_controller/joint_trajectory'
 
-# The app's QoS for /joint_states (QoSResolver.manualDefault): best effort, volatile, keep 1.
+# The app's joint-state QoS: best effort, volatile, keep 1.
 JOINT_STATES_QOS = QoSProfile(
     depth=1, history=HistoryPolicy.KEEP_LAST, reliability=ReliabilityPolicy.BEST_EFFORT,
     durability=DurabilityPolicy.VOLATILE)
@@ -83,8 +83,8 @@ class HoldStopped(Exception):
     """The robot clock stopped being usable while the twists streamed: HOLD let go."""
 
 
-class ClockOffsetEstimator:
-    """Conduit's ClockOffsetEstimator (Sources/Robots/Control/Arm), line for line."""
+class AppClockEstimate:
+    """The app's estimate of the robot clock, with the app's rules and constants."""
 
     WINDOW = 10.0
     MINIMUM_SAMPLES = 10
@@ -125,7 +125,7 @@ class ClockOffsetEstimator:
             self.trusted = True
 
     def clock(self):
-        """('notWallTime' | 'waiting' | 'epoch', epoch or None), as RobotClock."""
+        """('notWallTime' | 'waiting' | 'epoch', epoch or None): the app's clock states."""
         if self.not_wall_time:
             return 'notWallTime', None
         if not self.trusted or not self.samples:
@@ -141,9 +141,9 @@ class HoldClockCheck:
         # (time.monotonic here) and its wall clock (time.time).
         self.node = rclpy.create_node('conduit_demo_hold_clock_check')
         self.lock = threading.Lock()
-        self.estimator = ClockOffsetEstimator()
+        self.estimator = AppClockEstimate()
         self.clock = ('waiting', None)
-        self.epoch = None             # ClutchController.robotEpoch: the last epoch, kept
+        self.epoch = None             # the app's HOLD epoch: the last epoch, kept
         self.latest = None            # (stamp, receipt uptime, receipt wall) of the newest
         self.polled_receipt = None
         self.samples = []             # every polled sample: (stamp, uptime, wall)
@@ -192,7 +192,7 @@ class HoldClockCheck:
             self.status.setdefault(message.code, message.message)
 
     def _poll(self):
-        """ArmTeleopController.poll: one estimator sample per new /joint_states message."""
+        """The app's poll: one estimator sample per new /joint_states message."""
         with self.lock:
             latest = self.latest
             if latest is None or latest[1] == self.polled_receipt:
@@ -208,7 +208,7 @@ class HoldClockCheck:
                 self.epoch = clock[1]
 
     def robot_stamp(self, uptime):
-        """ClutchController.robotStamp(forUptime:): epoch + uptime; None before an epoch."""
+        """The app's HOLD stamp for an uptime: epoch + uptime; None before an epoch."""
         with self.lock:
             return None if self.epoch is None else self.epoch + uptime
 
@@ -263,7 +263,7 @@ class HoldClockCheck:
         off_wall = max(abs(stamp - wall) for stamp, _, wall in samples)
         print(f'clock: {len(samples)} samples polled in {seconds:.0f} s; largest '
               f'|stamp - wall clock| {off_wall:.3f} s (limit 86400 s)')
-        if off_wall > ClockOffsetEstimator.MAX_WALL_CLOCK_DIFFERENCE:
+        if off_wall > AppClockEstimate.MAX_WALL_CLOCK_DIFFERENCE:
             failures.append(f'stamps {off_wall:.0f} s from the wall clock: HOLD refused '
                             '("more than a day apart (simulation time?)")')
         # The robot clock's rate against the wall clock: a least-squares slope of the
@@ -284,7 +284,7 @@ class HoldClockCheck:
             print(f'clock: estimate - newest stamp at its receipt: '
                   f'{(epoch + uptime - stamp) * 1000:+.1f} ms')
         print(f'clock: state {clock[0]} at the end ({kept} samples kept, '
-              f'{ClockOffsetEstimator.MINIMUM_SAMPLES} needed once); changes in the window: '
+              f'{AppClockEstimate.MINIMUM_SAMPLES} needed once); changes in the window: '
               f'{[state for _, state in changes] or "none"}')
         if clock[0] != 'epoch':
             failures.append(f'robot clock {clock[0]}: HOLD refused')
