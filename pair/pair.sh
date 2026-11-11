@@ -1655,6 +1655,10 @@ demo_join() {
   args=(-d --name "$PAIR_DEMO_CONTAINER" --network host -e "RMW_IMPLEMENTATION=$rmw" -e "ROS_DOMAIN_ID=$PAIR_DOMAIN")
   if [[ "$PAIR_RMW" == zenoh ]]; then
     args+=(-e 'ZENOH_CONFIG_OVERRIDE=mode="client";connect/endpoints=["tcp/127.0.0.1:7447"]')
+  elif [[ "$PAIR_RMW" == fastdds ]]; then
+    # The container shares this PC's network but not its shared memory, so Fast
+    # DDS's shared-memory transport would reach no participant here: UDP only.
+    args+=(-e FASTDDS_BUILTIN_TRANSPORTS=UDPv4)
   elif [[ "$PAIR_RMW" == cyclonedds && -n "${CYCLONEDDS_URI:-}" ]]; then
     args+=(-e "CYCLONEDDS_URI=$CYCLONEDDS_URI")
     # The files it names, at the same paths in the container.

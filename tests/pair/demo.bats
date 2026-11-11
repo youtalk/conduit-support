@@ -368,11 +368,31 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   called "run -d --name conduit-demo --network host -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp -e ROS_DOMAIN_ID=123 -e CYCLONEDDS_URI=file://$BATS_TEST_TMPDIR/cyclone.xml -v $BATS_TEST_TMPDIR/cyclone.xml:$BATS_TEST_TMPDIR/cyclone.xml:ro $JAZZY_IMAGE join"
 }
 
-@test "the native path runs Fast DDS as rmw_fastrtps_cpp" {
+@test "the native path runs Fast DDS as rmw_fastrtps_cpp, over UDP only" {
   export RMW_IMPLEMENTATION=rmw_fastrtps_dynamic_cpp
   run main --demo --no-qr
   [ "$status" -eq 0 ]
-  called "run -d --name conduit-demo --network host -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp -e ROS_DOMAIN_ID=123 $JAZZY_IMAGE join"
+  called "run -d --name conduit-demo --network host -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp -e ROS_DOMAIN_ID=123 -e FASTDDS_BUILTIN_TRANSPORTS=UDPv4 $JAZZY_IMAGE join"
+}
+
+@test "the native path with no RMW set runs the demo on Fast DDS over UDP only" {
+  unset RMW_IMPLEMENTATION
+  run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  called "run -d --name conduit-demo --network host -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp -e ROS_DOMAIN_ID=123 -e FASTDDS_BUILTIN_TRANSPORTS=UDPv4 $JAZZY_IMAGE join"
+}
+
+@test "only Fast DDS limits the demo's transports" {
+  run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  grep -q "^run .* join\$" "$DOCKER_STUB/calls"
+  not_called FASTDDS_BUILTIN_TRANSPORTS
+  rm -f "$DOCKER_STUB/calls" "$DOCKER_STUB/container"
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  run main --demo --no-qr
+  [ "$status" -eq 0 ]
+  grep -q "^run .* join\$" "$DOCKER_STUB/calls"
+  not_called FASTDDS_BUILTIN_TRANSPORTS
 }
 
 @test "a conflict logged as the container exits is listed in full" {
