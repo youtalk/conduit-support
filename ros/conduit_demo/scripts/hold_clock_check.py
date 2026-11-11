@@ -433,8 +433,11 @@ def main():
         print(f'HOLD CLOCK FAIL: {error}', flush=True)
         return 2
     finally:
-        check.close()
-        rclpy.try_shutdown()
+        try:
+            check.close()
+            rclpy.try_shutdown()
+        except Exception as error:  # noqa: BLE001 - a failed shutdown leaves the result as is
+            print(f'shutdown: {error}')
     if failures:
         print('HOLD CLOCK FAIL: ' + '; '.join(failures), flush=True)
         return 1

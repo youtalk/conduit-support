@@ -76,11 +76,19 @@ in_arm() {
 
 # read returns 1 at the end of the here-document.
 read -r -d '' PROBE_PY <<'PY' || true
-"""Probes for measure_arm.sh: Gazebo's /stats and the wrist camera."""
+"""Probes for measure_arm.sh: Gazebo's /stats and the wrist camera.
+
+Each prints one `RESULT ok <text>` or `RESULT fail <text>` line before it shuts down, so a
+slow or failing shutdown (or a log line on stdout) does not lose the result."""
 
 import sys
 import threading
 import time
+
+
+def result(ok, text):
+    print(f'RESULT {"ok" if ok else "fail"} {text}', flush=True)
+    return 0 if ok else 1
 
 
 def stats(seconds):
@@ -97,8 +105,7 @@ def stats(seconds):
                             message.real_time_factor))
     node = Node()
     if not node.subscribe(WorldStatistics, '/stats', on_stats):
-        print('no /stats subscription')
-        return 1
+        return result(False, 'no /stats subscription')
     deadline = time.monotonic() + 10.0
     while time.monotonic() < deadline and not samples:
         time.sleep(0.05)
@@ -109,15 +116,14 @@ def stats(seconds):
     with lock:
         window = list(samples)
     if len(window) < 2:
-        print(f'{len(window)} /stats messages in {seconds:.0f} s')
-        return 1
+        return result(False, f'{len(window)} /stats messages in {seconds:.0f} s')
     dsim = window[-1][0] - window[0][0]
     dreal = window[-1][1] - window[0][1]
     # Each message's real_time_factor covers one step and jitters; its median is shown.
     factors = sorted(f for _, _, f in window)
-    print(f'{dsim / dreal:.3f} (sim {dsim:.1f} s / real {dreal:.1f} s; /stats '
-          f'real_time_factor median {factors[len(factors) // 2]:.3f}, {len(window)} messages)')
-    return 0
+    return result(True, f'{dsim / dreal:.3f} (sim {dsim:.1f} s / real {dreal:.1f} s; /stats '
+                        f'real_time_factor median {factors[len(factors) // 2]:.3f}, '
+                        f'{len(window)} messages)')
 
 
 def snapshot():
@@ -137,10 +143,8 @@ def snapshot():
         time.sleep(0.02)
     node.unsubscribe('/stats')
     if not got:
-        print('no /stats message within 10 s')
-        return 1
-    print(f'{got[0][0]:.3f} {got[0][1]:.3f}')
-    return 0
+        return result(False, 'no /stats message within 10 s')
+    return result(True, f'{got[0][0]:.3f} {got[0][1]:.3f}')
 
 
 def camera(seconds):
@@ -162,14 +166,17 @@ def camera(seconds):
     end = time.monotonic() + seconds
     while time.monotonic() < end:
         rclpy.spin_once(node, timeout_sec=0.05)
-    node.destroy_node()
-    rclpy.try_shutdown()
     if len(arrivals) < 2:
-        print(f'{len(arrivals)} images in {seconds:.0f} s')
-        return 1
-    hz = (len(arrivals) - 1) / (arrivals[-1] - arrivals[0])
-    print(f'{hz:.2f} Hz, {", ".join(sorted(sizes))}')
-    return 0
+        status = result(False, f'{len(arrivals)} images in {seconds:.0f} s')
+    else:
+        hz = (len(arrivals) - 1) / (arrivals[-1] - arrivals[0])
+        status = result(True, f'{hz:.2f} Hz, {", ".join(sorted(sizes))}')
+    try:
+        node.destroy_node()
+        rclpy.try_shutdown()
+    except Exception:  # noqa: BLE001 - the result is out already
+        pass
+    return status
 
 
 name = sys.argv[1]
@@ -189,10 +196,19 @@ indent() {
   done
 }
 
+# Runs a probe bounded by <seconds> and prints its result text; returns 1 when it failed
+# or printed no result (then its last lines are printed instead).
 probe() {
   local seconds="$1"
   shift
-  printf '%s\n' "$PROBE_PY" | in_arm "timeout -s INT -k 2 ${seconds} python3 - $*"
+  local out result
+  out=$(printf '%s\n' "$PROBE_PY" | in_arm "timeout -s INT -k 2 ${seconds} python3 - $*" 2>&1)
+  result=$(sed -n 's/^RESULT //p' <<<"$out" | tail -n 1)
+  case "$result" in
+    "ok "*) printf '%s\n' "${result#ok }" ;;
+    "fail "*) printf '%s\n' "${result#fail }"; return 1 ;;
+    *) printf '%s\n' "$out" | tail -n 3; return 1 ;;
+  esac
 }
 
 echo "measure: image ${IMAGE}, docker options [${DOCKER_OPTS[*]+${DOCKER_OPTS[*]}}], launch arguments [${LAUNCH_ARGS[*]+${LAUNCH_ARGS[*]}}], domain ${DOMAIN}${GZ_RTF:+, GZ_RTF ${GZ_RTF}}"
