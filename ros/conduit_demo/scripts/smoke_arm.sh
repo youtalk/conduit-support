@@ -27,6 +27,10 @@
 #   - no ROS 2 daemon was started.
 # Prints `SMOKE ARM PASS` or `SMOKE ARM FAIL: <check>`; exit 0 on pass. Both containers
 # are removed on exit. SMOKE_STARTUP_S (default 300) bounds the wait for the graph.
+#
+# SMOKE_ROBOT_CONTAINER=<name> checks a demo container that is already running instead
+# (mode standalone, join, all or arm), through the Zenoh router on <host-port>: its own,
+# published there, or the one it joined. That container is left running.
 set -u
 
 if [ $# -ne 3 ]; then
@@ -39,9 +43,17 @@ DOMAIN="$3"
 STARTUP_S="${SMOKE_STARTUP_S:-300}"
 ROBOT="conduit-demo-smoke-arm-${PORT}"
 CLIENT="conduit-demo-smoke-arm-client-${PORT}"
+EXISTING="${SMOKE_ROBOT_CONTAINER:-}"
+if [ -n "$EXISTING" ]; then
+  ROBOT="$EXISTING"
+fi
 
 cleanup() {
-  docker rm -f "$ROBOT" "$CLIENT" >/dev/null 2>&1 || true
+  if [ -n "$EXISTING" ]; then
+    docker rm -f "$CLIENT" >/dev/null 2>&1 || true
+  else
+    docker rm -f "$ROBOT" "$CLIENT" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
@@ -361,10 +373,16 @@ def main():
 main()
 PY
 
-echo "Starting ${IMAGE} (mode arm, router on host port ${PORT}, domain ${DOMAIN})"
 cleanup
-docker run -d --name "$ROBOT" -p "${PORT}:7447" -e ROS_DOMAIN_ID="$DOMAIN" \
-  "$IMAGE" arm >/dev/null || fail "docker run ${IMAGE} arm"
+if [ -n "$EXISTING" ]; then
+  robot_running || fail "no running container ${ROBOT}"
+  echo "Checking the running container ${ROBOT} through the router on host port ${PORT}," \
+    "domain ${DOMAIN}"
+else
+  echo "Starting ${IMAGE} (mode arm, router on host port ${PORT}, domain ${DOMAIN})"
+  docker run -d --name "$ROBOT" -p "${PORT}:7447" -e ROS_DOMAIN_ID="$DOMAIN" \
+    "$IMAGE" arm >/dev/null || fail "docker run ${IMAGE} arm"
+fi
 docker run -d --name "$CLIENT" --network host --entrypoint sleep \
   -e RMW_IMPLEMENTATION=rmw_zenoh_cpp -e ROS_DOMAIN_ID="$DOMAIN" \
   -e ZENOH_CONFIG_OVERRIDE="mode=\"client\";connect/endpoints=[\"tcp/127.0.0.1:${PORT}\"]" \
