@@ -707,8 +707,9 @@ show_link() {
   say "$link"
 }
 
-# Embedded check-in listener. Python 3 standard library only. It runs as a
-# coprocess (see start_checkin), so the code travels as an argument, not stdin.
+# Embedded check-in listener. Python 3 standard library only. Its stdin tells
+# it when the script is gone (see start_checkin), so the code travels as an
+# argument, not stdin.
 CHECKIN_PY=""
 read -r -d '' CHECKIN_PY << 'PY' || true
 # >>> python:checkin
@@ -770,7 +771,7 @@ def handle(conn, peer_ip):
 
 
 def watch_parent():
-    # The coprocess stdin is a pipe from the script; EOF means the script is gone.
+    # stdin is a pipe from the script; EOF means the script is gone.
     try:
         while sys.stdin.buffer.read(1024):
             pass
@@ -807,16 +808,27 @@ if __name__ == "__main__":
 # <<< python:checkin
 PY
 
-# start_checkin TOKEN PORT: run the listener as the CHECKIN coprocess and set
-# PAIR_CHECKIN_PORT to the port it bound. Its output is read through a copy of
-# the coprocess fd (PAIR_CHECKIN_FD): bash closes CHECKIN[0] once the
-# listener exits, and the copy keeps what it wrote before that readable.
+# start_checkin TOKEN PORT: run the listener in the background and set
+# PAIR_CHECKIN_PORT to the port it bound and CHECKIN_PID to its process. Two
+# FIFOs connect it, because macOS runs this script with bash 3.2 (no coproc):
+# its stdin is fd 8, which only this script holds, so the listener sees EOF
+# and exits when the script ends; its output is read from fd 9
+# (PAIR_CHECKIN_FD), which reaches EOF once the listener exits.
 start_checkin() {
   local token="$1" port="$2" line
   command -v python3 > /dev/null 2>&1 || die 1 "python3 is required to receive the iPhone's check-in."
-  coproc CHECKIN { exec python3 -u -c "$CHECKIN_PY" "$token" "$port"; }
-  exec {PAIR_CHECKIN_FD}<&"${CHECKIN[0]}"
+  if ! PAIR_CHECKIN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/conduit-pair.XXXXXX")" ||
+    ! mkfifo "$PAIR_CHECKIN_DIR/in" "$PAIR_CHECKIN_DIR/out"; then
+    die 1 "Could not create the check-in listener's FIFOs in ${TMPDIR:-/tmp}."
+  fi
+  python3 -u -c "$CHECKIN_PY" "$token" "$port" < "$PAIR_CHECKIN_DIR/in" > "$PAIR_CHECKIN_DIR/out" &
+  CHECKIN_PID=$!
   trap stop_checkin EXIT
+  # Each open waits for the listener to open the other end.
+  exec 8> "$PAIR_CHECKIN_DIR/in" 9< "$PAIR_CHECKIN_DIR/out"
+  rm -rf "$PAIR_CHECKIN_DIR"
+  PAIR_CHECKIN_DIR=""
+  PAIR_CHECKIN_FD=9
   read -r line <&"$PAIR_CHECKIN_FD" || die 1 "The check-in listener did not start."
   [[ "$line" =~ ^PORT=([0-9]+)$ ]] || die 1 "The check-in listener did not report a port."
   PAIR_CHECKIN_PORT="${BASH_REMATCH[1]}"
@@ -827,6 +839,10 @@ stop_checkin() {
     kill "$CHECKIN_PID" 2> /dev/null || true
     wait "$CHECKIN_PID" 2> /dev/null || true
     CHECKIN_PID=""
+  fi
+  if [[ -n "${PAIR_CHECKIN_DIR:-}" ]]; then
+    rm -rf "$PAIR_CHECKIN_DIR"
+    PAIR_CHECKIN_DIR=""
   fi
 }
 
@@ -946,9 +962,12 @@ tailscale_needs_zenoh() {
 }
 
 # export_line NAME VALUE: a single-quoted export line that survives any value.
+# The substitution is an assignment: bash 3.2 keeps the quotes of a quoted
+# replacement inside "${...}".
 export_line() {
-  local q="'" esc="'\\''"
-  printf "export %s='%s'\n" "$1" "${2//"$q"/"$esc"}"
+  local q="'" esc="'\\''" value
+  value=${2//$q/$esc}
+  printf "export %s='%s'\n" "$1" "$value"
 }
 
 # host_peer_config PHONE_IP: write the peer files under ~/.config/conduit and
@@ -1062,16 +1081,17 @@ wait_for_node() {
 
 # wait_for_data TIMEOUT: 0 once Conduit's latched /tf_static arrives.
 wait_for_data() {
-  local status=()
-  {
-    # Unbuffered so the first message reaches grep at once; --foreground keeps
-    # ros2 in this terminal's process group so Ctrl-C ends the wait. -k: under
-    # rmw_zenoh_cpp, ros2 may not exit on SIGTERM, so SIGKILL it 5 s later.
-    PYTHONUNBUFFERED=1 timeout --foreground -k 5 "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
-      /tf_static tf2_msgs/msg/TFMessage 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link'
-    status=("${PIPESTATUS[@]}")
-  } || true
-  return "${status[1]}"
+  local status=0
+  # grep's status decides, whatever ros2 exits with: pipefail is off for the
+  # pipeline. (Not PIPESTATUS: bash 3.2 resets it when a DEBUG trap runs.)
+  set +o pipefail
+  # Unbuffered so the first message reaches grep at once; --foreground keeps
+  # ros2 in this terminal's process group so Ctrl-C ends the wait. -k: under
+  # rmw_zenoh_cpp, ros2 may not exit on SIGTERM, so SIGKILL it 5 s later.
+  PYTHONUNBUFFERED=1 timeout --foreground -k 5 "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
+    /tf_static tf2_msgs/msg/TFMessage 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link' || status=$?
+  set -o pipefail
+  return "$status"
 }
 
 ufw_enabled() {

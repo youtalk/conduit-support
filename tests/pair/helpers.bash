@@ -9,6 +9,11 @@ load_script() {
   source "$SCRIPT"
 }
 
+# Assertions that fail a test from anywhere in its body: bats misses a failing
+# `! cmd` there, and a failing `[[ ]]` too under bash 3.2 (macOS).
+has() { [[ "$output" == *"$1"* ]]; }
+lacks() { [[ "$output" != *"$1"* ]]; }
+
 make_fixture() {
   export CONDUIT_PAIR_ROOT="$BATS_TEST_TMPDIR/root"
   rm -rf "$CONDUIT_PAIR_ROOT"
@@ -26,6 +31,10 @@ make_fixture() {
   mkdir -p "$BATS_TEST_TMPDIR/rosbin"
   printf '#!/usr/bin/env bash\n' > "$BATS_TEST_TMPDIR/rosbin/ros2"
   chmod +x "$BATS_TEST_TMPDIR/rosbin/ros2"
+  # The test machine's own Tailscale must not answer; a test that needs one
+  # stubs it again.
+  printf '#!/usr/bin/env bash\nexit 1\n' > "$BATS_TEST_TMPDIR/rosbin/tailscale"
+  chmod +x "$BATS_TEST_TMPDIR/rosbin/tailscale"
   PATH="$BATS_TEST_TMPDIR/rosbin:$PATH"
   export PATH
 }
