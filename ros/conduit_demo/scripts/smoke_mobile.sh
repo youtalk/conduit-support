@@ -11,6 +11,7 @@
 #     /battery_state, /joy, /turtlebot3/{robot_description,joint_states} and the
 #     /navigate_to_pose action, with their types;
 #   - no /clock, /robot_description or /joint_states;
+#   - /diagnostics carries a status of one of Nav2's lifecycle managers;
 #   - /camera/image_raw at 8 Hz or more;
 #   - a NavigateToPose goal to a free point of the map succeeds within 60 s;
 #   - a /joy message with the deadman held and the stick forward moves /odom;
@@ -178,6 +179,26 @@ def publishers(node, expected, timeout_s=60.0):
     return None
 
 
+def diagnostics(node, prefix, timeout_s=30.0):
+    """A DiagnosticArray on /diagnostics with a status whose name starts with `prefix`
+    (diagnostic_updater names each status `<node>: <task>`)."""
+    from diagnostic_msgs.msg import DiagnosticArray
+    statuses = set()
+    def on_diagnostics(msg):
+        statuses.update(status.name for status in msg.status)
+    node.create_subscription(
+        DiagnosticArray, '/diagnostics', on_diagnostics, qos_profile_sensor_data)
+    def matching():
+        return any(name.startswith(prefix) for name in statuses)
+    if not spin_until(node, matching, timeout_s):
+        return (f'no /diagnostics status named {prefix}... within {timeout_s:.0f} s '
+                f'(statuses seen: {sorted(statuses)})')
+    publishers = sorted(
+        info.node_name for info in node.get_publishers_info_by_topic('/diagnostics'))
+    print(f'/diagnostics from {" ".join(publishers)}: {sorted(statuses)}')
+    return None
+
+
 def drive(node, enable_button, linear_axis, seconds=3.0, min_distance=0.3):
     from nav_msgs.msg import Odometry
     from sensor_msgs.msg import Joy
@@ -225,6 +246,8 @@ def main():
             error = navigate(node, float(args[0]), float(args[1]))
         elif name == 'drive':
             error = drive(node, int(args[0]), int(args[1]))
+        elif name == 'diagnostics':
+            error = diagnostics(node, args[0])
         elif name == 'publishers':
             error = publishers(node, [
                 (topic, names.split(',')) for topic, names in
@@ -271,6 +294,7 @@ EXPECTED_TOPICS=(
   "/joy [sensor_msgs/msg/Joy]"
   "/turtlebot3/robot_description [std_msgs/msg/String]"
   "/turtlebot3/joint_states [sensor_msgs/msg/JointState]"
+  "/diagnostics [diagnostic_msgs/msg/DiagnosticArray]"
 )
 ABSENT_TOPICS=(/clock /robot_description /joint_states)
 EXPECTED_IMAGES="/camera/image_raw "
@@ -317,6 +341,9 @@ images=$(grep -E '\[sensor_msgs/msg/(Image|CompressedImage)\]' <<<"$topics" | cu
 [ "$images" = "$EXPECTED_IMAGES" ] || fail "image topics are '${images}', expected '${EXPECTED_IMAGES}'"
 
 check 30 action /navigate_to_pose nav2_msgs/action/NavigateToPose || fail "action /navigate_to_pose"
+# Nav2's lifecycle managers report its health: lifecycle_manager_nav2 on Lyrical,
+# lifecycle_manager_navigation and lifecycle_manager_map_server before it.
+check 40 diagnostics lifecycle_manager_ || fail "/diagnostics"
 
 # 2. The map camera's rate.
 check 60 rate /camera/image_raw 8 || fail "/camera/image_raw rate"
