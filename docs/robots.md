@@ -38,6 +38,8 @@ Servo arm that follows the iPhone.
 </figure>
 </div>
 
+No robot? [Try Robots with the demo](robots-demo.md): one command starts a simulated mobile robot and a simulated arm.
+
 ## What you need
 
 - A ROS 2 host (Humble, Jazzy, Kilted, Lyrical or Rolling) reachable over Zenoh or DDS with the
