@@ -8,10 +8,11 @@
 # checks the arm from a second container of the same image, a Zenoh client of that
 # router on the host network:
 #   - the topics /joint_states, /wrist_camera/image_raw, /wrist_camera/camera_info,
-#     /robot_description, /robot_description_semantic, /servo_node/status and /clock,
-#     and the actions /move_action and /panda_hand_controller/gripper_cmd, with their
-#     types;
+#     /robot_description, /robot_description_semantic, /servo_node/status, /clock and
+#     /diagnostics, and the actions /move_action and /panda_hand_controller/gripper_cmd,
+#     with their types;
 #   - joint_state_broadcaster, panda_arm_controller and panda_hand_controller active;
+#   - /diagnostics carries the controller manager's status;
 #   - /joint_states carries panda_finger_joint1;
 #   - /wrist_camera/image_raw is 320 x 240 at 8 Hz or more, /wrist_camera/camera_info
 #     publishes;
@@ -27,6 +28,10 @@
 #   - no ROS 2 daemon was started.
 # Prints `SMOKE ARM PASS` or `SMOKE ARM FAIL: <check>`; exit 0 on pass. Both containers
 # are removed on exit. SMOKE_STARTUP_S (default 300) bounds the wait for the graph.
+#
+# SMOKE_ROBOT_CONTAINER=<name> checks a demo container that is already running instead
+# (mode standalone, join, all or arm), through the Zenoh router on <host-port>: its own,
+# published there, or the one it joined. That container is left running.
 set -u
 
 if [ $# -ne 3 ]; then
@@ -39,9 +44,17 @@ DOMAIN="$3"
 STARTUP_S="${SMOKE_STARTUP_S:-300}"
 ROBOT="conduit-demo-smoke-arm-${PORT}"
 CLIENT="conduit-demo-smoke-arm-client-${PORT}"
+EXISTING="${SMOKE_ROBOT_CONTAINER:-}"
+if [ -n "$EXISTING" ]; then
+  ROBOT="$EXISTING"
+fi
 
 cleanup() {
-  docker rm -f "$ROBOT" "$CLIENT" >/dev/null 2>&1 || true
+  if [ -n "$EXISTING" ]; then
+    docker rm -f "$CLIENT" >/dev/null 2>&1 || true
+  else
+    docker rm -f "$ROBOT" "$CLIENT" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
@@ -125,6 +138,26 @@ def controllers(node, names, timeout_s=120.0):
                     return None
         spin_until(node, lambda: False, 2.0)
     return f'controllers not all active after {timeout_s:.0f} s: {states}'
+
+
+def diagnostics(node, prefix, timeout_s=30.0):
+    """A DiagnosticArray on /diagnostics with a status whose name starts with `prefix`
+    (diagnostic_updater names each status `<node>: <task>`)."""
+    from diagnostic_msgs.msg import DiagnosticArray
+    statuses = set()
+    def on_diagnostics(msg):
+        statuses.update(status.name for status in msg.status)
+    node.create_subscription(
+        DiagnosticArray, '/diagnostics', on_diagnostics, qos_profile_sensor_data)
+    def matching():
+        return any(name.startswith(prefix) for name in statuses)
+    if not spin_until(node, matching, timeout_s):
+        return (f'no /diagnostics status named {prefix}... within {timeout_s:.0f} s '
+                f'(statuses seen: {sorted(statuses)})')
+    publishers = sorted(
+        info.node_name for info in node.get_publishers_info_by_topic('/diagnostics'))
+    print(f'/diagnostics from {" ".join(publishers)}: {sorted(statuses)}')
+    return None
 
 
 def finger(node):
@@ -340,6 +373,8 @@ def main():
             error = controllers(node, args)
         elif name == 'finger':
             error = finger(node)
+        elif name == 'diagnostics':
+            error = diagnostics(node, args[0])
         elif name == 'camera':
             error = camera(node, args[0], args[1], int(args[2]), int(args[3]), float(args[4]))
         elif name == 'poses':
@@ -361,10 +396,16 @@ def main():
 main()
 PY
 
-echo "Starting ${IMAGE} (mode arm, router on host port ${PORT}, domain ${DOMAIN})"
 cleanup
-docker run -d --name "$ROBOT" -p "${PORT}:7447" -e ROS_DOMAIN_ID="$DOMAIN" \
-  "$IMAGE" arm >/dev/null || fail "docker run ${IMAGE} arm"
+if [ -n "$EXISTING" ]; then
+  robot_running || fail "no running container ${ROBOT}"
+  echo "Checking the running container ${ROBOT} through the router on host port ${PORT}," \
+    "domain ${DOMAIN}"
+else
+  echo "Starting ${IMAGE} (mode arm, router on host port ${PORT}, domain ${DOMAIN})"
+  docker run -d --name "$ROBOT" -p "${PORT}:7447" -e ROS_DOMAIN_ID="$DOMAIN" \
+    "$IMAGE" arm >/dev/null || fail "docker run ${IMAGE} arm"
+fi
 docker run -d --name "$CLIENT" --network host --entrypoint sleep \
   -e RMW_IMPLEMENTATION=rmw_zenoh_cpp -e ROS_DOMAIN_ID="$DOMAIN" \
   -e ZENOH_CONFIG_OVERRIDE="mode=\"client\";connect/endpoints=[\"tcp/127.0.0.1:${PORT}\"]" \
@@ -379,6 +420,7 @@ EXPECTED_TOPICS=(
   "/robot_description_semantic [std_msgs/msg/String]"
   "/servo_node/status [moveit_msgs/msg/ServoStatus]"
   "/clock [rosgraph_msgs/msg/Clock]"
+  "/diagnostics [diagnostic_msgs/msg/DiagnosticArray]"
 )
 
 topics=""
@@ -405,6 +447,7 @@ check 40 actions /move_action=moveit_msgs/action/MoveGroup \
 # 2. Controllers and joint states.
 check 140 controllers joint_state_broadcaster panda_arm_controller panda_hand_controller \
   || fail "controllers"
+check 40 diagnostics controller_manager: || fail "/diagnostics"
 check 40 finger || fail "/joint_states"
 
 # 3. The wrist camera (light setting: 320 x 240 at 10 Hz).

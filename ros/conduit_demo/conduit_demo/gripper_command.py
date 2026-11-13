@@ -1,8 +1,9 @@
 """gripper_command: a control_msgs/action/GripperCommand server in front of a parallel gripper.
 
-ROS 2 Lyrical's gripper action controller (parallel_gripper_action_controller) serves
-control_msgs/action/ParallelGripperCommand; Conduit's gripper, like most GripperCommand
-clients, sends control_msgs/action/GripperCommand. This node serves GripperCommand on
+The demo's gripper action controller (parallel_gripper_action_controller, the one that
+ROS 2 Kilted and Lyrical ship) serves control_msgs/action/ParallelGripperCommand;
+Conduit's gripper, like most GripperCommand clients, sends
+control_msgs/action/GripperCommand. This node serves GripperCommand on
 `action_name` (default /panda_hand_controller/gripper_cmd) and forwards each goal to the
 controller's ParallelGripperCommand server on `controller_action` (default
 /panda_hand_controller/parallel_gripper_cmd) for the finger joint `joint`:

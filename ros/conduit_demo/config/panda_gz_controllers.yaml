@@ -4,8 +4,9 @@
 # The names are a real Panda's and moveit_resources_panda's: joint_state_broadcaster,
 # panda_arm_controller (MoveIt Servo and move_group both drive it) and
 # panda_hand_controller on panda_finger_joint1. The hand controller is
-# parallel_gripper_action_controller, the GripperActionController that ROS 2 Lyrical
-# ships; its control_msgs/action/ParallelGripperCommand server is renamed to
+# parallel_gripper_action_controller on every distribution (Kilted and Lyrical ship no
+# GripperCommand controller; Jazzy ships both, and uses this one too, so the names are the
+# same everywhere); its control_msgs/action/ParallelGripperCommand server is renamed to
 # /panda_hand_controller/parallel_gripper_cmd (see arm.launch.py), and conduit_demo's
 # gripper_command node serves control_msgs/action/GripperCommand on
 # /panda_hand_controller/gripper_cmd in front of it, the action Conduit's gripper uses.

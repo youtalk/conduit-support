@@ -11,6 +11,7 @@
 #     /battery_state, /joy, /turtlebot3/{robot_description,joint_states} and the
 #     /navigate_to_pose action, with their types;
 #   - no /clock, /robot_description or /joint_states;
+#   - /diagnostics carries a status of one of Nav2's lifecycle managers;
 #   - /camera/image_raw at 8 Hz or more;
 #   - a NavigateToPose goal to a free point of the map succeeds within 60 s;
 #   - a /joy message with the deadman held and the stick forward moves /odom;
@@ -18,6 +19,13 @@
 # Prints `SMOKE MOBILE PASS` or `SMOKE MOBILE FAIL: <check>`; exit 0 on pass. Both
 # containers are removed on exit. SMOKE_STARTUP_S (default 180) bounds the wait for the
 # graph.
+#
+# SMOKE_ROBOT_CONTAINER=<name> checks a demo container that is already running instead
+# (mode standalone, join, all or mobile), through the Zenoh router on <host-port>: its
+# own, published there, or the one it joined. That container is left running. With the
+# arm on the same graph (any mode but mobile), /clock, /robot_description and
+# /joint_states must come from the arm alone (ros_gz_bridge, robot_state_publisher and
+# arm_clock), and /wrist_camera/image_raw is the second image topic.
 set -u
 
 if [ $# -ne 3 ]; then
@@ -30,9 +38,17 @@ DOMAIN="$3"
 STARTUP_S="${SMOKE_STARTUP_S:-180}"
 ROBOT="conduit-demo-smoke-robot-${PORT}"
 CLIENT="conduit-demo-smoke-client-${PORT}"
+EXISTING="${SMOKE_ROBOT_CONTAINER:-}"
+if [ -n "$EXISTING" ]; then
+  ROBOT="$EXISTING"
+fi
 
 cleanup() {
-  docker rm -f "$ROBOT" "$CLIENT" >/dev/null 2>&1 || true
+  if [ -n "$EXISTING" ]; then
+    docker rm -f "$CLIENT" >/dev/null 2>&1 || true
+  else
+    docker rm -f "$ROBOT" "$CLIENT" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
@@ -148,6 +164,41 @@ def navigate(node, x, y, limit_s=60.0):
     return None
 
 
+def publishers(node, expected, timeout_s=60.0):
+    """Each topic's publishers are exactly the named nodes: [(topic, [node, ...])]."""
+    found = {}
+    def exact():
+        for topic, names in expected:
+            found[topic] = sorted(
+                info.node_name for info in node.get_publishers_info_by_topic(topic))
+        return all(found[topic] == sorted(names) for topic, names in expected)
+    if not spin_until(node, exact, timeout_s):
+        return f'publishers {found}, expected {dict(expected)}'
+    for topic, names in expected:
+        print(f'{topic} published by {" ".join(names)} only')
+    return None
+
+
+def diagnostics(node, prefix, timeout_s=30.0):
+    """A DiagnosticArray on /diagnostics with a status whose name starts with `prefix`
+    (diagnostic_updater names each status `<node>: <task>`)."""
+    from diagnostic_msgs.msg import DiagnosticArray
+    statuses = set()
+    def on_diagnostics(msg):
+        statuses.update(status.name for status in msg.status)
+    node.create_subscription(
+        DiagnosticArray, '/diagnostics', on_diagnostics, qos_profile_sensor_data)
+    def matching():
+        return any(name.startswith(prefix) for name in statuses)
+    if not spin_until(node, matching, timeout_s):
+        return (f'no /diagnostics status named {prefix}... within {timeout_s:.0f} s '
+                f'(statuses seen: {sorted(statuses)})')
+    publishers = sorted(
+        info.node_name for info in node.get_publishers_info_by_topic('/diagnostics'))
+    print(f'/diagnostics from {" ".join(publishers)}: {sorted(statuses)}')
+    return None
+
+
 def drive(node, enable_button, linear_axis, seconds=3.0, min_distance=0.3):
     from nav_msgs.msg import Odometry
     from sensor_msgs.msg import Joy
@@ -195,6 +246,12 @@ def main():
             error = navigate(node, float(args[0]), float(args[1]))
         elif name == 'drive':
             error = drive(node, int(args[0]), int(args[1]))
+        elif name == 'diagnostics':
+            error = diagnostics(node, args[0])
+        elif name == 'publishers':
+            error = publishers(node, [
+                (topic, names.split(',')) for topic, names in
+                (arg.split('=', 1) for arg in args)])
         else:
             error = f'unknown check {name}'
     finally:
@@ -208,10 +265,20 @@ def main():
 main()
 PY
 
-echo "Starting ${IMAGE} (mode mobile, router on host port ${PORT}, domain ${DOMAIN})"
 cleanup
-docker run -d --name "$ROBOT" -p "${PORT}:7447" -e ROS_DOMAIN_ID="$DOMAIN" \
-  "$IMAGE" mobile >/dev/null || fail "docker run ${IMAGE} mobile"
+if [ -n "$EXISTING" ]; then
+  MODE=$(docker inspect -f '{{if .Args}}{{index .Args 0}}{{end}}' "$ROBOT" 2>/dev/null) \
+    || fail "no container ${ROBOT}"
+  echo "Checking the running container ${ROBOT} (mode ${MODE}) through the router on" \
+    "host port ${PORT}, domain ${DOMAIN}"
+else
+  MODE=mobile
+  echo "Starting ${IMAGE} (mode mobile, router on host port ${PORT}, domain ${DOMAIN})"
+  docker run -d --name "$ROBOT" -p "${PORT}:7447" -e ROS_DOMAIN_ID="$DOMAIN" \
+    "$IMAGE" mobile >/dev/null || fail "docker run ${IMAGE} mobile"
+fi
+WITH_ARM=false
+[ "$MODE" = mobile ] || WITH_ARM=true
 docker run -d --name "$CLIENT" --network host --entrypoint sleep \
   -e RMW_IMPLEMENTATION=rmw_zenoh_cpp -e ROS_DOMAIN_ID="$DOMAIN" \
   -e ZENOH_CONFIG_OVERRIDE="mode=\"client\";connect/endpoints=[\"tcp/127.0.0.1:${PORT}\"]" \
@@ -227,8 +294,19 @@ EXPECTED_TOPICS=(
   "/joy [sensor_msgs/msg/Joy]"
   "/turtlebot3/robot_description [std_msgs/msg/String]"
   "/turtlebot3/joint_states [sensor_msgs/msg/JointState]"
+  "/diagnostics [diagnostic_msgs/msg/DiagnosticArray]"
 )
 ABSENT_TOPICS=(/clock /robot_description /joint_states)
+EXPECTED_IMAGES="/camera/image_raw "
+if [ "$WITH_ARM" = true ]; then
+  EXPECTED_TOPICS+=(
+    "/clock [rosgraph_msgs/msg/Clock]"
+    "/robot_description [std_msgs/msg/String]"
+    "/joint_states [sensor_msgs/msg/JointState]"
+    "/wrist_camera/image_raw [sensor_msgs/msg/Image]"
+  )
+  EXPECTED_IMAGES="/camera/image_raw /wrist_camera/image_raw "
+fi
 
 topics=""
 missing=("${EXPECTED_TOPICS[@]}")
@@ -247,17 +325,25 @@ if [ ${#missing[@]} -gt 0 ]; then
 fi
 echo "topics present: ${EXPECTED_TOPICS[*]}"
 
-for name in "${ABSENT_TOPICS[@]}"; do
-  if grep -q "^${name} \[" <<<"$topics"; then
-    fail "${name} exists"
-  fi
-done
-echo "topics absent: ${ABSENT_TOPICS[*]}"
+if [ "$WITH_ARM" = true ]; then
+  check 70 publishers /clock=ros_gz_bridge /robot_description=robot_state_publisher \
+    /joint_states=arm_clock || fail "publishers of the arm's topics"
+else
+  for name in "${ABSENT_TOPICS[@]}"; do
+    if grep -q "^${name} \[" <<<"$topics"; then
+      fail "${name} exists"
+    fi
+  done
+  echo "topics absent: ${ABSENT_TOPICS[*]}"
+fi
 
 images=$(grep -E '\[sensor_msgs/msg/(Image|CompressedImage)\]' <<<"$topics" | cut -d' ' -f1 | tr '\n' ' ')
-[ "$images" = "/camera/image_raw " ] || fail "image topics are '${images}', expected only /camera/image_raw"
+[ "$images" = "$EXPECTED_IMAGES" ] || fail "image topics are '${images}', expected '${EXPECTED_IMAGES}'"
 
 check 30 action /navigate_to_pose nav2_msgs/action/NavigateToPose || fail "action /navigate_to_pose"
+# Nav2's lifecycle managers report its health: lifecycle_manager_nav2 on Lyrical,
+# lifecycle_manager_navigation and lifecycle_manager_map_server before it.
+check 40 diagnostics lifecycle_manager_ || fail "/diagnostics"
 
 # 2. The map camera's rate.
 check 60 rate /camera/image_raw 8 || fail "/camera/image_raw rate"

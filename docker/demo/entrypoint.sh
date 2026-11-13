@@ -1,16 +1,26 @@
 #!/bin/bash
 # Conduit Robots demo: entrypoint.sh <mode> [launch arguments...]
 #
-#   mobile   a Zenoh router on port 7447 inside the container, then the TurtleBot3
-#            on Nav2's loopback simulator with the map camera (mobile.launch.py)
-#   arm      the router, then the Panda in Gazebo with the wrist camera, MoveIt Servo
-#            and move_group (arm.launch.py; arguments such as gpu:=true go to it)
-#   all      the router, then both robots (mobile.launch.py and arm.launch.py; the
-#            arguments go to arm.launch.py). Ctrl-C (SIGINT, Docker's stop signal)
-#            stops both; either launch ending stops the other.
+#   standalone  a Zenoh router on port 7447 inside the container, then both robots
+#               (demo.launch.py: the TurtleBot3 and the Panda; arguments such as
+#               gpu:=true go to it). For a PC without ROS 2: publish the router's port.
+#   join        both robots on the ROS 2 graph the environment describes, for a PC with
+#               ROS 2 (run on the host network): RMW_IMPLEMENTATION, ROS_DOMAIN_ID and
+#               ZENOH_CONFIG_OVERRIDE (a client of the PC's router) or CYCLONEDDS_URI.
+#               It starts no router and no ROS 2 daemon. check_conflicts reads the graph
+#               first: when the PC already uses a name of the demo, it prints a
+#               `CONFLICT <name>` line for each and the container exits 3 without
+#               starting the demo; otherwise demo.launch.py, as in standalone.
+#   all         the same as standalone
+#   mobile      the router, then the TurtleBot3 on Nav2's loopback simulator with the
+#               map camera (mobile.launch.py)
+#   arm         the router, then the Panda in Gazebo with the wrist camera, MoveIt Servo
+#               and move_group (arm.launch.py; arguments such as gpu:=true go to it)
 #
 # Anything else runs as a command with ROS 2 and the demo workspace sourced, for
 # example: docker run --rm -it conduit-demo:lyrical-dev bash
+#
+# set -e only: the setup scripts read unset variables, so no -u.
 set -e
 # shellcheck source=/dev/null
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
@@ -34,30 +44,27 @@ start_router() {
   exit 1
 }
 
-# Runs mobile.launch.py and arm.launch.py side by side until one of them ends or a
-# SIGINT / SIGTERM arrives, then stops both with SIGINT (their Ctrl-C shutdown). A
-# non-interactive shell starts background commands with SIGINT ignored, which ros2
-# launch would keep; env --default-signal=INT gives it back.
-run_all() {
-  env --default-signal=INT ros2 launch conduit_demo mobile.launch.py &
-  local mobile=$!
-  env --default-signal=INT ros2 launch conduit_demo arm.launch.py "$@" &
-  local arm=$!
-  trap 'kill -INT "$mobile" "$arm" 2>/dev/null || true' INT TERM
-  local status=0
-  wait -n "$mobile" "$arm" || status=$?
-  kill -INT "$mobile" "$arm" 2>/dev/null || true
-  wait "$mobile" "$arm" || true
-  return "$status"
-}
-
 if [ $# -eq 0 ]; then
-  echo "usage: entrypoint.sh mobile|arm|all [launch arguments...] | <command>" >&2
+  echo "usage: entrypoint.sh standalone|join|all|mobile|arm [launch arguments...] | <command>" >&2
   exit 2
 fi
 
 mode="$1"
 case "$mode" in
+  standalone | all)
+    shift
+    start_router
+    exec ros2 launch conduit_demo demo.launch.py "$@"
+    ;;
+  join)
+    shift
+    status=0
+    ros2 run conduit_demo check_conflicts || status=$?
+    if [ "$status" -ne 0 ]; then
+      exit "$status"
+    fi
+    exec ros2 launch conduit_demo demo.launch.py "$@"
+    ;;
   mobile)
     shift
     start_router
@@ -67,11 +74,6 @@ case "$mode" in
     shift
     start_router
     exec ros2 launch conduit_demo arm.launch.py "$@"
-    ;;
-  all)
-    shift
-    start_router
-    run_all "$@"
     ;;
   *)
     exec "$@"

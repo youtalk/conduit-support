@@ -32,6 +32,7 @@ setup(
             'gripper_command = conduit_demo.gripper_command:main',
             'servo_twist_mode = conduit_demo.servo_twist_mode:main',
             'arm_clock = conduit_demo.arm_clock:main',
+            'check_conflicts = conduit_demo.check_conflicts:main',
         ],
     },
 )
