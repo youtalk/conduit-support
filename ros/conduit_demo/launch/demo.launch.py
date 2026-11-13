@@ -2,8 +2,8 @@
 
 The one launch the demo image's modes start (docker/demo/entrypoint.sh standalone, join
 and all): mobile.launch.py (the TurtleBot3 on Nav2's loopback simulator with the map
-camera) and arm.launch.py (the Panda in Gazebo with the wrist camera, Servo and
-move_group).
+camera) and arm.launch.py (the Panda in Gazebo with the wrist and head cameras, Servo
+and move_group).
 
 Each runs in its own scope, so the launch configurations one sets do not reach the other:
 Nav2's bringup sets use_composition and container_name, which ros_gz_sim's
@@ -38,8 +38,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'gpu', default_value='false',
-            description='true: the wrist camera at 640 x 480 and 15 Hz, full visuals '
-                        '(needs a GPU)'),
+            description='true: the wrist and head cameras at 640 x 480 and 15 Hz, full '
+                        'visuals (needs a GPU)'),
         _scoped_include('mobile.launch.py'),
         _scoped_include('arm.launch.py', {'gpu': LaunchConfiguration('gpu')}),
     ])

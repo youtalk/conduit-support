@@ -1,5 +1,5 @@
 # Conduit Robots demo: a TurtleBot3 on Nav2's loopback simulator with a camera drawn
-# from the map, and a Panda in Gazebo with a wrist camera, MoveIt Servo and move_group,
+# from the map, and a Panda in Gazebo with wrist and head cameras, MoveIt Servo and move_group,
 # behind their own Zenoh router or on a PC's ROS 2 graph. One Dockerfile for every
 # distribution the demo is offered on (jazzy, kilted, lyrical: the same package names;
 # Gazebo Harmonic, Ionic and Jetty come with each one's ros_gz). Built from the repository

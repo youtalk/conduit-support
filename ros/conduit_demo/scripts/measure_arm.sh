@@ -1,6 +1,6 @@
 #!/bin/bash
 # Measures the demo image's arm (Linux or macOS with Docker): Gazebo's real-time factor,
-# the wrist camera's rate, hold_clock_check.py (Conduit's HOLD on the arm's clock) and
+# the wrist and head cameras' rates, hold_clock_check.py (Conduit's HOLD on the arm's clock) and
 # grasp_test.py.
 #
 #   bash measure_arm.sh <image> <domain> [docker run options...] [-- launch arguments...]
@@ -15,7 +15,8 @@
 # inside the container) and, once Servo takes twists:
 #   1. the real-time factor from Gazebo's /stats over STATS_S s (Δsim / Δreal, and the
 #      median of the messages' per-step real_time_factor);
-#   2. the rate and size of /wrist_camera/image_raw over STATS_S s;
+#   2. the rate and size of /wrist_camera/image_raw and /head_camera/image_raw over
+#      STATS_S s each;
 #   3. hold_clock_check.py --seconds HOLD_SECONDS;
 #   4. grasp_test.py --runs RUNS, with the real-time factor over the whole test.
 # Both Python scripts are taken from this script's directory and copied into the
@@ -147,7 +148,7 @@ def snapshot():
     return result(True, f'{got[0][0]:.3f} {got[0][1]:.3f}')
 
 
-def camera(seconds):
+def camera(topic, seconds):
     import rclpy
     from rclpy.qos import qos_profile_sensor_data
     from sensor_msgs.msg import Image
@@ -158,7 +159,7 @@ def camera(seconds):
     def on_image(message):
         arrivals.append(time.monotonic())
         sizes.add(f'{message.width} x {message.height} {message.encoding}')
-    node.create_subscription(Image, '/wrist_camera/image_raw', on_image, qos_profile_sensor_data)
+    node.create_subscription(Image, topic, on_image, qos_profile_sensor_data)
     deadline = time.monotonic() + 30.0
     while not arrivals and time.monotonic() < deadline:
         rclpy.spin_once(node, timeout_sec=0.05)
@@ -185,7 +186,7 @@ if name == 'stats':
 elif name == 'snapshot':
     sys.exit(snapshot())
 elif name == 'camera':
-    sys.exit(camera(float(sys.argv[2])))
+    sys.exit(camera(sys.argv[2], float(sys.argv[3])))
 sys.exit(f'unknown probe {name}')
 PY
 
@@ -240,8 +241,11 @@ fi
 
 rtf=$(probe $((STATS_S + 25)) stats "$STATS_S" </dev/null) || fail "/stats: ${rtf}"
 echo "measure: real-time factor (idle, ${STATS_S} s): ${rtf}"
-camera=$(probe $((STATS_S + 45)) camera "$STATS_S" </dev/null) || fail "wrist camera: ${camera}"
-echo "measure: wrist camera: ${camera}"
+for cam in wrist head; do
+  camera=$(probe $((STATS_S + 45)) camera "/${cam}_camera/image_raw" "$STATS_S" </dev/null) \
+    || fail "${cam} camera: ${camera}"
+  echo "measure: ${cam} camera: ${camera}"
+done
 echo "measure: container $(docker stats --no-stream --format '{{.CPUPerc}} CPU, {{.MemUsage}}' "$NAME")"
 
 status=0

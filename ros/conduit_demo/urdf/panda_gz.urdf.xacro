@@ -11,12 +11,16 @@
     (no collision, so the SRDF's collision matrix needs no entry), and
     wrist_camera_optical_frame (REP-103: z forward, x right, y down);
   - the Gazebo camera sensor on /wrist_camera/image_raw and /wrist_camera/camera_info;
+  - head_camera_link on panda_link0, a fixed camera above and behind the arm's left
+    shoulder that sees the arm, the table, the cubes and the tray (a visual only), and
+    head_camera_optical_frame; its Gazebo camera sensor on /head_camera/image_raw and
+    /head_camera/camera_info;
   - one ros2_control system on gz_ros2_control for the seven arm joints and the hand
     (panda_finger_joint2 mimics panda_finger_joint1, as in the description).
 
-  Argument gpu (default false): false is the light setting (camera 320 x 240 at 10 Hz,
-  the low-poly collision meshes as visuals, for software rendering); true is the GPU
-  setting (640 x 480 at 15 Hz, the full visual meshes).
+  Argument gpu (default false): false is the light setting (each camera 320 x 240 at
+  10 Hz, the low-poly collision meshes as visuals, for software rendering); true is the
+  GPU setting (640 x 480 at 15 Hz, the full visual meshes).
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
   <xacro:arg name="gpu" default="false"/>
@@ -30,6 +34,15 @@
   <xacro:property name="camera_width" value="${640 if gpu else 320}"/>
   <xacro:property name="camera_height" value="${480 if gpu else 240}"/>
   <xacro:property name="camera_rate" value="${15 if gpu else 10}"/>
+
+  <!-- Head camera: on panda_link0 (the world origin, at the table top), 1.5 m up, behind
+       the arm's left shoulder on the tray's side, so the arm hides neither the tray nor
+       the cubes: it looks at the middle of the table (x 0.38, y -0.02, z 0) from about
+       1.75 m, yawed 0.62 rad right and pitched 1.03 rad down. Same image size and rate as
+       the wrist camera. -->
+  <xacro:property name="head_camera_xyz" value="-0.35 0.5 1.5"/>
+  <xacro:property name="head_camera_rpy" value="0 1.032 -0.619"/>
+  <xacro:property name="head_camera_hfov" value="0.95"/>
 
   <!-- Visual meshes: the full ones on a GPU, the collision meshes (200-300 triangles a
        link) otherwise. -->
@@ -285,6 +298,53 @@
         </image>
         <clip>
           <near>0.01</near>
+          <far>5.0</far>
+        </clip>
+      </camera>
+    </sensor>
+  </gazebo>
+
+  <!-- Head camera. x of head_camera_link is the viewing direction, z the image's up. -->
+  <link name="head_camera_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.02 0 0"/>
+      <geometry>
+        <box size="0.04 0.1 0.03"/>
+      </geometry>
+      <material name="head_camera_black">
+        <color rgba="0.08 0.08 0.08 1"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="head_camera_joint" type="fixed">
+    <parent link="panda_link0"/>
+    <child link="head_camera_link"/>
+    <origin rpy="${head_camera_rpy}" xyz="${head_camera_xyz}"/>
+  </joint>
+  <link name="head_camera_optical_frame"/>
+  <joint name="head_camera_optical_joint" type="fixed">
+    <parent link="head_camera_link"/>
+    <child link="head_camera_optical_frame"/>
+    <origin rpy="${-pi / 2} 0 ${-pi / 2}" xyz="0 0 0"/>
+  </joint>
+
+  <gazebo reference="head_camera_link">
+    <sensor name="head_camera" type="camera">
+      <always_on>true</always_on>
+      <update_rate>${camera_rate}</update_rate>
+      <topic>head_camera/image_raw</topic>
+      <frame_id>head_camera_optical_frame</frame_id>
+      <gz_frame_id>head_camera_optical_frame</gz_frame_id>
+      <camera>
+        <camera_info_topic>head_camera/camera_info</camera_info_topic>
+        <horizontal_fov>${head_camera_hfov}</horizontal_fov>
+        <image>
+          <width>${camera_width}</width>
+          <height>${camera_height}</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
           <far>5.0</far>
         </clip>
       </camera>

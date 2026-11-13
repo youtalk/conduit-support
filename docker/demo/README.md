@@ -1,8 +1,8 @@
 # Conduit Robots demo image
 
 For maintainers. The image carries both demo robots: a TurtleBot3 on Nav2's loopback
-simulator with a camera drawn from the map, and a Panda in Gazebo with a wrist camera,
-MoveIt Servo, move_group and a gripper. The ROS 2 package is `ros/conduit_demo`.
+simulator with a camera drawn from the map, and a Panda in Gazebo with a wrist camera, a
+head camera, MoveIt Servo, move_group and a gripper. The ROS 2 package is `ros/conduit_demo`.
 
 One `Dockerfile` builds the image for each ROS 2 distribution the demo is offered on:
 Jazzy, Kilted and Lyrical. There is no Humble image (its Zenoh wire format and its Servo
@@ -28,9 +28,9 @@ router), or `CYCLONEDDS_URI`. Its exit status: 3 when the graph already uses a n
 demo (one `CONFLICT <name>` line each), 1 when it cannot join the graph (for example, no
 router), otherwise the demo starts and `check_conflicts: no conflicts (…)` is in the log.
 
-Launch arguments: `gpu:=true` raises the wrist camera to 640 x 480 at 15 Hz with full
-visuals (needs a GPU in the container); the default light setting is 320 x 240 at 10 Hz,
-rendered in software.
+Launch arguments: `gpu:=true` raises both cameras to 640 x 480 at 15 Hz with full visuals
+(needs a GPU in the container); the default light setting is 320 x 240 at 10 Hz, rendered in
+software.
 
 `docker stop -t 30 conduit-demo` stops it (the image's stop signal is SIGINT; the full demo
 takes up to about 20 s to shut down). Gazebo's own transport stays in the container:
@@ -64,7 +64,7 @@ All in `ros/conduit_demo/scripts`, against a local image:
   <domain>`: start the image in mode `mobile` or `arm` and check the robot's names, types,
   rates and actions. With `SMOKE_ROBOT_CONTAINER=<name>` they check a running demo
   container (any mode) through the router on `<host-port>` instead.
-- `measure_arm.sh <image> <domain>`: Gazebo's real-time factor, the wrist camera's rate,
+- `measure_arm.sh <image> <domain>`: Gazebo's real-time factor, both cameras' rates,
   `hold_clock_check.py` (Conduit's HOLD on the arm's clock) and `grasp_test.py` (10 grasps).
 - Unit tests: `python3 -m pytest test` in `ros/conduit_demo`.
 

@@ -1,4 +1,4 @@
-"""A Panda in Gazebo with a wrist camera, MoveIt Servo and move_group.
+"""A Panda in Gazebo with wrist and head cameras, MoveIt Servo and move_group.
 
 The arm of the Conduit Robots demo, with a real Panda's names (and those of the
 mock-hardware Servo harness), so a Conduit arm profile fills itself in:
@@ -10,8 +10,8 @@ mock-hardware Servo harness), so a Conduit arm profile fills itself in:
   states and Servo's commands on the right clock (see Clocks); gripper_command serves
   control_msgs/action/GripperCommand on /panda_hand_controller/gripper_cmd in front of the
   hand controller's ParallelGripperCommand server;
-- ros_gz_bridge (config/gz_bridge.yaml): /clock, /wrist_camera/image_raw and
-  /wrist_camera/camera_info;
+- ros_gz_bridge (config/gz_bridge.yaml): /clock, /wrist_camera/image_raw,
+  /wrist_camera/camera_info, /head_camera/image_raw and /head_camera/camera_info;
 - robot_state_publisher (/robot_description, /tf, /tf_static with world -> panda_link0);
 - MoveIt Servo (servo_node) with moveit_servo's panda_simulated_config.yaml and
   conduit_teleop's config/servo_overlay.yaml last, switched to TWIST commands by
@@ -24,7 +24,7 @@ mock-hardware Servo harness), so a Conduit arm profile fills itself in:
 
 Clocks: Gazebo publishes the graph's only /clock. It starts at zero and runs slower than
 wall time when Gazebo cannot keep up (software rendering on a slow machine). The
-controllers inside Gazebo run on it, and so do ros_gz_bridge (the wrist camera's stamps
+controllers inside Gazebo run on it, and so do ros_gz_bridge (the cameras' stamps
 are Gazebo's) and the spawners. Everything Conduit's HOLD reads or relies on runs on wall
 time: joint_state_broadcaster's output (/joint_state_broadcaster/joint_states) is
 restamped with the wall clock on /joint_states by arm_clock, and Servo, move_group,

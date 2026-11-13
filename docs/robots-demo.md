@@ -18,7 +18,7 @@ You do not need a robot to try [Robots](robots.md). The same command that
   map.
 - **A robot arm**: a Franka Panda in Gazebo. Hold HOLD and move your phone to move the arm, pick a
   pose (ready, extended, transport) from the pose menu, open and close the gripper with the arc,
-  watch the wrist camera, and pick up the cubes on the table.
+  watch the wrist and head cameras, and pick up the cubes on the table.
 
 ## What you need
 
@@ -78,8 +78,9 @@ themselves in. See [Robots](robots.md#create-a-profile).
 - The pose menu lists the arm's named poses (ready, extended and transport) and sends the arm
   there.
 - The gripper arc opens and closes the fingers, and shows how far they are open.
-- The wrist camera shows what the hand sees, at about 10 Hz and 320 x 240 by design. The arm
-  moves at normal speed, and no GPU is needed.
+- The wrist camera shows what the hand sees, and the head camera, above and behind the arm,
+  shows the arm, the table and the cubes. Both run at about 10 Hz and 320 x 240 by design. The
+  arm moves at normal speed, and no GPU is needed.
 - Three small cubes (red, green and blue) and a tray are on a table within reach: try to pick one
   up and put it in the tray.
 

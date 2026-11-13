@@ -8,14 +8,15 @@
 # checks the arm from a second container of the same image, a Zenoh client of that
 # router on the host network:
 #   - the topics /joint_states, /wrist_camera/image_raw, /wrist_camera/camera_info,
-#     /robot_description, /robot_description_semantic, /servo_node/status, /clock and
-#     /diagnostics, and the actions /move_action and /panda_hand_controller/gripper_cmd,
+#     /head_camera/image_raw, /head_camera/camera_info, /robot_description,
+#     /robot_description_semantic, /servo_node/status, /clock and /diagnostics, and the
+#     actions /move_action and /panda_hand_controller/gripper_cmd,
 #     with their types;
 #   - joint_state_broadcaster, panda_arm_controller and panda_hand_controller active;
 #   - /diagnostics carries the controller manager's status;
 #   - /joint_states carries panda_finger_joint1;
-#   - /wrist_camera/image_raw is 320 x 240 at 8 Hz or more, /wrist_camera/camera_info
-#     publishes;
+#   - /wrist_camera/image_raw and /head_camera/image_raw are 320 x 240 at 8 Hz or more,
+#     and their camera_info topics publish;
 #   - /robot_description_semantic (transient local) has the panda_arm states
 #     `extended` and `ready`;
 #   - the launch switched Servo to TWIST commands;
@@ -416,6 +417,8 @@ EXPECTED_TOPICS=(
   "/joint_states [sensor_msgs/msg/JointState]"
   "/wrist_camera/image_raw [sensor_msgs/msg/Image]"
   "/wrist_camera/camera_info [sensor_msgs/msg/CameraInfo]"
+  "/head_camera/image_raw [sensor_msgs/msg/Image]"
+  "/head_camera/camera_info [sensor_msgs/msg/CameraInfo]"
   "/robot_description [std_msgs/msg/String]"
   "/robot_description_semantic [std_msgs/msg/String]"
   "/servo_node/status [moveit_msgs/msg/ServoStatus]"
@@ -450,9 +453,11 @@ check 140 controllers joint_state_broadcaster panda_arm_controller panda_hand_co
 check 40 diagnostics controller_manager: || fail "/diagnostics"
 check 40 finger || fail "/joint_states"
 
-# 3. The wrist camera (light setting: 320 x 240 at 10 Hz).
+# 3. The wrist and head cameras (light setting: 320 x 240 at 10 Hz).
 check 90 camera /wrist_camera/image_raw /wrist_camera/camera_info 320 240 8 \
   || fail "wrist camera"
+check 90 camera /head_camera/image_raw /head_camera/camera_info 320 240 8 \
+  || fail "head camera"
 
 # 4. Servo takes twists: the launch switched its command type to TWIST.
 servo_deadline=$((SECONDS + 60))
