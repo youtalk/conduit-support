@@ -127,6 +127,16 @@ setup() {
   [ "$ROS_STATIC_PEERS" = "it's;192.168.1.50" ]
 }
 
+@test "export_line round-trips quotes and ampersands through eval" {
+  [ "$(export_line V "a'&b")" = "export V='a'\\''&b'" ]
+  for value in "it's" 'a&b' "a'&b" "'&'" '&&' "file:///tmp/it's & co/peer.xml" "x'\\''y"; do
+    line="$(export_line CONDUIT_ROUND_TRIP "$value")"
+    unset CONDUIT_ROUND_TRIP
+    eval "$line"
+    [ "$CONDUIT_ROUND_TRIP" = "$value" ]
+  done
+}
+
 @test "quote in HOME is escaped in the CycloneDDS export" {
   PAIR_RMW=cyclonedds PAIR_DISTRO=jazzy
   HOME="$BATS_TEST_TMPDIR/o'home"
@@ -150,7 +160,13 @@ setup() {
   f="$BATS_TEST_TMPDIR/bashrc"
   echo 'alias a=b' > "$f"
   cp "$f" "$BATS_TEST_TMPDIR/before"
-  TMPDIR="$BATS_TEST_TMPDIR/missing" run --separate-stderr bashrc_with_block "$f" "export X='1'"
+  # A failing mktemp (macOS's ignores a TMPDIR that does not exist), called
+  # without `run`, which needs mktemp itself.
+  mkdir -p "$BATS_TEST_TMPDIR/nomktemp"
+  printf '#!/bin/sh\nexit 1\n' > "$BATS_TEST_TMPDIR/nomktemp/mktemp"
+  chmod +x "$BATS_TEST_TMPDIR/nomktemp/mktemp"
+  status=0
+  PATH="$BATS_TEST_TMPDIR/nomktemp:$PATH" bashrc_with_block "$f" "export X='1'" 2> /dev/null || status=$?
   [ "$status" -eq 1 ]
   cmp "$f" "$BATS_TEST_TMPDIR/before"
 }

@@ -200,15 +200,18 @@ STUB
 }
 
 @test "wait_checkin returns 1 when the listener is gone" {
-  exec {PAIR_CHECKIN_FD}< <(echo 'HINT other')
+  # A fixed fd: bash 3.2 has no {var} file descriptors.
+  exec 9< <(echo 'HINT other')
+  PAIR_CHECKIN_FD=9
   run wait_checkin
   [ "$status" -eq 1 ]
 }
 
 @test "wait_checkin skips junk, shows the hint and parses spaces" {
   PAIR_RMW=zenoh
-  exec {PAIR_CHECKIN_FD}< <(printf '%s\n' 'junk' 'HINT no_checkin' \
+  exec 9< <(printf '%s\n' 'junk' 'HINT no_checkin' \
     'CHECKIN phone_ip=192.168.1.50 node=conduit_node namespace=conduit device=My iPhone app_version=3.0 beta')
+  PAIR_CHECKIN_FD=9
   wait_checkin > "$BATS_TEST_TMPDIR/out"
   grep -q 'Local Network' "$BATS_TEST_TMPDIR/out"
   [ "$PAIR_PHONE_IP" = 192.168.1.50 ]
