@@ -35,6 +35,11 @@ jobs:
       - name: Test conduit_teleop (pure Python, no ROS)
         working-directory: ros/conduit_teleop
         run: python -m pytest test -v
+      - name: Test conduit_demo (pure Python, no ROS)
+        working-directory: ros/conduit_demo
+        run: |
+          pip install numpy
+          python -m pytest test -v
       - name: Copy the pairing script into docs/ so MkDocs publishes it
         run: cp pair/pair.sh docs/pair.sh
       - run: mkdocs build --strict
