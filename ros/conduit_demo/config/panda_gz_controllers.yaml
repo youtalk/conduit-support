@@ -1,0 +1,64 @@
+# ros2_control for the demo Panda on gz_ros2_control (loaded by the plugin in
+# urdf/panda_gz.urdf.xacro and by the spawners in launch/arm.launch.py).
+#
+# The names are a real Panda's and moveit_resources_panda's: joint_state_broadcaster,
+# panda_arm_controller (MoveIt Servo and move_group both drive it) and
+# panda_hand_controller on panda_finger_joint1. The hand controller is
+# parallel_gripper_action_controller, the GripperActionController that ROS 2 Lyrical
+# ships; its control_msgs/action/ParallelGripperCommand server is renamed to
+# /panda_hand_controller/parallel_gripper_cmd (see arm.launch.py), and conduit_demo's
+# gripper_command node serves control_msgs/action/GripperCommand on
+# /panda_hand_controller/gripper_cmd in front of it, the action Conduit's gripper uses.
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    panda_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    panda_hand_controller:
+      type: parallel_gripper_action_controller/GripperActionController
+
+# The broadcaster publishes on /joint_state_broadcaster/joint_states (and
+# /joint_state_broadcaster/dynamic_joint_states), stamped on Gazebo's clock; arm_clock
+# republishes the joint states on /joint_states stamped with the wall clock (see
+# launch/arm.launch.py).
+joint_state_broadcaster:
+  ros__parameters:
+    use_local_topics: true
+
+panda_arm_controller:
+  ros__parameters:
+    joints:
+      - panda_joint1
+      - panda_joint2
+      - panda_joint3
+      - panda_joint4
+      - panda_joint5
+      - panda_joint6
+      - panda_joint7
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: true
+
+panda_hand_controller:
+  ros__parameters:
+    joint: panda_finger_joint1
+    state_interfaces:
+      - position
+      - velocity
+    # Position control only (the finger joint has no effort or velocity command
+    # interface); the force a closing finger applies is the joint's effort limit in the
+    # URDF: 20 N, with the mimic finger panda_finger_joint2 holding with up to 40 N so a
+    # gripped cube stays centred (see urdf/panda_gz.urdf.xacro). A finger that stops on an
+    # object for stall_timeout ends the goal as stalled.
+    allow_stalling: true
+    stall_velocity_threshold: 0.001
+    stall_timeout: 0.5
+    goal_tolerance: 0.002
