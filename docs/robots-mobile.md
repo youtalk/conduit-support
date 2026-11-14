@@ -25,31 +25,43 @@ every input, so press again to drive.
 
 - **Landscape:** status chips at the top left, the gear and close at the top right. At the
   bottom, the joystick is under one thumb (the left one unless you change it in the gear panel),
-  the mini map starts in the other corner, and the status banner is between them.
+  the small window starts in the other corner, and the status banner is between them.
 - **Upright:** the same top row, the status banner above the bottom row, the joystick in the
   bottom corner of the hand that holds the phone (the right hand unless you change it), and the
-  mini map starting in the other corner.
+  small window starting in the other corner.
+
+With a Map topic, the view opens on the full map behind the controls and the camera in the small
+window; with only a LaserScan topic, it opens on the camera and the mini map in the window. Tap
+the window to swap the two; each robot's drive view opens on its last choice. Without a Map or
+LaserScan topic, the camera fills the screen and there is no window. The robot keeps driving
+whatever is behind the controls.
+
+Drag the window anywhere: it stays where you let go, and moves aside if it would cover a control
+or a warning. Pinch it or double-tap it to switch between three sizes. Conduit keeps its place for
+each robot and each way of holding the phone. With VoiceOver, its actions move it to a free corner
+or edge and resize it.
 
 The chips show the battery, the speed from the odometry, the camera's latency and frame rate
 (the frame rate only when the robot's and the phone's clocks disagree; "No video" before the
 first frame; red while the camera is STALE) and the diagnostics (tap it for the full list). The
 battery, speed and diagnostics chips appear once they have a value.
 Pinch the camera to scale it between the whole image and filling the screen, and drag to pan
-it; Conduit keeps the zoom for each orientation. The mini map shows when the profile has a Map
-or LaserScan topic; tap it for the full-screen map, with the camera in the small window instead.
-Drag the window anywhere: it stays where you let go, and moves aside if it would cover a control
-or a warning. Pinch it or double-tap it to switch between three sizes. Conduit keeps its place for
-each robot and each way of holding the phone. With VoiceOver, its actions move it to a free corner
-or edge and resize it.
+it; Conduit keeps the zoom for each orientation.
 
 ### iPad and Mac
 
-The camera fills two thirds of the width, next to a column of **Map**, **Status** and
-**Diagnostics** tiles. Drag the divider between them to resize (the camera keeps at least 40 %
-of the width); double-tap it to restore the default. Tap a tile to open it in a sheet. Pinch and
-drag the camera to zoom it within its tile. With a hardware keyboard connected, the hint "Space +
-arrows or WASD to drive" shows above the banner. In a narrow iPad window the drive view uses the
-iPhone's landscape layout.
+The controls are the iPhone's landscape layout, with the joystick on the left (larger where the
+window is wide enough), and they stay as they are when the iPad turns. With a Camera topic and a
+Map or LaserScan topic, the camera and the full map share the screen behind the controls: side by
+side where the window is at least as wide as it is tall (the camera on the left), one above the
+other where it is taller (the camera on top). Drag the divider between them to resize; each keeps
+at least a quarter, and the divider stops at half when you bring it near the middle. Conduit keeps
+the split on the device, one for each direction. The camera opens on the whole image; pinch and
+drag it to zoom it within its side. Each side shows its own captions. With only one of the two,
+it fills the screen, and there is no small window.
+
+The diagnostics chip opens the diagnostics in a sheet. With a hardware keyboard connected, the
+banner shows the hint "Space + arrows or WASD to drive".
 
 ### Gear panel
 
@@ -65,26 +77,42 @@ the gear panel is open.
 
 ### Map and navigation goals
 
-The full-screen map (a sheet on iPad and Mac) pinch-zooms between 0.5× and 20×, pans with a drag,
-and resets with a double tap. Nothing drives while the map, Status or Diagnostics is open; the
-banner says "Paused while a panel is open", and after you close it every input needs a fresh
-press.
+The full map pinch-zooms between 0.5× and 20×, pans with a drag, and resets with a double tap.
+Conduit keeps each robot's view of the map and opens it where you left it. The robot keeps
+driving while the map is shown. Only the diagnostics pause driving: the banner says "Paused while
+a panel is open", and after you close them every input needs a fresh press.
 
-To send a navigation goal, set the profile's **Goal pose** topic (`/goal_pose` for Nav2). The
-profile also needs a Map topic. Then, on the full-screen map:
+To send a navigation goal, the profile needs a Map topic and a **Nav2 goal action** (Nav2's
+`nav2_msgs/action/NavigateToPose`; `/navigate_to_pose` unless your robot uses another name).
+Then, with the map in view (on iPhone the full map behind the controls, on iPad and Mac the map
+side of the split):
 
-1. Tap **Set goal**.
-2. Touch the goal and drag toward the heading the robot should face. A tap without a drag points
-   the goal away from the robot.
+1. Tap the flag button next to the gear. The banner says "Touch the goal and drag toward the
+   heading".
+2. Touch the goal on the map and drag toward the way the robot should face. A tap without a drag
+   points the goal away from the robot.
 
-Conduit sends one `geometry_msgs/PoseStamped` in the profile's **Map frame**, with a zero stamp
-(the latest transform), like RViz's **2D Goal Pose** tool, and then returns to panning. It waits
-up to 2 s for a subscriber and then sends anyway. The map says "Goal sent on `<topic>`", or "Goal
-sent, but nothing subscribes to `<topic>`" when no subscriber matched. The goal stays on the map
-until you close the drive view.
+The flag is dimmed until a map has arrived and Conduit sees the action on the robot's graph;
+without it, the banner says "This robot has no Nav2 NavigateToPose action". Tap the flag again to
+stop placing a goal.
 
-Conduit cannot cancel a goal. Releasing the joystick, closing the map or closing the drive view
-does not stop the robot driving to it.
+Conduit sends the goal as a pose in the profile's **Map frame**, with a zero stamp (the latest
+transform) and Nav2's default behavior tree, like RViz's **Nav2 Goal** tool. It waits up to 2 s
+for the action server. The banner then follows the goal: "Sending goal…", "Driving to the goal",
+and "Goal reached", or "Nav2 refused the goal", "Nav2 aborted the goal: <reason>", "Goal
+canceled". It stays until the next goal or until you close the drive view. If the goal cannot be
+sent, the banner says why, for example "Cannot send goal: Nav2's NavigateToPose action was not
+found" or "Nav2 did not answer the goal".
+
+While a goal is on its way, a red **Cancel goal** button sits right above the joystick: tap it to
+ask Nav2 to stop ("Canceling goal…", then "Goal canceled"). A new goal cancels the one on its way
+first, and closing the drive view cancels it too. If Nav2 does not confirm, the banner says
+"Cancel not confirmed — check the robot"; if the link is lost, "Goal status unknown — the link was
+lost".
+
+Without Conduit Plus, a goal on its way when the weekly free time runs out may finish, for at most
+5 more minutes ("Free time is up. The robot is finishing its goal (up to 5 min).") and is then
+canceled; new goals are off.
 
 ## Inputs
 
@@ -144,5 +172,5 @@ ros2 launch conduit_teleop kachaka.launch.py
 ```
 
 Profile: Camera `/kachaka/front_camera/image_raw/compressed`, Map `/kachaka/mapping/map`, Map
-frame `map`, Base frame `base_footprint`, Goal pose `/kachaka/goal_pose`, the LaserScan,
-Odometry and Battery topics the bridge lists, Joy output `/joy`.
+frame `map`, Base frame `base_footprint`, the LaserScan, Odometry and Battery topics the bridge
+lists, Joy output `/joy`.
