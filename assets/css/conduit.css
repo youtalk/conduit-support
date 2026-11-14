@@ -1,0 +1,798 @@
+/* ============================================================
+   Conduit · Support site theme
+   Apple-native look on top of MkDocs Material:
+   - SF Pro for all text, SF Mono for code
+   - Apple system colors, flat surfaces, no decorative gradients
+   - Apple corner radii (10 / 14 / 18 / 22)
+   ============================================================ */
+
+/* ----- 1. Design tokens ----- */
+
+:root,
+[data-md-color-scheme="default"] {
+  /* Apple system colors (light) */
+  --conduit-blue:   #007AFF;
+  --conduit-indigo: #5856D6;
+  --conduit-green:  #34C759;
+  --conduit-orange: #FF9500;
+  --conduit-red:    #FF3B30;
+
+  /* Surfaces */
+  --conduit-bg:           #F2F2F7;      /* systemGroupedBackground */
+  --conduit-bg-elevated:  #FFFFFF;
+  --conduit-bg-grouped:   #F2F2F7;
+  --conduit-fill:         rgba(120, 120, 128, 0.12);
+  --conduit-separator:    rgba(60, 60, 67, 0.16);
+  --conduit-label:        #1D1D1F;
+  --conduit-label-2:      rgba(60, 60, 67, 0.75);
+  --conduit-label-3:      rgba(60, 60, 67, 0.45);
+  --conduit-tint-fill:    rgba(0, 122, 255, 0.10);
+  --conduit-shadow:       0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.10);
+
+  /* Terminal panel (dark in both schemes) */
+  --conduit-term-bg:      #1C1C1E;
+  --conduit-term-fg:      #F2F2F7;
+  --conduit-term-prompt:  #30D158;
+
+  /* Typography */
+  --conduit-font:        -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                         "Inter Variable", system-ui, sans-serif;
+  --conduit-font-mono:   ui-monospace, "SF Mono", "Menlo", "Monaco",
+                         "Cascadia Mono", "Roboto Mono", monospace;
+
+  /* MkDocs Material overrides */
+  --md-text-font: var(--conduit-font);
+  --md-code-font: var(--conduit-font-mono);
+  --md-primary-fg-color:           var(--conduit-blue);
+  --md-primary-fg-color--light:    #4DA3FF;
+  --md-primary-fg-color--dark:     #0064D2;
+  --md-accent-fg-color:            var(--conduit-indigo);
+  --md-typeset-a-color:            var(--conduit-blue);
+  --md-default-bg-color:           var(--conduit-bg);
+  --md-default-fg-color:           var(--conduit-label);
+  --md-default-fg-color--light:    var(--conduit-label-2);
+  --md-default-fg-color--lighter:  var(--conduit-label-3);
+  --md-code-bg-color:              rgba(120, 120, 128, 0.12);
+  --md-code-fg-color:              #1D1D1F;
+}
+
+[data-md-color-scheme="slate"] {
+  /* Apple system colors (dark) */
+  --conduit-blue:   #0A84FF;
+  --conduit-indigo: #5E5CE6;
+  --conduit-green:  #30D158;
+  --conduit-orange: #FF9F0A;
+  --conduit-red:    #FF453A;
+
+  --conduit-bg:           #000000;
+  --conduit-bg-elevated:  #1C1C1E;
+  --conduit-bg-grouped:   #2C2C2E;
+  --conduit-fill:         rgba(120, 120, 128, 0.24);
+  --conduit-separator:    rgba(84, 84, 88, 0.65);
+  --conduit-label:        #F5F5F7;
+  --conduit-label-2:      rgba(235, 235, 245, 0.62);
+  --conduit-label-3:      rgba(235, 235, 245, 0.32);
+  --conduit-tint-fill:    rgba(10, 132, 255, 0.18);
+  --conduit-shadow:       none;
+
+  --conduit-term-bg:      #2C2C2E;
+
+  --md-default-bg-color: var(--conduit-bg);
+  --md-default-fg-color: var(--conduit-label);
+  --md-typeset-a-color:  var(--conduit-blue);
+  --md-code-bg-color:    rgba(120, 120, 128, 0.24);
+  --md-code-fg-color:    #F5F5F7;
+}
+
+/* ----- 2. Base surface ----- */
+
+html { scroll-behavior: smooth; }
+
+body,
+.md-typeset,
+.md-container {
+  font-family: var(--conduit-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
+}
+
+.md-main { background: var(--conduit-bg); }
+
+/* ----- 3. Header and tabs ----- */
+
+.md-header {
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  color: var(--conduit-label);
+  box-shadow: 0 0.5px 0 var(--conduit-separator);
+}
+
+[data-md-color-scheme="slate"] .md-header {
+  background: rgba(22, 22, 24, 0.8);
+}
+
+.md-header__title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.md-tabs {
+  background: transparent;
+  color: var(--conduit-label-2);
+  box-shadow: 0 0.5px 0 var(--conduit-separator);
+}
+
+.md-tabs__link {
+  font-weight: 600;
+  font-size: 0.8rem;
+  opacity: 1;
+  color: var(--conduit-label-2);
+  transition: color .2s ease;
+}
+
+.md-tabs__item--active .md-tabs__link,
+.md-tabs__link:hover {
+  color: var(--conduit-blue);
+}
+
+.md-search__form {
+  border-radius: 10px;
+  background: var(--conduit-fill);
+}
+.md-search__input { font-family: var(--conduit-font); }
+.md-search__input::placeholder { color: var(--conduit-label-3); }
+
+/* ----- 4. Typography ----- */
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5 {
+  letter-spacing: -0.022em;
+  color: var(--conduit-label);
+  overflow-wrap: normal;
+}
+
+.md-typeset h1 {
+  font-weight: 800;
+  font-size: clamp(1.7rem, 1.1rem + 2.4vw, 2.4rem);
+  line-height: 1.1;
+  margin: 0 0 1em;
+}
+
+.md-typeset h2 {
+  font-weight: 700;
+  font-size: clamp(1.3rem, 1.05rem + 1vw, 1.6rem);
+  line-height: 1.2;
+  margin-top: 2.2em;
+  padding-top: 1.1em;
+  border-top: 0.5px solid var(--conduit-separator);
+}
+
+.md-typeset h3 {
+  font-weight: 600;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  margin-top: 1.8em;
+}
+
+.md-typeset h4 { font-weight: 600; font-size: 1rem; }
+
+.md-typeset p,
+.md-typeset li {
+  color: var(--conduit-label);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.md-typeset strong { color: var(--conduit-label); font-weight: 600; }
+
+.md-typeset a {
+  color: var(--conduit-blue);
+  text-decoration: none;
+  text-underline-offset: 0.18em;
+}
+.md-typeset a:hover {
+  color: var(--conduit-blue);
+  text-decoration: underline;
+}
+.md-typeset a:focus-visible,
+.md-tabs__link:focus-visible {
+  outline: 2px solid var(--conduit-blue);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ----- 5. Layout ----- */
+
+/* Wider than Material's 61rem so the text column keeps a comfortable
+   width next to both sidebars. */
+.md-grid { max-width: 76rem; }
+
+/* Pages sit on one white sheet on wide screens. On phones the sheet is
+   dropped so the text gets the full width. */
+.md-content__inner {
+  padding: 0.4rem 0 3rem;
+}
+
+@media (min-width: 60em) {
+  .md-content__inner {
+    background: var(--conduit-bg-elevated);
+    border-radius: 22px;
+    padding: 2.2rem 2.4rem 3rem;
+    margin: 1.4rem 0.8rem 3rem;
+    box-shadow: var(--conduit-shadow);
+    border: 0.5px solid var(--conduit-separator);
+  }
+  /* Material's spacer before the first heading */
+  .md-content__inner::before { display: none; }
+}
+
+@media (max-width: 59.9375em) {
+  .md-main { background: var(--conduit-bg-elevated); }
+}
+
+/* The home page is one long page: it needs no section sidebar. */
+@media (min-width: 76.25em) {
+  [data-conduit-home="true"] .md-sidebar--primary { display: none; }
+}
+
+/* The README's "---" rules are for GitHub; on the site every H2 already
+   has a rule above it. */
+[data-conduit-home="true"] .md-typeset hr { display: none; }
+
+/* Hide a stray "# Conduit" H1 on the home page — sync_readme.py replaces it
+   with the hero, this is the fallback if the regex ever misses. The
+   data-conduit-home attribute is set on <html> by overrides/main.html. */
+[data-conduit-home="true"] .md-content__inner > h1:first-of-type {
+  display: none;
+}
+
+/* ----- 6. Home hero (injected into index.md by scripts/sync_readme.py) ----- */
+
+.conduit-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem 2.4rem;
+  align-items: center;
+  margin: 0 0 2.4rem;
+  padding: 0 0 2.4rem;
+  border-bottom: 0.5px solid var(--conduit-separator);
+}
+
+@media (max-width: 59.9375em) {
+  .conduit-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.6rem;
+    padding-top: 0.8rem;
+  }
+}
+
+.conduit-hero__copy { min-width: 0; }
+
+.md-typeset .conduit-hero__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.md-typeset .conduit-hero__brand a { display: inline-flex; }
+
+.conduit-hero__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 15px;
+  display: block;
+  box-shadow: 0 0 0 0.5px var(--conduit-separator);
+}
+
+.md-typeset .conduit-hero h1.conduit-hero__title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  font-size: clamp(2.2rem, 1.4rem + 3vw, 3rem);
+  line-height: 1;
+  color: var(--conduit-label);
+}
+
+.md-typeset .conduit-hero p.conduit-hero__subtitle {
+  margin: 1.1rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--conduit-label-2);
+  max-width: 30rem;
+}
+
+.md-typeset .conduit-hero p.conduit-hero__subtitle strong {
+  color: var(--conduit-label);
+  font-weight: 600;
+}
+
+.conduit-hero__cta {
+  margin-top: 1.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.md-typeset .conduit-hero p.conduit-hero__note {
+  margin: 1.2rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--conduit-label-2);
+}
+
+/* Buttons — iOS filled and tinted styles */
+.md-typeset a.conduit-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.62rem 1.05rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.86rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition: filter .15s ease;
+}
+.md-typeset a.conduit-btn--primary {
+  background-color: var(--conduit-blue);
+  color: #fff;
+}
+.md-typeset a.conduit-btn--primary:hover { color: #fff; filter: brightness(1.08); }
+.md-typeset a.conduit-btn--tinted {
+  background-color: var(--conduit-tint-fill);
+  color: var(--conduit-blue);
+}
+.md-typeset a.conduit-btn--tinted:hover { filter: brightness(0.97); }
+
+/* Apple's App Store badge, shown unaltered at the buttons' height (Apple asks
+   for at least 40 px on screen). */
+.md-typeset a.conduit-badge {
+  display: inline-flex;
+  align-items: center;
+}
+.md-typeset img.conduit-badge__img {
+  display: block;
+  height: 2.616rem;
+  width: auto;
+}
+
+/* Material's own buttons (used on the QR pairing page) get the same shape. */
+.md-typeset .md-button {
+  border-radius: 12px;
+  font-weight: 600;
+  border-width: 0;
+  background-color: var(--conduit-tint-fill);
+  color: var(--conduit-blue);
+}
+.md-typeset .md-button--primary {
+  background-color: var(--conduit-blue);
+  color: #fff;
+}
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus {
+  color: #fff;
+  background-color: var(--conduit-blue);
+  filter: brightness(1.08);
+}
+
+/* Stage: the host's terminal with the iPhone in front of it, the same
+   picture as the share image (scripts/generate_og_image.py). */
+.conduit-hero__stage {
+  display: grid;
+  grid-template-columns: 56fr 20fr 24fr;
+  align-items: center;
+}
+.conduit-hero__stage .conduit-terminal {
+  grid-column: 1 / 3;
+  grid-row: 1;
+  overflow: hidden;
+}
+.md-typeset img.conduit-hero__device {
+  grid-column: 2 / 4;
+  grid-row: 1;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.18));
+}
+
+@media (max-width: 59.9375em) {
+  .conduit-hero__stage { grid-template-columns: 62fr 18fr 20fr; max-width: 30rem; }
+}
+
+/* Terminal: what the ROS 2 host sees once Conduit is publishing */
+.conduit-terminal {
+  margin: 0;
+  min-width: 0;
+  border-radius: 14px;
+  background: var(--conduit-term-bg);
+  color: var(--conduit-term-fg);
+  font-family: var(--conduit-font-mono);
+  font-size: 0.68rem;
+  line-height: 1.75;
+  padding: 1rem 1.2rem 1.1rem;
+  overflow-x: auto;
+}
+
+@media (max-width: 30em) {
+  .conduit-terminal { font-size: 0.6rem; padding: 0.9rem 0.9rem 1rem; }
+}
+
+/* The three window buttons of a macOS terminal */
+.conduit-terminal::before {
+  content: "";
+  display: block;
+  height: 12px;
+  margin-bottom: 0.7rem;
+  background:
+    radial-gradient(circle at 6px 6px,  #FF5F57 5.5px, transparent 6px),
+    radial-gradient(circle at 26px 6px, #FEBC2E 5.5px, transparent 6px),
+    radial-gradient(circle at 46px 6px, #28C840 5.5px, transparent 6px);
+  background-repeat: no-repeat;
+}
+
+.conduit-terminal__prompt {
+  display: block;
+  margin-bottom: 0.35rem;
+  white-space: nowrap;
+}
+.conduit-terminal__prompt::before {
+  content: "$ ";
+  color: var(--conduit-term-prompt);
+}
+
+.md-typeset .conduit-terminal ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.md-typeset .conduit-terminal li {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* The one moment of motion: topics appear one by one, as they do on the
+   host when you turn sensors on. */
+@keyframes conduit-topic-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.conduit-terminal li {
+  animation: conduit-topic-in .25s ease-out both;
+}
+.conduit-terminal li:nth-child(1)  { animation-delay: .30s; }
+.conduit-terminal li:nth-child(2)  { animation-delay: .38s; }
+.conduit-terminal li:nth-child(3)  { animation-delay: .46s; }
+.conduit-terminal li:nth-child(4)  { animation-delay: .54s; }
+.conduit-terminal li:nth-child(5)  { animation-delay: .62s; }
+.conduit-terminal li:nth-child(6)  { animation-delay: .70s; }
+.conduit-terminal li:nth-child(7)  { animation-delay: .78s; }
+.conduit-terminal li:nth-child(8)  { animation-delay: .86s; }
+.conduit-terminal li:nth-child(9)  { animation-delay: .94s; }
+.conduit-terminal li:nth-child(10) { animation-delay: 1.02s; }
+.conduit-terminal li:nth-child(11) { animation-delay: 1.10s; }
+.conduit-terminal li:nth-child(12) { animation-delay: 1.18s; }
+.conduit-terminal li:nth-child(13) { animation-delay: 1.26s; }
+.conduit-terminal li:nth-child(14) { animation-delay: 1.34s; }
+.conduit-terminal li:nth-child(15) { animation-delay: 1.42s; }
+
+/* ----- 7. Admonitions ----- */
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-width: 1px;
+  border-radius: 14px;
+  background: var(--conduit-bg-elevated);
+  box-shadow: none;
+  padding: 0 1rem;
+  font-size: 0.86rem;
+  overflow: hidden;
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  margin: 0 -1rem;
+  padding: 0.6rem 1rem 0.6rem 2.7rem;
+  font-weight: 600;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  border: 0;
+}
+
+.md-typeset .admonition-title::before,
+.md-typeset summary::before {
+  left: 1rem;
+  top: 0.72rem;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.md-typeset summary::after {
+  right: 1rem;
+  top: 0.72rem;
+}
+
+.md-typeset .admonition > :last-child,
+.md-typeset details > :last-child { margin-bottom: 0.9rem; }
+.md-typeset details:not([open]) > summary { margin-bottom: 0; }
+
+.md-typeset .admonition p,
+.md-typeset .admonition li,
+.md-typeset details p,
+.md-typeset details li { font-size: 0.86rem; }
+
+/* ----- 8. Code & tables ----- */
+
+.md-typeset code {
+  font-family: var(--conduit-font-mono);
+  font-size: 0.84em;
+  padding: 0.1em 0.38em;
+  border-radius: 6px;
+  background: var(--md-code-bg-color);
+}
+
+.md-typeset pre,
+.md-typeset pre > code {
+  border-radius: 14px;
+}
+.md-typeset pre > code {
+  padding: 0.95rem 1.05rem;
+  line-height: 1.55;
+  background: var(--conduit-bg-grouped);
+}
+
+/* Material bleeds code blocks to the screen edges on phones; keep them
+   inside the text column with their rounded corners. */
+@media screen and (max-width: 44.984375em) {
+  .md-content__inner > pre,
+  .md-content__inner > .highlight,
+  .md-content__inner > .highlight > pre,
+  .md-typeset > .highlight,
+  .md-typeset li > .highlight {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .md-content__inner > pre > code,
+  .md-content__inner > .highlight > pre > code,
+  .md-content__inner > .highlight code {
+    border-radius: 14px;
+  }
+}
+
+.md-typeset .highlight .filename {
+  background: var(--conduit-fill);
+  color: var(--conduit-label-2);
+  border-radius: 14px 14px 0 0;
+}
+.md-clipboard { color: var(--conduit-label-3); }
+.md-clipboard:hover { color: var(--conduit-blue); }
+
+/* Material lets wide tables bleed past the text column; keep them inside
+   (they still scroll sideways when they are too wide). */
+.md-typeset__scrollwrap { margin: 1em 0; }
+.md-typeset__table { padding: 0; display: table; min-width: 100%; }
+
+.md-typeset table:not([class]) {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 0.5px solid var(--conduit-separator);
+  background: var(--conduit-bg-elevated);
+  box-shadow: none;
+  font-size: 0.8rem;
+}
+.md-typeset table:not([class]) th {
+  background: var(--conduit-bg-grouped);
+  font-weight: 600;
+  color: var(--conduit-label);
+  border-bottom: 0.5px solid var(--conduit-separator);
+}
+.md-typeset table:not([class]) td,
+.md-typeset table:not([class]) th { padding: 0.65rem 0.9rem; }
+.md-typeset table:not([class]) tr { border-bottom: 0.5px solid var(--conduit-separator); }
+.md-typeset table:not([class]) tr:last-child { border-bottom: 0; }
+.md-typeset table:not([class]) code { white-space: nowrap; }
+
+/* The app icon wherever a page shows it */
+.md-typeset img[src$="app_icon.png"] { border-radius: 22.5%; }
+
+/* Inline badge images (img.shields.io) */
+.md-typeset img[src*="shields.io"] {
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+/* ----- 9. Media grids (videos, screenshots) ----- */
+
+/* README media tables (class added by sync_readme.py) become grids. */
+.md-typeset table.conduit-media,
+.md-typeset table.conduit-media tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 1.6rem 1.2rem;
+  border: 0;
+  background: none;
+  font-size: inherit;
+}
+.md-typeset table.conduit-media {
+  display: block;
+  margin: 1.2rem 0 1.6rem;
+}
+.md-typeset table.conduit-media tr { display: contents; }
+.md-typeset table.conduit-media td {
+  display: block;
+  width: auto;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--conduit-label-2);
+}
+.md-typeset table.conduit-media td:empty { display: none; }
+.md-typeset table.conduit-media td br { display: none; }
+.md-typeset table.conduit-media td b {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--conduit-label);
+  font-size: 0.86rem;
+}
+.md-typeset table.conduit-media td sub {
+  font-size: inherit;
+  vertical-align: baseline;
+}
+.md-typeset table.conduit-media td img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  box-shadow: 0 0 0 0.5px var(--conduit-separator);
+}
+/* Phone screenshots: two columns on phones, four on wider screens */
+.md-typeset table.conduit-media:has(img[src*="assets/img/"]) tbody {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 40em) {
+  .md-typeset table.conduit-media:has(img[src*="assets/img/"]) tbody {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.md-typeset .conduit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 1.4rem 1.2rem;
+  margin: 1.2rem 0 1.6rem;
+}
+.md-typeset .conduit-grid--shots {
+  grid-template-columns: repeat(auto-fill, minmax(min(42%, 9.5rem), 1fr));
+}
+
+.md-typeset .conduit-grid figure {
+  margin: 0;
+  min-width: 0;
+  display: block;
+}
+
+.md-typeset .conduit-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+.md-typeset .conduit-video iframe,
+.md-typeset .conduit-video img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+
+.md-typeset img.conduit-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  box-shadow: 0 0 0 0.5px var(--conduit-separator);
+}
+
+.md-typeset .conduit-grid figcaption {
+  margin: 0.6rem 0 0;
+  max-width: none;
+  text-align: left;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--conduit-label-2);
+}
+.md-typeset .conduit-grid figcaption strong {
+  display: block;
+  color: var(--conduit-label);
+  font-size: 0.86rem;
+}
+
+/* ----- 10. Sidebar & nav ----- */
+
+.md-nav {
+  font-family: var(--conduit-font);
+  font-size: 0.8rem;
+}
+.md-nav__title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--conduit-label);
+}
+.md-nav__item .md-nav__link--active,
+.md-nav__link--active {
+  color: var(--conduit-blue);
+  font-weight: 600;
+}
+.md-nav__link:hover { color: var(--conduit-blue); }
+
+.md-sidebar__scrollwrap { scrollbar-width: thin; }
+
+/* TOC right rail */
+.md-nav--secondary .md-nav__title {
+  font-size: .72rem;
+  color: var(--conduit-label-2);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Drawer (below 76.25em the tabs become this menu). Material paints its
+   top bar and the repository row in the primary blue; give them the same
+   surface and hairline as the header instead. */
+@media screen and (max-width: 76.234375em) {
+  .md-nav--primary .md-nav__title,
+  .md-nav--primary .md-nav__title[for=__drawer] {
+    color: var(--conduit-label);
+    background-color: var(--conduit-bg-elevated);
+    box-shadow: inset 0 -0.5px 0 var(--conduit-separator);
+  }
+  .md-nav--primary .md-nav__title ~ .md-nav__list {
+    box-shadow: none;
+  }
+}
+@media screen and (max-width: 59.984375em) {
+  .md-nav__source {
+    color: var(--conduit-label);
+    background-color: var(--conduit-bg-elevated);
+    box-shadow: inset 0 -0.5px 0 var(--conduit-separator);
+  }
+}
+
+/* The logo is the app icon: give it the app icon's corners everywhere. */
+.md-logo img {
+  border-radius: 22.5%;
+}
+
+/* ----- 11. Footer ----- */
+
+.md-footer {
+  background: transparent;
+  color: var(--conduit-label-2);
+}
+.md-footer__link { color: var(--conduit-label); }
+.md-footer-meta { background: var(--conduit-bg-grouped); }
+.md-footer-meta,
+.md-footer-meta a { color: var(--conduit-label-2); }
+.md-footer-meta__inner { font-weight: 500; }
+
+/* ----- 12. Reduced motion ----- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .conduit-terminal li { animation: none; }
+}
