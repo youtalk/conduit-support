@@ -19,8 +19,8 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
   set a navigation goal on the map. Conduit sends `sensor_msgs/Joy`;
   [`conduit_teleop`](robots-mobile.md) turns it into `cmd_vel`.
 - **Robot arms** — hold HOLD and move your iPhone or iPad: a [MoveIt Servo](robots-arm.md) arm
-  follows, while the screen shows the wrist camera, the gripper, diagnostics and a menu that
-  moves the arm to the poses of its SRDF. On a Mac the arm view only watches.
+  follows, while the screen shows the wrist camera (and a head camera, if the robot has one), the
+  gripper, diagnostics and a menu that moves the arm to the poses of its SRDF. On a Mac the arm view only watches.
 
 ## Demo videos
 
@@ -66,7 +66,11 @@ Each robot in the list shows a glyph for its kind, its name, its kind (**Mobile 
 2. Tap **Start** in the bottom corner (while Conduit is offline, a "Discover your robot" tip
    points at it). Conduit goes online and fills in the new profile from the robot:
     - each empty topic field that has exactly one discovered topic of the right type, including
-      Servo's twist topic, command type service and status topic, and the gripper action;
+      Servo's twist topic, command type service and status topic, and the gripper action; when
+      several fit, the one with the field's usual name (the grey name in the empty field). A
+      topic with another field's usual name is left for that field, and an arm's **Head camera**
+      is filled only with its usual name, `/head_camera/image_raw`: a robot's one camera goes to
+      **Wrist camera**;
     - the frames: for a mobile robot the **Map frame** from the map and the **Base frame** from
       the odometry; for an arm the **Base frame**, the **Gripper joint** and the gripper's
       **Open** and **Closed** positions from the robot's SRDF and URDF.

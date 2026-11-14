@@ -86,6 +86,22 @@ The wrist camera fills the screen behind the controls. Pinch it to scale between
 and filling the screen, and drag to pan where the image is larger than the screen. Each layout
 keeps its own zoom.
 
+When the profile has a **Head camera** topic, a fixed camera that sees the arm and its workspace,
+the view shows it too, so you can see what the whole arm is doing without RViz:
+
+- **iPhone:** one camera fills the screen and the other is in a small window over it, the wrist
+  camera on the full screen to start with. Tap the window to swap the two; Conduit remembers the
+  choice for each robot. Drag the window anywhere: it stays where you let go, and moves aside if
+  it would cover a control or a warning. Pinch it or double-tap it to switch between three sizes.
+  Conduit keeps the window's place for each robot and each way of holding the phone. It starts in
+  the bottom corner across from HOLD when you hold the phone upright, and at the bottom centre in
+  landscape. The window hides while the gear's panel is open, and shows STALE when its camera's
+  images stop.
+- **iPad:** the two cameras share the screen under the controls, side by side in a wide window
+  and one above the other in a tall one, each with its own zoom and captions. Drag the divider
+  between them to resize; each camera keeps at least a quarter, and the divider stops at half
+  when you bring it near the middle. Conduit keeps the split on the device.
+
 On iPhone the layout follows how you hold the phone; with the rotation lock on, it stays as it
 is. Turning the phone releases HOLD and stops a gripper drag, and keeps the alignment. Closing the
 view returns the app to portrait.
@@ -100,8 +116,8 @@ view returns the app to portrait.
   under the thumb of the hand that holds the phone, with the gripper arc around it.
 
 The status chips: Servo, motion tracking (only while it is not normal, for example "tracking
-limited (excessive motion)" or "no tracking"), the wrist camera's latency and frame rate ("42 ms ·
-30 fps") and, when the profile has a Diagnostics topic, the diagnostics. Tap the diagnostics chip
+limited (excessive motion)" or "no tracking"), the camera's latency and frame rate ("42 ms ·
+30 fps"; the camera that fills the screen, or on iPad the wrist camera) and, when the profile has a Diagnostics topic, the diagnostics. Tap the diagnostics chip
 to open the diagnostics; this releases HOLD, stops a gripper drag and cancels a pose move.
 The status line appears only when something needs saying: a fault, a refusal, why HOLD is off,
 a pose move, or the free-time notice. The camera's captions (STALE, "No data", "No wrist camera
@@ -168,7 +184,10 @@ closes the arm view.
 **VoiceOver:** HOLD is the "Clutch" button: double-tap and hold to move the arm, and release to
 stop. The gripper is the adjustable "Gripper opening": double-tap to open or close it, swipe up
 or down to open or close it by 10 %, with Open and Close as actions. The wrist camera has "Show
-whole image" and "Fill screen" actions.
+whole image" and "Fill screen" actions. On iPhone, the small window is a button named after its
+camera: double-tap it to swap the cameras; its actions move it to a free corner or edge ("Move to
+bottom left", …) and resize it (Larger, Smaller). On iPad, the divider between the cameras can be
+adjusted, with "Split evenly" as an action.
 
 Conduit also publishes the raw pose (`<namespace>/pose`, `/tf`) and `<namespace>/teleop/clutch`
 (`std_msgs/Bool`, true while the clutch is held, false on any pose discontinuity), so a custom
@@ -352,7 +371,8 @@ Conduit shares the screen with other apps (Split View or a window); the tracking
 again. The diagnostics open in a sheet.
 
 A Mac has no ARKit world tracking, so its arm view is view-only: the wrist camera (pinch and drag
-work, and it opens on the whole image), the Servo status from the profile's **Servo status**
+work, and it opens on the whole image) and, with a Head camera topic, the head camera beside it as
+on iPad, the Servo status from the profile's **Servo status**
 topic, and the diagnostics, with "Arm control needs an iPhone or iPad. This view shows the wrist
 camera, Servo and diagnostics." There is no HOLD, gripper, Align or pose menu, and the view
 pauses no sensors and does not start Device Pose.

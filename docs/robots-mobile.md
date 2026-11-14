@@ -25,10 +25,10 @@ every input, so press again to drive.
 
 - **Landscape:** status chips at the top left, the gear and close at the top right. At the
   bottom, the joystick is under one thumb (the left one unless you change it in the gear panel),
-  the mini map is in the other corner, and the status banner is between them.
+  the mini map starts in the other corner, and the status banner is between them.
 - **Upright:** the same top row, the status banner above the bottom row, the joystick in the
   bottom corner of the hand that holds the phone (the right hand unless you change it), and the
-  mini map in the other corner.
+  mini map starting in the other corner.
 
 The chips show the battery, the speed from the odometry, the camera's latency and frame rate
 (the frame rate only when the robot's and the phone's clocks disagree; "No video" before the
@@ -36,7 +36,11 @@ first frame; red while the camera is STALE) and the diagnostics (tap it for the 
 battery, speed and diagnostics chips appear once they have a value.
 Pinch the camera to scale it between the whole image and filling the screen, and drag to pan
 it; Conduit keeps the zoom for each orientation. The mini map shows when the profile has a Map
-or LaserScan topic; tap it for the full-screen map.
+or LaserScan topic; tap it for the full-screen map, with the camera in the small window instead.
+Drag the window anywhere: it stays where you let go, and moves aside if it would cover a control
+or a warning. Pinch it or double-tap it to switch between three sizes. Conduit keeps its place for
+each robot and each way of holding the phone. With VoiceOver, its actions move it to a free corner
+or edge and resize it.
 
 ### iPad and Mac
 
