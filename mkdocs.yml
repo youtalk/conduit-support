@@ -54,6 +54,7 @@ nav:
       - Mobile robots: robots-mobile.md
       - Robot arms: robots-arm.md
       - Try the demo: robots-demo.md
+  - Conduit Plus: plus.md
   - Help:
       - FAQ: faq.md
       - Troubleshooting: troubleshooting.md
