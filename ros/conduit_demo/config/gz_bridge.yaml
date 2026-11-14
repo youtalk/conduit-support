@@ -1,5 +1,5 @@
 # ros_gz_bridge topics for the demo arm (launch/arm.launch.py): Gazebo's clock and
-# the wrist camera, all from Gazebo to ROS.
+# the wrist and head cameras, all from Gazebo to ROS.
 - ros_topic_name: /clock
   gz_topic_name: /clock
   ros_type_name: rosgraph_msgs/msg/Clock
@@ -14,6 +14,18 @@
 
 - ros_topic_name: /wrist_camera/camera_info
   gz_topic_name: /wrist_camera/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /head_camera/image_raw
+  gz_topic_name: /head_camera/image_raw
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /head_camera/camera_info
+  gz_topic_name: /head_camera/camera_info
   ros_type_name: sensor_msgs/msg/CameraInfo
   gz_type_name: gz.msgs.CameraInfo
   direction: GZ_TO_ROS

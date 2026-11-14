@@ -52,7 +52,8 @@ def test_the_names_the_demo_uses_conflict():
         '/robot_description', '/robot_description_semantic', '/joint_states',
         '/joint_state_broadcaster/joint_states', '/servo_node/joint_trajectory',
         '/panda_arm_controller/joint_trajectory', '/wrist_camera/image_raw',
-        '/wrist_camera/camera_info', '/clock',
+        '/wrist_camera/camera_info', '/head_camera/image_raw', '/head_camera/camera_info',
+        '/clock',
     ]
     services = ['/controller_manager/list_controllers', '/servo_node/switch_command_type']
     actions = [
@@ -63,6 +64,7 @@ def test_the_names_the_demo_uses_conflict():
     frames = [
         'map', 'odom', 'base_footprint', 'base_link', 'camera_link', 'world', 'panda_link0',
         'panda_hand', 'panda_leftfinger', 'wrist_camera_link', 'wrist_camera_optical_frame',
+        'head_camera_link', 'head_camera_optical_frame',
     ]
     assert find_conflicts(topics, services, actions, frames) == sorted(
         topics + services + actions + frames)

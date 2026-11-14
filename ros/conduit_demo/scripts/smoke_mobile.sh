@@ -25,7 +25,7 @@
 # own, published there, or the one it joined. That container is left running. With the
 # arm on the same graph (any mode but mobile), /clock, /robot_description and
 # /joint_states must come from the arm alone (ros_gz_bridge, robot_state_publisher and
-# arm_clock), and /wrist_camera/image_raw is the second image topic.
+# arm_clock), and /head_camera/image_raw and /wrist_camera/image_raw are image topics too.
 set -u
 
 if [ $# -ne 3 ]; then
@@ -303,9 +303,10 @@ if [ "$WITH_ARM" = true ]; then
     "/clock [rosgraph_msgs/msg/Clock]"
     "/robot_description [std_msgs/msg/String]"
     "/joint_states [sensor_msgs/msg/JointState]"
+    "/head_camera/image_raw [sensor_msgs/msg/Image]"
     "/wrist_camera/image_raw [sensor_msgs/msg/Image]"
   )
-  EXPECTED_IMAGES="/camera/image_raw /wrist_camera/image_raw "
+  EXPECTED_IMAGES="/camera/image_raw /head_camera/image_raw /wrist_camera/image_raw "
 fi
 
 topics=""
