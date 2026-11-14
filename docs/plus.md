@@ -49,12 +49,18 @@ on the free plan, the Start button shows the time left too ("3h 12m left this we
 
 ## Plans
 
-- **Monthly** and **Yearly**: subscriptions that renew automatically until you cancel them.
-- **Lifetime**: one purchase, Conduit Plus for good. While a subscription is active, cancel it
-  before you buy Lifetime.
+| | Free | Monthly | Yearly | Lifetime | Founder |
+| --- | --- | --- | --- | --- | --- |
+| **Use** | 5 hours a week | No limit | No limit | No limit | No limit |
+| **Features** | Every feature | Every feature | Every feature | Every feature | Every feature |
+| **Payment** | None | Every month | Every year | Once | None |
+| **Renewal** | — | Automatic until you cancel | Automatic until you cancel | — | — |
+| **Settings shows** | Free | Conduit Plus | Conduit Plus | Conduit Plus · Lifetime | Conduit Plus · Founder |
+| **How to get it** | Every new user | Upgrade | Upgrade | Upgrade | A one-time feature of an earlier version ([Founder](#founder)) |
 
 Conduit shows the prices in your currency. To buy, open **Settings** → **Conduit Plus** and tap
-**Upgrade**, or choose a plan wherever Conduit shows Conduit Plus.
+**Upgrade**, or choose a plan wherever Conduit shows Conduit Plus. While a subscription is active,
+cancel it before you buy Lifetime.
 
 ## Founder
 
