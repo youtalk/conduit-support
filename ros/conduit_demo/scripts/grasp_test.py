@@ -87,7 +87,7 @@ HAND_DOWN = (1.0, 0.0, 0.0, 0.0)  # x, y, z, w
 TCP_OFFSET = 0.1034  # panda_hand to the point between the finger pads, along the hand's z
 
 # The cubes and their places in worlds/demo_table.sdf.
-CUBE_SIZE = 0.045
+CUBE_SIZE = 0.03
 CUBES = {
     'red': ('red_cube', (0.5, -0.12, CUBE_SIZE / 2)),
     'green': ('green_cube', (0.5, 0.0, CUBE_SIZE / 2)),
@@ -97,7 +97,7 @@ CUBES = {
 GRASP_HEIGHT = CUBE_SIZE / 2  # the pads' centre at the cube's centre
 LIFT = 0.10
 MIN_LIFT = 0.09
-MIN_FINGER = 0.015
+MIN_FINGER = 0.010  # finger1 on the cube reads half its width (0.015)
 FINGER_SUM_TOLERANCE = 0.006  # finger1 + finger2 vs the cube's width: both fingers on it
 FINGER_ASYMMETRY = 0.005      # |finger1 - finger2|: finger1 reports half the real opening
 PUT_DOWN_TOLERANCE = 0.005

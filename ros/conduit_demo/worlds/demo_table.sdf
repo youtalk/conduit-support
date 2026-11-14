@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   The Conduit Robots demo arm's world: the Panda (spawned at the origin, on the table
-  top) with three 4.5 cm cubes (red, green, blue) and a tray in reach.
+  top) with three 3 cm cubes (red, green, blue) and a tray in reach.
 
   Light setting: no shadows, one directional light, plain colors, so the wrist camera
   renders in software (Mesa llvmpipe) without a GPU. The physics step is 1 ms at a
@@ -141,16 +141,17 @@
       </link>
     </model>
 
-    <!-- Cubes: 4.5 cm, 50 g (inertia m a^2 / 6). -->
+    <!-- Cubes: 3 cm, 30 g (inertia m a^2 / 6), well inside the open gripper (7 cm at the SRDF's
+         `open`), so a grasp steered by hand has room to spare. -->
     <model name="red_cube">
-      <pose>0.5 -0.12 0.0225 0 0 0</pose>
+      <pose>0.5 -0.12 0.015 0 0 0</pose>
       <link name="link">
         <inertial>
-          <mass>0.05</mass>
+          <mass>0.03</mass>
           <inertia>
-            <ixx>1.6875e-05</ixx>
-            <iyy>1.6875e-05</iyy>
-            <izz>1.6875e-05</izz>
+            <ixx>4.5e-06</ixx>
+            <iyy>4.5e-06</iyy>
+            <izz>4.5e-06</izz>
             <ixy>0</ixy>
             <ixz>0</ixz>
             <iyz>0</iyz>
@@ -159,7 +160,7 @@
         <collision name="collision">
           <geometry>
             <box>
-              <size>0.045 0.045 0.045</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
           <surface>
@@ -174,7 +175,7 @@
         <visual name="visual">
           <geometry>
             <box>
-              <size>0.045 0.045 0.045</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
           <material>
@@ -186,14 +187,14 @@
     </model>
 
     <model name="green_cube">
-      <pose>0.5 0 0.0225 0 0 0</pose>
+      <pose>0.5 0 0.015 0 0 0</pose>
       <link name="link">
         <inertial>
-          <mass>0.05</mass>
+          <mass>0.03</mass>
           <inertia>
-            <ixx>1.6875e-05</ixx>
-            <iyy>1.6875e-05</iyy>
-            <izz>1.6875e-05</izz>
+            <ixx>4.5e-06</ixx>
+            <iyy>4.5e-06</iyy>
+            <izz>4.5e-06</izz>
             <ixy>0</ixy>
             <ixz>0</ixz>
             <iyz>0</iyz>
@@ -202,7 +203,7 @@
         <collision name="collision">
           <geometry>
             <box>
-              <size>0.045 0.045 0.045</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
           <surface>
@@ -217,7 +218,7 @@
         <visual name="visual">
           <geometry>
             <box>
-              <size>0.045 0.045 0.045</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
           <material>
@@ -229,14 +230,14 @@
     </model>
 
     <model name="blue_cube">
-      <pose>0.5 0.12 0.0225 0 0 0</pose>
+      <pose>0.5 0.12 0.015 0 0 0</pose>
       <link name="link">
         <inertial>
-          <mass>0.05</mass>
+          <mass>0.03</mass>
           <inertia>
-            <ixx>1.6875e-05</ixx>
-            <iyy>1.6875e-05</iyy>
-            <izz>1.6875e-05</izz>
+            <ixx>4.5e-06</ixx>
+            <iyy>4.5e-06</iyy>
+            <izz>4.5e-06</izz>
             <ixy>0</ixy>
             <ixz>0</ixz>
             <iyz>0</iyz>
@@ -245,7 +246,7 @@
         <collision name="collision">
           <geometry>
             <box>
-              <size>0.045 0.045 0.045</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
           <surface>
@@ -260,7 +261,7 @@
         <visual name="visual">
           <geometry>
             <box>
-              <size>0.045 0.045 0.045</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
           <material>
