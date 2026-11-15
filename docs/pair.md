@@ -95,8 +95,11 @@ When Conduit is connected, the script prints how to use the iPhone's topics:
 
 ```bash
 # From your own ROS 2 container: share the router container's network.
+# It needs rmw_zenoh_cpp, which the ros:lyrical image does not have.
 docker run --rm -it --network container:conduit-router \
-  -e RMW_IMPLEMENTATION=rmw_zenoh_cpp ros:lyrical bash
+  -e RMW_IMPLEMENTATION=rmw_zenoh_cpp ros:lyrical \
+  bash -c 'apt-get update && apt-get install -y ros-lyrical-rmw-zenoh-cpp &&
+    source /opt/ros/lyrical/setup.bash && exec bash'
 
 # Or from anywhere that reaches this computer: connect to its router port.
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
