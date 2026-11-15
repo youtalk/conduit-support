@@ -140,7 +140,8 @@ running_router() {
   [ "$status" -eq 0 ]
   has "The Zenoh router keeps running in Docker (container conduit-router, port 7447)"
   has "your own ROS 2 Lyrical containers"
-  has "docker run --rm -it --network container:conduit-router -e RMW_IMPLEMENTATION=rmw_zenoh_cpp ros:lyrical bash"
+  has "They need ros-lyrical-rmw-zenoh-cpp, which the ros:lyrical image does not have:"
+  has "docker run --rm -it --network container:conduit-router -e RMW_IMPLEMENTATION=rmw_zenoh_cpp ros:lyrical bash -c 'apt-get update && apt-get install -y ros-lyrical-rmw-zenoh-cpp && source /opt/ros/lyrical/setup.bash && exec bash'"
   has "export ZENOH_CONFIG_OVERRIDE='connect/endpoints=[\"tcp/192.168.1.85:7447\"]'"
   has "docker exec -it conduit-router with-ros ros2 topic echo /conduit/imu"
   has "To stop the router: docker stop conduit-router"
@@ -165,7 +166,7 @@ running_router() {
   [ "$status" -eq 0 ]
   called "$(router_run 7447 7449 ghcr.io/youtalk/conduit-router:jazzy-0.1.0)"
   has "&distro=jazzy&domain=0&"
-  has "ros:jazzy bash"
+  has "ros:jazzy bash -c 'apt-get update && apt-get install -y ros-jazzy-rmw-zenoh-cpp && source /opt/ros/jazzy/setup.bash && exec bash'"
 }
 
 @test "--distro rolling uses the Lyrical router" {
