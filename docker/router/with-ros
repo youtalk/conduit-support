@@ -1,0 +1,10 @@
+#!/bin/bash
+# with-ros COMMAND...: run COMMAND with ROS 2 and Conduit's message packages
+# sourced, for `docker exec conduit-router with-ros ros2 ...` (docker exec skips
+# the entrypoint). Unbuffered Python, so pair.sh sees the first message at once.
+# shellcheck source=/dev/null
+source "/opt/ros/${ROS_DISTRO}/setup.bash"
+# shellcheck source=/dev/null
+source /opt/conduit/setup.bash
+export PYTHONUNBUFFERED=1
+exec "$@"

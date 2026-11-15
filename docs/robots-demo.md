@@ -35,19 +35,20 @@ demo.
 ## Start the demo
 
 ```bash
-curl -fsSL https://conduit.direct/pair.sh | bash
+curl -fsSL https://conduit.direct/pair.sh | bash -s -- --demo
 ```
 
-On a Mac, or on a Linux PC without ROS 2, the script starts the demo in a Docker container
-called `conduit-demo`, with its own Zenoh router inside, and shows the pairing QR code. Scan it
-with the iPhone's Camera app, as in [Connect with a QR code](pair.md). On a Mac with Docker
-Desktop installed but not running, the script offers to start it.
+On a Mac, or on a Linux PC without ROS 2, the script starts a Zenoh router in Docker (container
+`conduit-router`, as in [Without ROS 2 on the PC](pair.md#without-ros-2-on-the-pc)), starts the
+demo in a second container called `conduit-demo` on the router's ROS 2 graph, and shows the
+pairing QR code. Scan it with the iPhone's Camera app, as in [Connect with a QR code](pair.md). On
+a Mac with Docker Desktop installed but not running, the script offers to start it.
 
 If Docker is missing, not running, or not usable by your user (on Linux, not in the `docker`
 group), the script says so in one line, with what to do, and stops.
 
-Run the script again while the demo is running and it reuses the running demo and shows the
-QR code again.
+Run the script again while the demo is running and it reuses the running router and demo and
+shows the QR code again.
 
 ## Add the robots
 
@@ -88,8 +89,8 @@ Both robots report to **Diagnostics**, so the diagnostics view lists both.
 
 ## With ROS 2 on the PC
 
-On a Linux PC with ROS 2, the script pairs your phone with that PC as usual and asks whether to add the
-demo robots too. If you say yes, the demo joins the PC's own ROS 2 graph, with the PC's RMW and
+On a Linux PC with ROS 2, the script with `--demo` pairs your phone with that PC as usual and adds
+the demo robots too. The demo joins the PC's own ROS 2 graph, with the PC's RMW and
 domain, and the QR code carries the PC's settings. The demo image matches the PC's distribution
 (Rolling uses the Lyrical image).
 
@@ -113,17 +114,19 @@ docker stop -t 30 conduit-demo
 ```
 
 The container takes up to about 20 seconds to shut down. Start it again by running the one-liner.
+On a computer without ROS 2 the router container keeps running too; stop it after the demo with
+`docker stop conduit-router`.
 
 ## Troubleshooting
 
 - **The script says Docker is not running.** Start Docker Desktop (Mac) or the Docker service
   (Linux) and run the script again.
-- **The script says the demo's port cannot be reached.** Some Docker runtimes (Colima, some
+- **The script says the router's port cannot be reached.** Some Docker runtimes (Colima, some
   OrbStack setups) publish ports on this computer only, and a firewall may block the rest. Use
   Docker Desktop on a Mac, or allow the connections.
 - **Conduit never checks in.** See [Connect with a QR code](pair.md#troubleshooting). On a Mac,
   if the macOS firewall is on, let Docker accept incoming connections in System Settings > Network >
   Firewall > Options.
-- **"No topics found" right after pairing.** The QR code appears as soon as the demo's router is
+- **"No topics found" right after pairing.** The QR code appears as soon as the router is
   ready, but the robots take about 20 to 30 seconds more to come up. Wait about half a minute and
   tap Start again.

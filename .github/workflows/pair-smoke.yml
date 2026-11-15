@@ -4,17 +4,21 @@ name: Pairing script smoke test
 # binary packages (debs on Ubuntu, RPMs on RHEL and Fedora), with
 # tests/pair/smoke/fake_conduit.py in place of the iPhone.
 # A container stands in for the PC, so this checks the script, not the LAN.
+# The container job runs the container path on a runner with Docker and no
+# ROS 2, against a router image built from docker/router.
 on:
   pull_request:
     paths:
       - "pair/**"
       - "tests/pair/**"
+      - "docker/router/**"
       - ".github/workflows/pair-smoke.yml"
   push:
     branches: [main]
     paths:
       - "pair/**"
       - "tests/pair/**"
+      - "docker/router/**"
       - ".github/workflows/pair-smoke.yml"
   workflow_dispatch:
 
@@ -100,3 +104,26 @@ jobs:
           source "/opt/ros/${DISTRO}/setup.bash"
           set -u
           bash tests/pair/smoke/run.sh
+
+  container:
+    name: Container path ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [jazzy, lyrical]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the router image
+        env:
+          DISTRO: ${{ matrix.distro }}
+        run: docker build -f docker/router/Dockerfile --build-arg ROS_DISTRO="$DISTRO" -t "conduit-router:$DISTRO-ci" .
+
+      - name: Pair with a fake Conduit through the router container
+        timeout-minutes: 15
+        env:
+          DISTRO: ${{ matrix.distro }}
+          CONDUIT_ROUTER_IMAGE: conduit-router:${{ matrix.distro }}-ci
+        run: bash tests/pair/smoke/run_container.sh "$DISTRO"
