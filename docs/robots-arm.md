@@ -5,11 +5,6 @@ description: Move a MoveIt Servo arm with the motion of your iPhone or iPad, and
 
 # Teleoperate a robot arm
 
-!!! info "Coming in Conduit 3"
-    Robots is part of Conduit 3, which is not on the App Store yet. The Conduit on the App Store
-    today (2.x) publishes sensors but has no robot button. This page describes Robots as it will
-    ship in Conduit 3.
-
 While you hold **HOLD**, the arm's end effector follows the motion of your iPhone or iPad:
 Conduit turns ARKit's pose of the device into `geometry_msgs/TwistStamped` for MoveIt Servo
 (`/servo_node/delta_twist_cmds` by default). A gripper arc works the gripper, and a pose menu

@@ -48,7 +48,7 @@ Each camera publishes on its own topics under `/conduit/camera/<camera>/`:
 | Ultra Wide (back) | `ultrawide` | `camera_ultrawide_optical_frame` |
 | Telephoto (back) | `telephoto` | `camera_telephoto_optical_frame` |
 
-You see only the cameras your device has. You can turn on several at once. The front camera is free; the back cameras need the Back Cameras In-App Purchase. On a Mac, Conduit uses the built-in FaceTime HD camera only.
+You see only the cameras your device has. You can turn on several at once. On a Mac, Conduit uses the built-in FaceTime HD camera only.
 
 Each camera's settings sheet has:
 
@@ -63,7 +63,7 @@ Higher resolutions and quality settings can lower the achieved frame rate.
 
 ## LiDAR
 
-LiDAR needs an iPhone 12 Pro or later Pro model, or an iPad Pro (2020 or later), and the LiDAR In-App Purchase. It uses ARKit, which provides only the wide back camera: while LiDAR is on, only the wide camera streams, and turning on another camera turns LiDAR off (Conduit asks first).
+LiDAR needs an iPhone 12 Pro or later Pro model, or an iPad Pro (2020 or later). It uses ARKit, which provides only the wide back camera: while LiDAR is on, only the wide camera streams, and turning on another camera turns LiDAR off (Conduit asks first).
 
 The LiDAR settings sheet has an **Output** setting:
 

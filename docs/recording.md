@@ -7,19 +7,20 @@ description: Record Conduit's topics to an MCAP file on the device, then open it
 
 Conduit can write every topic it publishes to an **MCAP** file on the device. Open the file in
 [Foxglove](https://foxglove.dev/) or [Lichtblick](https://github.com/lichtblick-suite/lichtblick),
-or replay it into a ROS 2 graph with `ros2 bag play`. Recording is free.
+or replay it into a ROS 2 graph with `ros2 bag play`.
 
 ## Record
 
-Next to the Start button, pick what Start does:
+Turn on the sensors you want, then touch and hold the Start button and pick what to do:
 
-| Mode | What happens |
+| Choice | What happens |
 | --- | --- |
-| **Publish** | Sends the topics to ROS 2. Nothing is recorded |
-| **Record** | Writes the topics to an MCAP file. No network or ROS 2 host is needed |
-| **Both** | Sends the topics to ROS 2 and records them |
+| **Publish to Router** | Sends the topics to ROS 2. Nothing is recorded |
+| **Record to File** | Writes the topics to an MCAP file. No network or ROS 2 host is needed |
+| **Publish & Record** | Sends the topics to ROS 2 and records them |
 
-Turn on the sensors you want, then tap Start. Tap it again to stop and close the file.
+The Start button remembers the choice: its icon shows it, and a tap starts it again. Tap Stop to
+stop and close the file. While publishing, touch and hold Stop to start recording too.
 
 A recording holds the same messages, with the same stamps, as the live topics, plus
 `/tf_static`, so viewers can place point clouds and camera images in 3D. Each file carries the
@@ -34,15 +35,9 @@ Files are named `conduit_<yyyy-MM-dd>_<HH-mm-ss>.mcap`, in the device's local ti
 
 ## Share a recording
 
-Sharing a recording off the device needs the **Recording Export** purchase (Settings → Premium
-Features). With it:
-
 - The share button on a recording opens the share sheet: AirDrop, Files, Mail and so on.
 - Recordings are kept in **Documents/Recordings**, which the Files app (iPhone and iPad) and
-  Finder (Mac, with the iPhone connected) can open. Recordings made before the purchase move
-  there too.
-
-Without it, recordings stay in Conduit's private storage and the share button shows a lock.
+  Finder (Mac, with the iPhone connected) can open.
 
 ## Open a recording
 

@@ -4,21 +4,17 @@ Current limitations and known issues in Conduit.
 
 ## Privacy & policy constraints
 
-### Background GPS tracking not supported
+### Background GPS needs Background Publishing
 
-**Status**: Limitation of the current release
+**Status**: By design
 
-**Reason**: Conduit does not ask for "Always" location permission, and iOS can suspend an app in the background at any time.
+**Reason**: Conduit asks only for "While Using the App" location permission. iOS lets it keep using the location in the background only while it publishes there.
 
 **Current behavior**:
 
-- GPS publishes while Conduit is in the foreground
 - With Settings → Publishing → **Background Publishing** off, GPS stops when you leave the app
-- With **Background Publishing** on, GPS may keep publishing for a while, but iOS can suspend Conduit at any time, so do not rely on it for a long track
-
-**Workaround**:
-
-- Keep the app in the foreground during GPS data collection
+- With **Background Publishing** on, GPS keeps publishing in the background, and iOS shows that Conduit is using your location
+- If you turn off Conduit's location permission, or set it to "Never", while Conduit is in the background, background publishing ends
 
 ---
 
@@ -42,9 +38,9 @@ Current limitations and known issues in Conduit.
 
 **Status**: iOS system restriction
 
-**Reason**: iOS doesn't allow camera/ARKit usage in background. Camera and LiDAR stop even with **Background Publishing** on. The Microphone also stops in the background in the current release.
+**Reason**: iOS doesn't allow camera/ARKit usage in background. Camera and LiDAR stop even with **Background Publishing** on, and start again when you return to Conduit. GPS and Microphone keep publishing in the background with **Background Publishing** on.
 
-**Workaround**: Keep app in foreground when using Camera, LiDAR or Microphone
+**Workaround**: Keep app in foreground when using Camera or LiDAR
 
 ### Proximity sensor only on iPhone
 
@@ -182,27 +178,15 @@ ros2 topic echo /conduit/camera/front/camera_info \
 
 ---
 
-## Premium features
+## Conduit Plus
 
-### Premium purchase required for some sensors
+### Weekly free time
 
 **Status**: By design (business model)
 
-**Free**:
+Every feature is free for 5 hours of use every week; Conduit Plus removes the limit. Owners of a Conduit 2 one-time feature have Conduit Plus as Founders. See [Conduit Plus](plus.md).
 
-- IMU, GPS, Magnetometer, Barometer, Illuminance, Proximity, Battery, Thermal, **Microphone**
-- Front camera
-- **MCAP recording** to the device
-
-**One-time In-App Purchases**:
-
-- **Back Cameras** — Wide, Ultra Wide and Telephoto cameras in one purchase
-- **LiDAR**
-- **Game Controller**
-- **Background Mode** — keep publishing while the app is in the background
-- **Recording Export** — export and share recorded `.mcap` files
-
-### Premium purchases not syncing
+### Plan not shown after a purchase or on a new device
 
 **Status**: Rare issue
 
@@ -211,8 +195,8 @@ ros2 topic echo /conduit/camera/front/camera_info \
 **Solutions**:
 
 1. Restart app
-2. Restore purchases (Settings → Premium Features → Restore Purchases)
-3. Verify Apple ID is correct
+2. Restore purchases (Settings → Conduit Plus → Restore Purchases)
+3. Verify that the device uses the Apple Account you bought with
 
 ---
 
@@ -220,7 +204,7 @@ ros2 topic echo /conduit/camera/front/camera_info \
 
 | Issue | Workaround |
 |-------|------------|
-| Background GPS | Keep app in foreground |
+| Background GPS | Turn on Background Publishing |
 | macOS no IMU / GPS | Use iPhone/iPad |
 | Camera background | Keep app in foreground |
 | Memory warnings | Reduce active sensors |

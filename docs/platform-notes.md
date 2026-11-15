@@ -55,12 +55,13 @@ In [Robots](robots.md) (Conduit 3), the robot arm view only watches on a Mac; mo
 
 ## Background publishing
 
-Settings → Publishing → **Background Publishing** keeps sensors publishing after you leave the app. It needs the Background Mode In-App Purchase.
+Settings → Publishing → **Background Publishing** keeps sensors publishing after you leave the app.
 
-- Camera and LiDAR stop in the background (iOS restriction).
-- The other sensors keep publishing until iOS suspends the app, which it can do at any time.
+- On iPhone and iPad, Conduit keeps running in the background as long as the **GPS** or **Microphone** sensor is on. Without either, the other sensors publish only until iOS suspends the app.
+- Camera and LiDAR stop in the background (iOS restriction) and start again when you return.
+- On iPhone, a Live Activity on the Lock Screen and in the Dynamic Island shows the running session.
 
-Keep Conduit in the foreground when you need data for a long time. See [Known issues](known-issues.md).
+See [Known issues](known-issues.md).
 
 ## Network
 

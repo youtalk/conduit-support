@@ -5,11 +5,6 @@ description: Watch a ROS 2 robot's camera, map and diagnostics on your iPhone, i
 
 # Robots
 
-!!! info "Coming in Conduit 3"
-    Robots is part of Conduit 3, which is not on the App Store yet. The Conduit on the App Store
-    today (2.x) publishes sensors but has no robot button. This page describes Robots as it will
-    ship in Conduit 3.
-
 Conduit 3.0 subscribes as well as publishes. A **robot profile** says which topics hold the
 robot's camera, map, odometry, battery and diagnostics, and where Conduit sends its commands.
 **Open** shows the drive view:
