@@ -25,7 +25,8 @@ Conduit has been downloaded over 10,000 times and has ranked as high as **#4 in 
     ```bash
     curl -fsSL https://conduit.direct/pair.sh | bash
     ```
-    The script checks the setup and shows a QR code.
+    The script checks the setup and shows a QR code. On a Mac, or a Linux PC whose ROS 2 runs only
+    in Docker, the same command starts a Zenoh router in Docker for the iPhone and your containers.
 3. **Scan the QR code** with the iPhone's Camera app. Conduit opens and fills in the connection settings.
 4. **Turn on sensors and tap Start**, then check on the PC:
     ```bash

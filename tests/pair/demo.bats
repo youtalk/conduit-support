@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
-# pair.sh --demo, hidden until Conduit 3.0: a Mac or a Linux PC without ROS 2
-# runs the demo container with its own Zenoh router and pairs with it; a Linux
+# pair.sh --demo, hidden until Conduit 3.0: on the container path (a Mac or a
+# Linux PC without ROS 2) the demo joins the router container's graph; a Linux
 # PC with ROS 2 pairs as usual and adds the demo robots to its graph.
+# container.bats covers the router container itself.
 
 bats_require_minimum_version 1.5.0
 load helpers
@@ -11,6 +12,7 @@ LAN_ADDR='3: wlp130s0f0    inet 192.168.1.85/24 scope global wlp130s0f0'
 GOOD_CHECKIN='CHECKIN phone_ip=192.168.1.50 node=conduit_node namespace=conduit device=iPhone app_version=3.0.0'
 LYRICAL_IMAGE='ghcr.io/youtalk/conduit-demo:lyrical-0.1.0'
 JAZZY_IMAGE='ghcr.io/youtalk/conduit-demo:jazzy-0.1.0'
+ROUTER_IMAGE='ghcr.io/youtalk/conduit-router:lyrical-0.1.0'
 ZENOH_CLIENT='ZENOH_CONFIG_OVERRIDE=mode="client";connect/endpoints=["tcp/127.0.0.1:7447"]'
 
 setup() {
@@ -18,7 +20,7 @@ setup() {
   make_fixture
   export HOME="$BATS_TEST_TMPDIR/home"
   mkdir -p "$HOME"
-  unset CYCLONEDDS_URI ROS_STATIC_PEERS FASTRTPS_DEFAULT_PROFILES_FILE PAIR_FORCE_VIA CONDUIT_DEMO_IMAGE
+  unset CYCLONEDDS_URI ROS_STATIC_PEERS FASTRTPS_DEFAULT_PROFILES_FILE PAIR_FORCE_VIA CONDUIT_DEMO_IMAGE CONDUIT_ROUTER_IMAGE
   STUBS="$BATS_TEST_TMPDIR/stubs"
   mkdir -p "$STUBS"
   PATH="$STUBS:$PATH"
@@ -65,13 +67,6 @@ ros_setup() {
 
 docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
 
-@test "without --demo macOS is still refused" {
-  PAIR_UNAME=Darwin run main --no-qr
-  [ "$status" -eq 1 ]
-  has "This script supports Ubuntu, RHEL and Fedora only"
-  [ -z "$(docker_calls)" ]
-}
-
 @test "--demo is not in the help" {
   run main --help
   [ "$status" -eq 0 ]
@@ -85,19 +80,21 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   has "&host=192.168.1.73&port=7447&checkin=192.168.1.73%3A7449&"
 }
 
-@test "Linux without ROS 2 takes the demo path" {
+@test "Linux without ROS 2 starts the router, then the demo on the router's graph" {
   no_ros
   run main --demo --no-qr
   [ "$status" -eq 0 ]
+  called "run -d --name conduit-router --restart unless-stopped -p 7447:7447 -p 7449:7449 $ROUTER_IMAGE"
   called "pull $LYRICAL_IMAGE"
-  called "run -d --name conduit-demo -p 7447:7447 -p 7449:7449 $LYRICAL_IMAGE standalone"
-  # The listener runs in the container.
-  grep -q '^exec -i conduit-demo python3 -u -c ' "$DOCKER_STUB/calls"
+  called "run -d --name conduit-demo --network container:conduit-router -e RMW_IMPLEMENTATION=rmw_zenoh_cpp -e ROS_DOMAIN_ID=0 -e $ZENOH_CLIENT $LYRICAL_IMAGE join"
+  # The listener runs in the router container.
+  grep -q '^exec -i conduit-router python3 -u -c ' "$DOCKER_STUB/calls"
   has "iPhone checked in."
   lacks "checked in from"
+  has "The demo robots are starting on the router's graph."
+  has "Connected to iPhone."
   has "Add robot"
-  has "docker stop -t 30 conduit-demo"
-  [ ! -e "$BATS_TEST_TMPDIR/ros2.log" ]
+  has "docker stop -t 30 conduit-demo && docker stop conduit-router"
 }
 
 @test "the demo link is Zenoh, Lyrical, domain 0, the chosen ports" {
@@ -108,56 +105,6 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   has "https://conduit.direct/pair#v=1&transport=zenoh&distro=lyrical&domain=0&host=192.168.1.85&port=7448&checkin=192.168.1.85%3A7450&token="
 }
 
-@test "the router port moves to 7448 when 7447 is taken" {
-  no_ros
-  taken 7447
-  run main --demo --no-qr
-  [ "$status" -eq 0 ]
-  called "run -d --name conduit-demo -p 7448:7447 -p 7449:7449 $LYRICAL_IMAGE standalone"
-  has "&port=7448&checkin=192.168.1.85%3A7449&"
-}
-
-@test "the check-in port moves when 7449 is taken" {
-  no_ros
-  taken 7449
-  run main --demo --no-qr
-  [ "$status" -eq 0 ]
-  called "run -d --name conduit-demo -p 7447:7447 -p 7450:7449 $LYRICAL_IMAGE standalone"
-  has "&port=7447&checkin=192.168.1.85%3A7450&"
-}
-
-@test "the router and check-in ports never share one port" {
-  no_ros
-  taken 7447 7448
-  run main --demo --no-qr
-  [ "$status" -eq 0 ]
-  called "run -d --name conduit-demo -p 7449:7447 -p 7450:7449 $LYRICAL_IMAGE standalone"
-}
-
-@test "no free port stops before the container" {
-  no_ros
-  taken 7447 7448 7449 7450 7451 7452 7453 7454 7455 7456 7457
-  run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "7447-7457"
-  not_called '^run '
-}
-
-@test "a running conduit-demo container is reused with its ports" {
-  no_ros
-  echo "$LYRICAL_IMAGE" > "$DOCKER_STUB/images"
-  echo "true $LYRICAL_IMAGE bridge" > "$DOCKER_STUB/container"
-  echo "running 0" > "$DOCKER_STUB/status"
-  printf '%s\n' '7447 0.0.0.0:7451' '7447 [::]:7451' '7449 0.0.0.0:7452' > "$DOCKER_STUB/ports"
-  echo "Started Zenoh router with id 0123456789abcdef" > "$DOCKER_STUB/logs"
-  run main --demo --no-qr
-  [ "$status" -eq 0 ]
-  not_called '^run '
-  not_called '^rm '
-  has "already running"
-  has "&port=7451&checkin=192.168.1.85%3A7452&"
-}
-
 @test "a stopped conduit-demo container is replaced" {
   no_ros
   echo "false $LYRICAL_IMAGE bridge" > "$DOCKER_STUB/container"
@@ -165,85 +112,36 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   run main --demo --no-qr
   [ "$status" -eq 0 ]
   called "rm conduit-demo"
-  called "run -d --name conduit-demo -p 7447:7447 -p 7449:7449 $LYRICAL_IMAGE standalone"
+  grep -q "^run -d --name conduit-demo --network container:conduit-router .* $LYRICAL_IMAGE join\$" "$DOCKER_STUB/calls"
 }
 
-@test "another running conduit-demo container stops the demo path" {
+@test "a running standalone demo from an earlier version stops the container path" {
   no_ros
-  echo "true conduit-demo:old bridge" > "$DOCKER_STUB/container"
+  echo "true $LYRICAL_IMAGE bridge" > "$DOCKER_STUB/container"
   echo "running 0" > "$DOCKER_STUB/status"
   run main --demo --no-qr
   [ "$status" -eq 1 ]
-  has "conduit-demo:old"
+  has "from an earlier version of this script"
   has "docker stop -t 30 conduit-demo"
   not_called '^run \|^rm '
 }
 
-@test "a port published on 127.0.0.1 only is reported before the QR" {
+@test "a demo running on the router's graph is reused" {
   no_ros
-  touch "$BATS_TEST_TMPDIR/lan_blocked"
+  echo "$ROUTER_IMAGE" > "$DOCKER_STUB/images"
+  echo "true $ROUTER_IMAGE bridge" > "$(router_dir)/container"
+  echo "running 0" > "$(router_dir)/status"
+  printf '%s\n' '7447 0.0.0.0:7447' '7449 0.0.0.0:7449' > "$(router_dir)/ports"
+  echo "Started Zenoh router with id 0123456789abcdef" > "$(router_dir)/logs"
+  echo "true $LYRICAL_IMAGE container:id-conduit-router" > "$DOCKER_STUB/container"
+  echo "running 0" > "$DOCKER_STUB/status"
+  printf '%s\n' RMW_IMPLEMENTATION=rmw_zenoh_cpp ROS_DOMAIN_ID=0 > "$DOCKER_STUB/env"
   run main --demo --no-qr
   [ "$status" -eq 0 ]
-  output="${output%%https://conduit.direct/pair#*}"
-  has "could not connect to the demo at 192.168.1.85:7447"
-  has "127.0.0.1 only"
-}
-
-@test "a container that does not start is reported" {
-  no_ros
-  echo "Bind for 0.0.0.0:7447 failed: port is already allocated" > "$DOCKER_STUB/run_error"
-  run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "port is already allocated"
-  lacks "conduit.direct/pair"
-}
-
-@test "a demo container that exits is reported with its log" {
-  no_ros
-  echo "entrypoint: the Zenoh router did not start on port 7447" > "$DOCKER_STUB/crash_log"
-  run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "The demo container stopped"
-  has "the Zenoh router did not start on port 7447"
-  lacks "conduit.direct/pair"
-}
-
-@test "a router that never starts stops the wait" {
-  no_ros
-  echo "true $LYRICAL_IMAGE bridge" > "$DOCKER_STUB/container"
-  echo "running 0" > "$DOCKER_STUB/status"
-  printf '%s\n' '7447 0.0.0.0:7447' '7449 0.0.0.0:7449' > "$DOCKER_STUB/ports"
-  echo "starting" > "$DOCKER_STUB/logs"
-  PAIR_DEMO_START_SECONDS=2 run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "did not start within 2 seconds"
-  lacks "conduit.direct/pair"
-  # Not this run's container: it stays, and the user is told how to stop it.
-  not_called '^rm'
-  has "docker stop -t 30 conduit-demo"
-}
-
-@test "a container this run started whose router never starts is removed" {
-  no_ros
-  touch "$DOCKER_STUB/never_ready"
-  PAIR_DEMO_START_SECONDS=2 run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "did not start within 2 seconds"
-  has "Removed the demo container"
-  called "rm -f conduit-demo"
-  [ ! -e "$DOCKER_STUB/container" ]
-  lacks "conduit.direct/pair"
-}
-
-@test "a docker run that does not finish is force-removed" {
-  no_ros
-  touch "$DOCKER_STUB/run_hang"
-  PAIR_DOCKER_RUN_SECONDS=2 run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "did not finish within 2 seconds"
-  called "rm -f conduit-demo"
-  [ ! -e "$DOCKER_STUB/container" ]
-  lacks "conduit.direct/pair"
+  not_called '^run '
+  not_called '^rm '
+  has "The demo robots are already running on the router's graph"
+  has "Add robot"
 }
 
 @test "CONDUIT_DEMO_IMAGE overrides the image, which is not pulled when present" {
@@ -252,69 +150,8 @@ docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
   echo conduit-demo:lyrical-dev > "$DOCKER_STUB/images"
   run main --demo --no-qr
   [ "$status" -eq 0 ]
-  called "run -d --name conduit-demo -p 7447:7447 -p 7449:7449 conduit-demo:lyrical-dev standalone"
-  not_called '^pull '
-}
-
-@test "the QR code is drawn in the demo container" {
-  ! command -v qrencode > /dev/null || skip "qrencode draws it here"
-  no_ros
-  run main --demo
-  [ "$status" -eq 0 ]
-  grep -q '^exec -i conduit-demo python3 - https://conduit.direct/pair#v=1&transport=zenoh&distro=lyrical&' "$DOCKER_STUB/calls"
-  has "Scan the QR"
-}
-
-@test "Docker Desktop not running offers to start it" {
-  on_macos
-  mkdir -p "$CONDUIT_PAIR_ROOT/Applications/Docker.app"
-  echo down > "$DOCKER_STUB/info"
-  stub_open
-  run main --demo --no-qr
-  [ "$status" -eq 0 ]
-  has "Docker Desktop is not running. Start it now? [Y/n]"
-  called "open -a Docker"
-  has "https://conduit.direct/pair#"
-}
-
-@test "Docker Desktop declined exits 1" {
-  on_macos
-  mkdir -p "$CONDUIT_PAIR_ROOT/Applications/Docker.app"
-  echo down > "$DOCKER_STUB/info"
-  stub_open
-  echo n > "$PAIR_TTY"
-  run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "Start Docker Desktop"
-  not_called '^open '
-}
-
-@test "the Docker daemon refusing the user explains the docker group" {
-  no_ros
-  echo denied > "$DOCKER_STUB/info"
-  run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "docker group"
-  has "sudo usermod -aG docker"
-  lacks "conduit.direct/pair"
-}
-
-@test "a Docker daemon that is not running is reported" {
-  no_ros
-  echo down > "$DOCKER_STUB/info"
-  run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "sudo systemctl start docker"
-}
-
-@test "no Docker says how to install it" {
-  no_ros
-  command() { [[ "$*" != "-v docker" ]] || return 1; builtin command "$@"; }
-  run main --demo --no-qr
-  [ "$status" -eq 1 ]
-  has "https://docs.docker.com/engine/install/"
-  has "https://docs.ros.org/en/lyrical/Get-Started/Installation.html"
-  lacks "conduit.direct/pair"
+  grep -q "^run -d --name conduit-demo .* conduit-demo:lyrical-dev join\$" "$DOCKER_STUB/calls"
+  not_called '^pull conduit-demo'
 }
 
 @test "/opt/ros with one distribution is sourced and paired natively" {
@@ -481,11 +318,11 @@ joined_demo() {
   [ "$(grep -c 'docker stop -t 30 conduit-demo' <<< "$output")" -eq 2 ]
 }
 
-@test "the demo path's next steps do not ask to stop the demo first" {
+@test "the container path's next steps do not ask to stop the demo first" {
   no_ros
   run main --demo --no-qr
   [ "$status" -eq 0 ]
-  has "docker stop -t 30 conduit-demo"
+  has "docker stop -t 30 conduit-demo && docker stop conduit-router"
   lacks "before you start your own robot"
 }
 

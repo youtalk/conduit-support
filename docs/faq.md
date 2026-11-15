@@ -12,7 +12,7 @@ Run one command on your ROS 2 PC:
 curl -fsSL https://conduit.direct/pair.sh | bash
 ```
 
-The script checks the PC's ROS 2 setup, shows a QR code, and waits. Scan the code with the iPhone's Camera app, and Conduit fills in the connection settings. This is the easiest way to connect, for Zenoh and for DDS. See [Connect with a QR code](pair.md) for the requirements and for what to do when nothing happens after the scan.
+The script checks the PC's ROS 2 setup, shows a QR code, and waits. Scan the code with the iPhone's Camera app, and Conduit fills in the connection settings. This is the easiest way to connect, for Zenoh and for DDS. On a Mac, or a Linux PC without ROS 2, the script starts a Zenoh router in Docker instead, which the iPhone and your ROS 2 containers connect to. See [Connect with a QR code](pair.md) for the requirements and for what to do when nothing happens after the scan.
 
 The manual steps below still work if you prefer them or cannot run the script.
 

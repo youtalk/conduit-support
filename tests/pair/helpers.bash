@@ -104,7 +104,10 @@ STUB
 # Its state is in $DOCKER_STUB:
 #   info       ok, down (no daemon) or denied (the daemon refuses this user)
 #   images     the image references present, one per line (docker pull adds)
-#   container  "<running> <image> <network mode>" of the one container, if any
+#   calls      every call, one line each
+# and per container in a directory of its own, `cdir NAME`: $DOCKER_STUB itself
+# for conduit-demo, $DOCKER_STUB/c/NAME for any other (conduit-router):
+#   container  "<running> <image> <network mode>" of the container, if any
 #   status     "<status> <exit code>" of that container
 #   env        its environment, NAME=VALUE lines (docker run -e adds)
 #   ports      "<container port> <host address>:<host port>" lines (docker port)
@@ -114,15 +117,15 @@ STUB
 #   join_exit  how `docker run ... join` ends: 0 (no conflicts), or that exit
 #              status with join_log as the log
 #   run_error  when present, `docker run` fails with this message
-#   crash_log  when present, a standalone container exits at once with this log
+#   crash_log  when present, a router container exits at once with this log
 #   never_ready  when present, the container runs but never logs its router
-#              (standalone) or its name check's result (join)
+#              (router) or its name check's result (join)
 #   run_hang   when present, `docker run` creates the running container and
 #              then never returns
-#   calls      every call, one line each
+# `docker inspect --format {{.Id}}` answers id-NAME.
 stub_docker() {
   export DOCKER_STUB="$BATS_TEST_TMPDIR/docker"
-  mkdir -p "$DOCKER_STUB"
+  mkdir -p "$DOCKER_STUB/c/conduit-router"
   echo ok > "$DOCKER_STUB/info"
   : > "$DOCKER_STUB/images"
   echo 0 > "$DOCKER_STUB/join_exit"
@@ -130,6 +133,9 @@ stub_docker() {
 #!/usr/bin/env bash
 d="$DOCKER_STUB"
 printf '%s\n' "$*" >> "$d/calls"
+cdir() {
+  if [ "$1" = conduit-demo ]; then echo "$d"; else mkdir -p "$d/c/$1" && echo "$d/c/$1"; fi
+}
 case "$1" in
   info)
     case "$(cat "$d/info")" in
@@ -150,73 +156,93 @@ case "$1" in
     echo "Status: Downloaded newer image for $2"
     ;;
   inspect)
-    if [ ! -e "$d/container" ]; then
+    c="$(cdir "$4")"
+    if [ ! -e "$c/container" ]; then
       echo "Error: No such object: $4" >&2
       exit 1
     fi
     case "$3" in
-      *State.Status*) cat "$d/status" ;;
-      *Config.Env*) cat "$d/env" 2> /dev/null ;;
-      *) cat "$d/container" ;;
+      *State.Status*) cat "$c/status" ;;
+      *Config.Env*) cat "$c/env" 2> /dev/null ;;
+      *.Id*) echo "id-$4" ;;
+      *) cat "$c/container" ;;
     esac
     ;;
-  port) awk -v p="${3%/tcp}" '$1 == p { print $2 }' "$d/ports" ;;
+  port)
+    c="$(cdir "$2")"
+    awk -v p="${3%/tcp}" '$1 == p { print $2 }' "$c/ports" 2> /dev/null
+    ;;
   logs)
-    if [ -e "$d/logs_first" ]; then
-      cat "$d/logs_first"
-      rm -f "$d/logs_first"
+    c="$(cdir "$2")"
+    if [ -e "$c/logs_first" ]; then
+      cat "$c/logs_first"
+      rm -f "$c/logs_first"
     else
-      cat "$d/logs" 2> /dev/null
+      cat "$c/logs" 2> /dev/null
     fi
     ;;
   rm)
-    if [ "$2" != -f ] && grep -q '^true ' "$d/container" 2> /dev/null; then
+    if [ "$2" = -f ]; then name="$3"; else name="$2"; fi
+    c="$(cdir "$name")"
+    if [ "$2" != -f ] && grep -q '^true ' "$c/container" 2> /dev/null; then
       echo "Error response from daemon: cannot remove container: container is running: stop the container before removing or force remove" >&2
       exit 1
     fi
-    rm -f "$d/container" "$d/status" "$d/ports" "$d/logs" "$d/env"
+    rm -f "$c/container" "$c/status" "$c/ports" "$c/logs" "$c/env"
     ;;
   exec)
-    shift 3
+    shift
+    while [ "${1#-}" != "$1" ]; do shift; done
+    shift
+    [ "$1" != with-ros ] || shift
     exec "$@"
     ;;
   run)
     shift
     net=default
-    : > "$d/ports"
-    : > "$d/env"
-    while [ $# -gt 2 ]; do
+    name=""
+    ports=""
+    env=""
+    while [ "${1#-}" != "$1" ]; do
       case "$1" in
-        -p) echo "${2#*:} 0.0.0.0:${2%%:*}" >> "$d/ports"; shift ;;
+        -p) ports="$ports${2#*:} 0.0.0.0:${2%%:*}
+"; shift ;;
         --network) net="$2"; shift ;;
-        -e) echo "$2" >> "$d/env"; shift ;;
-        --name | -v) shift ;;
+        -e) env="$env$2
+"; shift ;;
+        --name) name="$2"; shift ;;
+        -v | --restart) shift ;;
       esac
       shift
     done
-    if [ -e "$d/run_error" ]; then
-      cat "$d/run_error" >&2
+    image="$1"
+    mode="${2:-}"
+    c="$(cdir "$name")"
+    printf '%s' "$ports" > "$c/ports"
+    printf '%s' "$env" > "$c/env"
+    if [ -e "$c/run_error" ]; then
+      cat "$c/run_error" >&2
       exit 125
     fi
-    echo "true $1 $net" > "$d/container"
-    echo "running 0" > "$d/status"
-    if [ -e "$d/run_hang" ]; then
-      echo "starting" > "$d/logs"
+    echo "true $image $net" > "$c/container"
+    echo "running 0" > "$c/status"
+    if [ -e "$c/run_hang" ]; then
+      echo "starting" > "$c/logs"
       exec sleep 30
-    elif [ -e "$d/never_ready" ]; then
-      echo "starting" > "$d/logs"
-    elif [ "$2" != join ] && [ -e "$d/crash_log" ]; then
-      echo "false $1 $net" > "$d/container"
-      echo "exited 1" > "$d/status"
-      cat "$d/crash_log" > "$d/logs"
-    elif [ "$2" != join ]; then
-      echo "Started Zenoh router with id 0123456789abcdef" > "$d/logs"
+    elif [ -e "$c/never_ready" ]; then
+      echo "starting" > "$c/logs"
+    elif [ "$mode" != join ] && [ -e "$c/crash_log" ]; then
+      echo "false $image $net" > "$c/container"
+      echo "exited 1" > "$c/status"
+      cat "$c/crash_log" > "$c/logs"
+    elif [ "$mode" != join ]; then
+      echo "Started Zenoh router with id 0123456789abcdef" > "$c/logs"
     elif [ "$(cat "$d/join_exit")" = 0 ]; then
-      echo "check_conflicts: no conflicts (12 topics, 30 services, 0 actions, 4 frames)" > "$d/logs"
+      echo "check_conflicts: no conflicts (12 topics, 30 services, 0 actions, 4 frames)" > "$c/logs"
     else
-      echo "false $1 $net" > "$d/container"
-      echo "exited $(cat "$d/join_exit")" > "$d/status"
-      cat "$d/join_log" > "$d/logs"
+      echo "false $image $net" > "$c/container"
+      echo "exited $(cat "$d/join_exit")" > "$c/status"
+      cat "$d/join_log" > "$c/logs"
     fi
     echo 0123456789abcdef
     ;;
@@ -224,6 +250,9 @@ esac
 STUB
   chmod +x "$STUBS/docker"
 }
+
+# ROUTER: the router container's state directory in the fake docker.
+router_dir() { echo "$DOCKER_STUB/c/conduit-router"; }
 
 # called LINE: the fake docker got exactly LINE. not_called PATTERN: no call
 # matched the grep PATTERN.

@@ -18,6 +18,11 @@ readonly PAIR_SUPPORTED_DISTROS="humble jazzy kilted lyrical rolling"
 # ghcr.io/youtalk/conduit-demo:<distro>-<version>. CONDUIT_DEMO_IMAGE, when set,
 # names the image for every distribution instead.
 readonly PAIR_DEMO_VERSION=0.1.0
+# The container path: the version of the router images,
+# ghcr.io/youtalk/conduit-router:<distro>-<version>. CONDUIT_ROUTER_IMAGE, when
+# set, names the image for every distribution instead.
+readonly PAIR_ROUTER_VERSION=0.1.0
+readonly PAIR_DEFAULT_ROUTER_DISTRO=lyrical
 
 # Exit codes: 0 connected, 1 environment not supported / user declined,
 # 2 not connected, 130 interrupted.
@@ -376,9 +381,12 @@ build_link() {
   printf '%s#%s' "$base" "$frag"
 }
 
-# The python3 that runs the embedded Python: this PC's, or on the --demo
-# container path the demo container's (a Mac may have no python3).
+# The python3 that runs the embedded Python: this PC's, or on the container
+# path the router container's (a Mac may have no python3).
 PAIR_PYTHON=(python3)
+# The prefix for ROS 2 commands: none on this PC, or on the container path
+# `docker exec conduit-router with-ros` (ROS 2 is sourced there, not here).
+PAIR_ROS=()
 
 have_python() {
   [[ "${PAIR_PYTHON[0]}" != python3 ]] || command -v python3 > /dev/null 2>&1
@@ -865,7 +873,7 @@ start_checkin() {
 # demo when this run started or used it and ends before its next steps.
 pair_exit() {
   stop_checkin
-  demo_exit_hint
+  container_exit_hint
 }
 
 stop_checkin() {
@@ -1086,24 +1094,33 @@ bashrc_with_block() {
   rm -f "$tmp"
 }
 
+# ros2_cmd ARGS...: `ros2 ARGS...` here, or in the router container.
+ros2_cmd() {
+  if [[ -n "${PAIR_ROS[*]:-}" ]]; then
+    "${PAIR_ROS[@]}" ros2 "$@" < /dev/null
+  else
+    ros2 "$@"
+  fi
+}
+
 # wait_for_node NODE NAMESPACE TIMEOUT: 0 once /NAMESPACE/NODE is in the graph.
 wait_for_node() {
   local node="$1" ns="$2" timeout="$3" want deadline nodes spin_time=1
   ns="${ns#/}"
   ns="${ns%/}"
   want="/${ns:+$ns/}$node"
-  if ! ros2 node list --help 2> /dev/null | grep -q -- '--spin-time'; then
+  if ! ros2_cmd node list --help 2> /dev/null | grep -q -- '--spin-time'; then
     # Older CLIs: ask the daemon, after a restart so it sees the new peers.
     spin_time=0
-    ros2 daemon stop > /dev/null 2>&1 || true
+    ros2_cmd daemon stop > /dev/null 2>&1 || true
   fi
   say "Tap Start in Conduit."
   deadline=$((SECONDS + timeout))
   while ((SECONDS < deadline)); do
     if ((spin_time)); then
-      nodes="$(ros2 node list --no-daemon --spin-time 3 2> /dev/null || true)"
+      nodes="$(ros2_cmd node list --no-daemon --spin-time 3 2> /dev/null || true)"
     else
-      nodes="$(ros2 node list 2> /dev/null || true)"
+      nodes="$(ros2_cmd node list 2> /dev/null || true)"
     fi
     if grep -qxF -- "$want" <<< "$nodes"; then
       return 0
@@ -1122,8 +1139,15 @@ wait_for_data() {
   # Unbuffered so the first message reaches grep at once; --foreground keeps
   # ros2 in this terminal's process group so Ctrl-C ends the wait. -k: under
   # rmw_zenoh_cpp, ros2 may not exit on SIGTERM, so SIGKILL it 5 s later.
-  PYTHONUNBUFFERED=1 timeout --foreground -k 5 "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
-    /tf_static tf2_msgs/msg/TFMessage 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link' || status=$?
+  # On the container path all of it runs in the router container (a Mac has
+  # no timeout), whose with-ros sets PYTHONUNBUFFERED.
+  if [[ -n "${PAIR_ROS[*]:-}" ]]; then
+    "${PAIR_ROS[@]}" timeout -k 5 "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
+      /tf_static tf2_msgs/msg/TFMessage < /dev/null 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link' || status=$?
+  else
+    PYTHONUNBUFFERED=1 timeout --foreground -k 5 "$1" ros2 topic echo --qos-durability transient_local --qos-reliability reliable \
+      /tf_static tf2_msgs/msg/TFMessage 2> /dev/null | grep -q -m1 'frame_id: conduit_base_link' || status=$?
+  fi
   set -o pipefail
   return "$status"
 }
@@ -1140,8 +1164,8 @@ firewalld_running() {
 # causes STAGE (no_checkin|no_node|no_data): what to check, firewall first.
 causes() {
   local stage="$1" dds_port=$((7400 + 250 * PAIR_DOMAIN))
-  if [[ "${PAIR_DEMO_PATH:-0}" == 1 ]]; then
-    demo_causes
+  if [[ "${PAIR_CONTAINER_PATH:-0}" == 1 ]]; then
+    container_causes "$stage"
     return 0
   fi
   case "$stage" in
@@ -1204,19 +1228,47 @@ causes() {
   esac
 }
 
-# --demo: the Robots demo, hidden until Conduit 3.0 (not in usage).
+# --- Container path -----------------------------------------------------------
 #
-# A Mac, or a Linux PC without ROS 2, takes the demo path: the demo container
-# runs its own Zenoh router on published ports, and the iPhone pairs with it
-# (Zenoh, Lyrical, domain 0). A Linux PC with ROS 2 pairs as without --demo and
-# also starts the demo robots on its own graph (join mode), unless that graph
-# already uses one of their names.
+# A Mac, a Linux PC without ROS 2, or any Linux PC with --container pairs with a
+# Zenoh router in a Docker container (conduit-router) that publishes its port.
+# The iPhone and the user's own ROS 2 containers both connect to it. Zenoh only:
+# Docker Desktop's NAT'd VM carries no DDS discovery.
+#
+# --demo (hidden until Conduit 3.0) adds the Robots demo. On the container path
+# the demo joins the router's graph (--network container:conduit-router). On a
+# Linux PC with ROS 2 the script pairs natively and the demo joins the PC's own
+# graph (host network), unless that graph already uses one of their names.
 
+readonly PAIR_ROUTER_CONTAINER=conduit-router
+readonly PAIR_ROUTER_STOP="docker stop $PAIR_ROUTER_CONTAINER"
 readonly PAIR_DEMO_CONTAINER=conduit-demo
 # A full demo takes about 20 s to shut down.
 readonly PAIR_DEMO_STOP="docker stop -t 30 $PAIR_DEMO_CONTAINER"
 readonly PAIR_DOCKER_INSTALL_URL="https://docs.docker.com/engine/install/"
 readonly PAIR_DOCKER_DESKTOP_URL="https://docs.docker.com/desktop/setup/install/mac-install/"
+
+# router_image DISTRO: the router image for DISTRO (CONDUIT_ROUTER_IMAGE overrides it).
+router_image() {
+  printf '%s\n' "${CONDUIT_ROUTER_IMAGE:-ghcr.io/youtalk/conduit-router:$1-$PAIR_ROUTER_VERSION}"
+}
+
+# distro_title DISTRO: DISTRO with a capital first letter (bash 3.2 has no ${x^}).
+distro_title() {
+  local first
+  first="$(printf '%s' "${1:0:1}" | tr '[:lower:]' '[:upper:]')"
+  printf '%s%s' "$first" "${1:1}"
+}
+
+# router_distro DISTRO: the router image's distribution for DISTRO; nothing for
+# the distributions the router is not offered for (Humble, Kilted).
+router_distro() {
+  case "$1" in
+    jazzy | lyrical) say "$1" ;;
+    rolling) say lyrical ;;
+    *) ;;
+  esac
+}
 
 # demo_image DISTRO: the demo image for DISTRO (CONDUIT_DEMO_IMAGE overrides it).
 demo_image() {
@@ -1320,9 +1372,9 @@ docker_problem() {
   esac
 }
 
-# demo_docker_ready: Docker works, or the script stops (exit 1) with what to do.
+# docker_ready: Docker works, or the script stops (exit 1) with what to do.
 # On a Mac with Docker Desktop installed but not running, offers to start it.
-demo_docker_ready() {
+docker_ready() {
   local limit="${PAIR_DOCKER_START_SECONDS:-120}" deadline
   check_docker
   if [[ "$PAIR_DOCKER" == down ]] && is_macos && [[ -d "$(docker_desktop_app)" ]]; then
@@ -1341,111 +1393,136 @@ demo_docker_ready() {
   fi
   [[ "$PAIR_DOCKER" != ok ]] || return 0
   if [[ "$PAIR_DOCKER" == missing ]] && ! is_macos; then
-    die 1 "$(docker_problem) and run this script again for the demo, or install ROS 2 to pair with this PC: $PAIR_INSTALL_URL"
+    die 1 "$(docker_problem) and run this script again, or install ROS 2 to pair with this PC directly: $PAIR_INSTALL_URL"
   fi
   die 1 "$(docker_problem), and run this script again."
 }
 
-# demo_container_state: "<running> <image> <network mode>" of the conduit-demo
-# container, or nothing when there is none.
-demo_container_state() {
+# container_state NAME: "<running> <image> <network mode>" of container NAME,
+# or nothing when there is none.
+container_state() {
   bounded 20 docker inspect --format '{{.State.Running}} {{.Config.Image}} {{.HostConfig.NetworkMode}}' \
-    "$PAIR_DEMO_CONTAINER" 2> /dev/null || true
+    "$1" 2> /dev/null || true
 }
 
-# demo_published_port PORT: the host port the demo container publishes PORT on.
-demo_published_port() {
+# container_id NAME: the full ID of container NAME, or nothing.
+container_id() {
+  bounded 20 docker inspect --format '{{.Id}}' "$1" 2> /dev/null || true
+}
+
+# container_port NAME PORT: the host port container NAME publishes PORT on.
+container_port() {
   local line
-  line="$(bounded 20 docker port "$PAIR_DEMO_CONTAINER" "$1/tcp" 2> /dev/null | head -n1 || true)"
+  line="$(bounded 20 docker port "$1" "$2/tcp" 2> /dev/null | head -n1 || true)"
   [[ -z "$line" ]] || say "${line##*:}"
 }
 
-# demo_container_env NAME: the value of NAME in the demo container's environment.
-demo_container_env() {
-  bounded 20 docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$PAIR_DEMO_CONTAINER" 2> /dev/null |
-    sed -n "s/^$1=//p" | head -n1 || true
+# container_env NAME VAR: the value of VAR in container NAME's environment.
+container_env() {
+  bounded 20 docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$1" 2> /dev/null |
+    sed -n "s/^$2=//p" | head -n1 || true
 }
 
-# demo_remove: remove a stopped conduit-demo container (never a running one).
-demo_remove() {
-  bounded 20 docker rm "$PAIR_DEMO_CONTAINER" > /dev/null 2>&1 || true
+# container_remove NAME: remove a stopped container NAME (never a running one).
+container_remove() {
+  bounded 20 docker rm "$1" > /dev/null 2>&1 || true
 }
 
-# demo_force_remove: remove the demo container this run started, running or not.
-demo_force_remove() {
-  bounded 30 docker rm -f "$PAIR_DEMO_CONTAINER" > /dev/null 2>&1 || true
+# container_force_remove NAME: remove container NAME, running or not. Only for
+# a container this run started.
+container_force_remove() {
+  bounded 30 docker rm -f "$1" > /dev/null 2>&1 || true
 }
 
-# demo_run ARGS...: `docker run ARGS...` for the demo container, stopped after
-# PAIR_DOCKER_RUN_SECONDS (60). On failure, sets PAIR_DEMO_RUN_ERROR and
+# container_run NAME ARGS...: `docker run --name NAME ARGS...`, stopped after
+# PAIR_DOCKER_RUN_SECONDS (60). On failure, sets PAIR_RUN_ERROR and
 # force-removes what the run may have left (a created container, or one the
 # daemon started after the time ran out), unless the name belongs to another
 # container.
-demo_run() {
-  local limit="${PAIR_DOCKER_RUN_SECONDS:-60}" err status=0
-  err="$(bounded "$limit" docker run "$@" 2>&1 > /dev/null)" || status=$?
+container_run() {
+  local name="$1" limit="${PAIR_DOCKER_RUN_SECONDS:-60}" err status=0
+  shift
+  err="$(bounded "$limit" docker run -d --name "$name" "$@" 2>&1 > /dev/null)" || status=$?
   ((status)) || return 0
   if ((status == 124)); then
-    PAIR_DEMO_RUN_ERROR="docker run did not finish within $limit seconds"
+    PAIR_RUN_ERROR="docker run did not finish within $limit seconds"
   else
-    PAIR_DEMO_RUN_ERROR="${err:-docker run failed}"
+    PAIR_RUN_ERROR="${err:-docker run failed}"
   fi
-  [[ "$err" == *"is already in use"* ]] || demo_force_remove
+  [[ "$err" == *"is already in use"* ]] || container_force_remove "$name"
   return 1
 }
 
-# demo_pull IMAGE: 0 once IMAGE is on this PC, downloading it the first time.
-demo_pull() {
-  if bounded 20 docker image inspect "$1" > /dev/null 2>&1; then
-    return 0
-  fi
-  say "Downloading the demo image $1 (a few GB, only the first time)..."
+# image_present IMAGE: 0 when IMAGE is on this PC.
+image_present() {
+  bounded 20 docker image inspect "$1" > /dev/null 2>&1
+}
+
+# image_pull IMAGE SIZE: 0 once IMAGE is on this PC, downloading it (about
+# SIZE) the first time.
+image_pull() {
+  ! image_present "$1" || return 0
+  say "Downloading $1 (about $2, only the first time)..."
   docker pull "$1"
 }
 
-# demo_logs: the demo container's log (stdout and stderr).
-demo_logs() {
-  bounded 20 docker logs "$PAIR_DEMO_CONTAINER" 2>&1 || true
+# container_logs NAME: container NAME's log (stdout and stderr).
+container_logs() {
+  bounded 20 docker logs "$1" 2>&1 || true
 }
 
-# demo_wait_router: 0 once the demo container's Zenoh router runs. Docker's
+# wait_router: 0 once the router container's Zenoh router runs. Docker's
 # published port accepts connections before the router inside listens, so the
 # log decides. Returns 1 if the container stops or the router never starts.
-demo_wait_router() {
-  local limit="${PAIR_DEMO_START_SECONDS:-90}" deadline first=1 log
+wait_router() {
+  local limit="${PAIR_ROUTER_START_SECONDS:-60}" deadline first=1 log
   deadline=$((SECONDS + limit))
   while ((SECONDS < deadline)); do
-    log="$(demo_logs)"
+    log="$(container_logs "$PAIR_ROUTER_CONTAINER")"
     [[ "$log" != *"Started Zenoh router"* ]] || return 0
-    if [[ "$(demo_container_state)" != true* ]]; then
-      say "The demo container stopped. The end of its log:"
+    if [[ "$(container_state "$PAIR_ROUTER_CONTAINER")" != true* ]]; then
+      say "The router container stopped. The end of its log:"
       tail -n 5 <<< "$log" | sed 's/^/  /'
       return 1
     fi
-    if ((first)); then say "Waiting for the demo's Zenoh router..."; fi
+    if ((first)); then say "Waiting for the Zenoh router..."; fi
     first=0
     sleep 1
   done
-  say "The demo's Zenoh router did not start within $limit seconds. The end of its log:"
+  say "The Zenoh router did not start within $limit seconds. The end of its log:"
   tail -n 5 <<< "$log" | sed 's/^/  /'
   return 1
 }
 
-# demo_causes: why no check-in arrived on the demo path. Docker publishes the
-# demo's ports past ufw and firewalld, so they are not listed.
-demo_causes() {
-  say "No check-in from the iPhone yet. Things to check:"
-  if [[ "${PAIR_VIA:-lan}" == tailscale ]]; then
-    say "- Open the Tailscale app on the iPhone and connect it to the same tailnet as this PC."
-  else
-    say "- The iPhone must be on the same Wi-Fi as this PC."
-    say "- Guest and office Wi-Fi often isolate clients from each other (client isolation); try another network or a hotspot."
-    say "- Allow Local Network access for Conduit: iPhone Settings > Privacy & Security > Local Network."
-  fi
-  if is_macos; then
-    say "- If the macOS firewall is on, let Docker accept incoming connections: System Settings > Network > Firewall > Options."
-  fi
-  say "- Scan the QR again if Conduit did not open from it."
+# container_causes STAGE: why the container path is stuck at STAGE. Docker
+# publishes the router's ports past ufw and firewalld, so they are not listed.
+container_causes() {
+  case "$1" in
+    no_checkin)
+      say "No check-in from the iPhone yet. Things to check:"
+      if [[ "${PAIR_VIA:-lan}" == tailscale ]]; then
+        say "- Open the Tailscale app on the iPhone and connect it to the same tailnet as this PC."
+      else
+        say "- The iPhone must be on the same Wi-Fi as this PC."
+        say "- Guest and office Wi-Fi often isolate clients from each other (client isolation); try another network or a hotspot."
+        say "- Allow Local Network access for Conduit: iPhone Settings > Privacy & Security > Local Network."
+      fi
+      if is_macos; then
+        say "- If the macOS firewall is on, let Docker accept incoming connections: System Settings > Network > Firewall > Options."
+      fi
+      say "- Scan the QR again if Conduit did not open from it."
+      ;;
+    no_node)
+      say "Conduit did not appear on the router. Things to check:"
+      say "- Did you tap Start in Conduit?"
+      say "- The router container must keep running: docker ps --filter name=$PAIR_ROUTER_CONTAINER"
+      ;;
+    no_data)
+      say "Conduit is on the router, but no message arrived on /tf_static. Things to check:"
+      say "- Conduit's Distribution (Settings) must be $(distro_title "$PAIR_DISTRO"), as the QR code set it."
+      ;;
+    *) ;;
+  esac
 }
 
 # demo_next_steps [joined]: adding the demo robots in Conduit, and how to stop
@@ -1457,8 +1534,13 @@ demo_next_steps() {
   say "  1. Tap the robot button, then +. Leave Kind on Mobile robot, name it, tap Start, then Save."
   say "  2. Tap + again. Set Kind to Arm, name it, tap Start, then Save."
   say "  3. Open either robot to drive it."
-  say "The demo keeps running after this script ends. To stop it:"
-  say "  $PAIR_DEMO_STOP"
+  if [[ "${PAIR_CONTAINER_PATH:-0}" == 1 ]]; then
+    say "The demo keeps running after this script ends. To stop it, and the router after it:"
+    say "  $PAIR_DEMO_STOP && $PAIR_ROUTER_STOP"
+  else
+    say "The demo keeps running after this script ends. To stop it:"
+    say "  $PAIR_DEMO_STOP"
+  fi
   if [[ "${1:-}" == joined ]]; then
     say "The demo checked this PC's ROS 2 names once, when it started."
     say "Stop the demo ($PAIR_DEMO_STOP) before you start your own robot on this PC."
@@ -1466,14 +1548,39 @@ demo_next_steps() {
   PAIR_DEMO_HINTED=1
 }
 
-# demo_exit_hint: when this run started or used the demo container
-# (PAIR_DEMO_IN_USE), the script ends before the next steps and the container
-# still runs, says how to stop it.
-demo_exit_hint() {
-  [[ "${PAIR_DEMO_IN_USE:-0}" == 1 && "${PAIR_DEMO_HINTED:-0}" != 1 ]] || return 0
-  PAIR_DEMO_HINTED=1
-  if [[ "$(demo_container_state)" == true* ]]; then
-    say "The demo keeps running (container $PAIR_DEMO_CONTAINER). To stop it: $PAIR_DEMO_STOP"
+# router_next_steps: using the router from the user's own ROS 2, and how to stop it.
+router_next_steps() {
+  local ns="${PAIR_NAMESPACE:-conduit}"
+  ns="${ns#/}"
+  ns="${ns%/}"
+  say ""
+  say "The Zenoh router keeps running in Docker (container $PAIR_ROUTER_CONTAINER, port $PAIR_ROUTER_PORT), and starts again with Docker."
+  say "Use the iPhone's topics from your own ROS 2 $(distro_title "$PAIR_DISTRO") containers:"
+  say "  docker run --rm -it --network container:$PAIR_ROUTER_CONTAINER -e RMW_IMPLEMENTATION=rmw_zenoh_cpp ros:$PAIR_DISTRO bash"
+  say "Or from anywhere that reaches this PC, connect to the router at $PAIR_HOST:$PAIR_ROUTER_PORT:"
+  say "  export RMW_IMPLEMENTATION=rmw_zenoh_cpp"
+  say "  export ZENOH_CONFIG_OVERRIDE='connect/endpoints=[\"tcp/$PAIR_HOST:$PAIR_ROUTER_PORT\"]'"
+  say "Check right now:"
+  say "  docker exec -it $PAIR_ROUTER_CONTAINER with-ros ros2 topic echo /${ns:+$ns/}imu"
+  say "To stop the router: $PAIR_ROUTER_STOP"
+  PAIR_ROUTER_HINTED=1
+}
+
+# container_exit_hint: when this run started or used a container and the
+# script ends before its next steps while the container still runs, says how
+# to stop it.
+container_exit_hint() {
+  if [[ "${PAIR_DEMO_IN_USE:-0}" == 1 && "${PAIR_DEMO_HINTED:-0}" != 1 ]]; then
+    PAIR_DEMO_HINTED=1
+    if [[ "$(container_state "$PAIR_DEMO_CONTAINER")" == true* ]]; then
+      say "The demo keeps running (container $PAIR_DEMO_CONTAINER). To stop it: $PAIR_DEMO_STOP"
+    fi
+  fi
+  if [[ "${PAIR_ROUTER_IN_USE:-0}" == 1 && "${PAIR_ROUTER_HINTED:-0}" != 1 ]]; then
+    PAIR_ROUTER_HINTED=1
+    if [[ "$(container_state "$PAIR_ROUTER_CONTAINER")" == true* ]]; then
+      say "The Zenoh router keeps running (container $PAIR_ROUTER_CONTAINER). To stop it: $PAIR_ROUTER_STOP"
+    fi
   fi
 }
 
@@ -1487,77 +1594,128 @@ show_pairing() {
   fi
 }
 
-# demo_path LINK_STYLE NO_QR CHECKIN_PORT: pair with the demo container, started
-# here or already running (no ROS 2 on this PC). Exits.
-demo_path() {
-  local link_style="$1" no_qr="$2" first_checkin="$3" image state running="" cimage="" net=""
-  local router="" checkin="" token link started=0
-  PAIR_DEMO_PATH=1
-  PAIR_RMW=zenoh
-  PAIR_DOMAIN=0
-  check_terminal
-  pick_address
-  demo_docker_ready
-
-  image="$(demo_image lyrical)"
-  state="$(demo_container_state)"
+# router_start DISTRO CHECKIN_PORT: reuse the running router container, or
+# start one (asking first). Sets PAIR_ROUTER_PORT and PAIR_ROUTER_CHECKIN.
+router_start() {
+  local distro="$1" first_checkin="$2" image state running="" cimage="" net="" router="" checkin="" started=0
+  image="$(router_image "$distro")"
+  state="$(container_state "$PAIR_ROUTER_CONTAINER")"
   if [[ -n "$state" ]]; then
     read -r running cimage net <<< "$state"
-    if [[ "$running" == true && "$cimage" == "$image" && "$net" != host ]]; then
-      router="$(demo_published_port 7447)"
-      checkin="$(demo_published_port 7449)"
+    if [[ "$running" == true && "$cimage" == "$image" ]]; then
+      router="$(container_port "$PAIR_ROUTER_CONTAINER" 7447)"
+      checkin="$(container_port "$PAIR_ROUTER_CONTAINER" 7449)"
     fi
     if [[ -n "$router" && -n "$checkin" ]]; then
-      say "The demo is already running (container $PAIR_DEMO_CONTAINER); pairing with it."
-      PAIR_DEMO_IN_USE=1
+      say "The Zenoh router is already running (container $PAIR_ROUTER_CONTAINER); pairing with it."
     elif [[ "$running" == true ]]; then
-      die 1 "Another $PAIR_DEMO_CONTAINER container is running ($cimage). Stop it ($PAIR_DEMO_STOP) and run this script again."
+      die 1 "Another $PAIR_ROUTER_CONTAINER container is running ($cimage). Stop it ($PAIR_ROUTER_STOP) and run this script again."
     else
-      demo_remove
+      container_remove "$PAIR_ROUTER_CONTAINER"
     fi
   fi
   if [[ -z "$router" || -z "$checkin" ]]; then
-    demo_pull "$image" || die 1 "Could not download the demo image $image."
+    if image_present "$image"; then
+      ask_yes_no "Start a Zenoh router for the iPhone in Docker (container $PAIR_ROUTER_CONTAINER)?" y ||
+        die 1 "Install ROS 2 to pair with this PC directly ($PAIR_INSTALL_URL), or run this script again."
+    else
+      ask_yes_no "Start a Zenoh router for the iPhone in Docker (container $PAIR_ROUTER_CONTAINER, downloads $image, about 1 GB)?" y ||
+        die 1 "Install ROS 2 to pair with this PC directly ($PAIR_INSTALL_URL), or run this script again."
+    fi
+    image_pull "$image" "1 GB" || die 1 "Could not download the router image $image."
     router="$(free_port 7447 7457)" ||
       die 1 "Ports 7447-7457 are all in use on this PC. Free one and run this script again."
     checkin="$(free_port "$first_checkin" $((first_checkin + 10)) "$router")" ||
       die 1 "Ports $first_checkin-$((first_checkin + 10)) are all in use on this PC. Free one and run this script again."
-    say "Starting the demo robots (container $PAIR_DEMO_CONTAINER)..."
-    demo_run -d --name "$PAIR_DEMO_CONTAINER" -p "$router:7447" -p "$checkin:7449" "$image" standalone ||
-      die 1 "The demo container did not start: $PAIR_DEMO_RUN_ERROR"
+    say "Starting the Zenoh router (container $PAIR_ROUTER_CONTAINER)..."
+    container_run "$PAIR_ROUTER_CONTAINER" --restart unless-stopped -p "$router:7447" -p "$checkin:7449" "$image" ||
+      die 1 "The router container did not start: $PAIR_RUN_ERROR"
     started=1
-    PAIR_DEMO_IN_USE=1
   fi
-  if ! demo_wait_router; then
+  PAIR_ROUTER_IN_USE=1
+  if ! wait_router; then
     # A container this run started goes; a reused one is the user's to stop.
     if ((started)); then
-      demo_force_remove
-      say "Removed the demo container this run started."
-    elif [[ "$(demo_container_state)" == true* ]]; then
-      say "The demo container keeps running. To stop it: $PAIR_DEMO_STOP"
-      PAIR_DEMO_HINTED=1
+      container_force_remove "$PAIR_ROUTER_CONTAINER"
+      say "Removed the router container this run started."
+      PAIR_ROUTER_IN_USE=0
     fi
     exit 1
   fi
   # The iPhone reaches the router at this PC's address, so this PC must too.
   if ! bounded 3 tcp_open "$PAIR_HOST" "$router"; then
-    say "This PC could not connect to the demo at $PAIR_HOST:$router, so the iPhone cannot either:"
-    say "- Docker may publish the demo's ports on 127.0.0.1 only, as Colima and some OrbStack setups do. Docker Desktop publishes them on every address."
+    say "This PC could not connect to the router at $PAIR_HOST:$router, so the iPhone cannot either:"
+    say "- Docker may publish the router's ports on 127.0.0.1 only, as Colima and some OrbStack setups do. Docker Desktop publishes them on every address."
     say "- A firewall may block the port."
   fi
+  PAIR_ROUTER_PORT="$router"
+  PAIR_ROUTER_CHECKIN="$checkin"
+}
 
-  # The container has python3 for the QR code and the check-in listener.
-  PAIR_PYTHON=(docker exec -i "$PAIR_DEMO_CONTAINER" python3)
+# demo_check_old: a conduit-demo container that is not on the router's graph
+# (an older standalone demo, or one joined to another graph) stops the script
+# while it runs; a stopped one goes.
+demo_check_old() {
+  local state running="" cimage="" net="" id
+  state="$(container_state "$PAIR_DEMO_CONTAINER")"
+  [[ -n "$state" ]] || return 0
+  read -r running cimage net <<< "$state"
+  if [[ "$running" != true ]]; then
+    container_remove "$PAIR_DEMO_CONTAINER"
+    return 0
+  fi
+  id="$(container_id "$PAIR_ROUTER_CONTAINER")"
+  if [[ "$net" == "container:$PAIR_ROUTER_CONTAINER" || (-n "$id" && "$net" == "container:$id") ]]; then
+    return 0
+  fi
+  die 1 "A $PAIR_DEMO_CONTAINER container from an earlier version of this script is running. Stop it ($PAIR_DEMO_STOP) and run this script again."
+}
+
+# container_path LINK_STYLE NO_QR CHECKIN_PORT DISTRO DEMO: pair with the
+# router container (no ROS 2 on this PC, or --container), with the demo robots
+# on its graph when DEMO is 1. Exits.
+container_path() {
+  local link_style="$1" no_qr="$2" first_checkin="$3" demo="$5" token link
+  PAIR_CONTAINER_PATH=1
+  PAIR_RMW=zenoh
+  PAIR_DOMAIN=0
+  PAIR_DISTRO="$(router_distro "$4")"
+  [[ -n "$PAIR_DISTRO" ]] || die 1 "The router container runs ROS 2 Jazzy or Lyrical (Rolling uses Lyrical); use --distro jazzy or --distro lyrical."
+  check_terminal
+  pick_address
+  docker_ready
+  if ((demo)); then demo_check_old; fi
+  router_start "$PAIR_DISTRO" "$first_checkin"
+  if ((demo)); then
+    demo_join "container:$PAIR_ROUTER_CONTAINER"
+  fi
+
+  # The router container has python3 for the QR code and the check-in listener.
+  PAIR_PYTHON=(docker exec -i "$PAIR_ROUTER_CONTAINER" python3)
+  PAIR_ROS=(docker exec "$PAIR_ROUTER_CONTAINER" with-ros)
   token="$(new_token)"
   start_checkin "$token" 7449
   [[ "$PAIR_CHECKIN_PORT" == 7449 ]] ||
-    die 1 "Another pairing with the demo is still waiting. Close it and run this script again."
-  link="$(build_link "$link_style" zenoh lyrical 0 "$PAIR_HOST" "$router" "$PAIR_HOST:$checkin" "$token" "$(hostname)")"
+    die 1 "Another pairing with the router is still waiting. Close it and run this script again."
+  link="$(build_link "$link_style" zenoh "$PAIR_DISTRO" 0 "$PAIR_HOST" "$PAIR_ROUTER_PORT" \
+    "$PAIR_HOST:$PAIR_ROUTER_CHECKIN" "$token" "$(hostname)")"
   show_pairing "$link" "$no_qr"
   wait_checkin || die 2 "The check-in listener stopped before the iPhone checked in."
   # Docker Desktop hides the iPhone's address from the container.
   say "$PAIR_DEVICE checked in."
-  demo_next_steps
+  if ! wait_for_node "$PAIR_NODE" "$PAIR_NAMESPACE" 300; then
+    causes no_node
+    exit 2
+  fi
+  if ! wait_for_data 20; then
+    causes no_data
+    exit 2
+  fi
+  say "Connected to $PAIR_DEVICE."
+  router_next_steps
+  if [[ "${PAIR_DEMO_ADDED:-0}" == 1 ]]; then
+    demo_next_steps
+  fi
   exit 0
 }
 
@@ -1569,9 +1727,9 @@ demo_wait_join() {
   local limit="${PAIR_DEMO_START_SECONDS:-90}" deadline first=1 log state line
   deadline=$((SECONDS + limit))
   while ((SECONDS < deadline)); do
-    log="$(demo_logs)"
+    log="$(container_logs "$PAIR_DEMO_CONTAINER")"
     if [[ "$log" == *"check_conflicts: no conflicts"* ]]; then
-      say "The demo robots are starting on this PC's graph."
+      say "The demo robots are starting on $PAIR_GRAPH."
       PAIR_DEMO_ADDED=1
       return 0
     fi
@@ -1579,40 +1737,47 @@ demo_wait_join() {
     case "$state" in
       exited* | dead*)
         # The log read above may predate the exit: read the whole of it now.
-        log="$(demo_logs)"
+        log="$(container_logs "$PAIR_DEMO_CONTAINER")"
         if [[ "${state##* }" == 3 ]]; then
-          say "This PC's ROS 2 graph already uses these names of the demo robots:"
+          say "The ROS 2 graph ($PAIR_GRAPH) already uses these names of the demo robots:"
           while IFS= read -r line; do
             if [[ "$line" == "CONFLICT "* ]]; then say "  ${line#CONFLICT }"; fi
           done <<< "$log"
           say "The demo robots were not added, so they cannot disturb what runs here."
         else
-          say "The demo robots could not join this PC's ROS 2 graph. The end of their log:"
+          say "The demo robots could not join $PAIR_GRAPH. The end of their log:"
           tail -n 5 <<< "$log" | sed 's/^/  /'
           say "The demo robots were not added."
         fi
-        demo_remove
+        container_remove "$PAIR_DEMO_CONTAINER"
         return 0
         ;;
       *) ;;
     esac
-    if ((first)); then say "Checking that this PC's graph does not use the demo's names..."; fi
+    if ((first)); then say "Checking that $PAIR_GRAPH does not use the demo's names..."; fi
     first=0
     sleep 1
   done
   say "The demo's name check did not finish within $limit seconds. The end of its log:"
   tail -n 5 <<< "$log" | sed 's/^/  /'
   # demo_join started this container: it goes.
-  demo_force_remove
+  container_force_remove "$PAIR_DEMO_CONTAINER"
   say "The demo robots were not added (their container was removed)."
 }
 
-# demo_join: --demo on a PC with ROS 2. Starts the demo robots on this PC's
-# graph: host network, this PC's RMW and domain, and on Zenoh a client of this
-# PC's router. Never stops the pairing: a problem skips the demo and says why.
+# demo_join NETWORK: --demo. Starts the demo robots on a graph: on a PC with
+# ROS 2 (NETWORK host) this PC's graph, with its RMW and domain, and on Zenoh a
+# client of its router; on the container path (NETWORK
+# container:conduit-router) the router container's graph. Never stops the
+# pairing: a problem skips the demo and says why.
 demo_join() {
-  local distro image state running="" cimage="" net="" rmw args entry rest
+  local network="$1" distro image state running="" cimage="" net="" rmw args entry rest id
   PAIR_DEMO_ADDED=0
+  if [[ "$network" == host ]]; then
+    PAIR_GRAPH="this PC's graph"
+  else
+    PAIR_GRAPH="the router's graph"
+  fi
   distro="$(demo_distro "$PAIR_DISTRO")"
   if [[ -z "$distro" ]]; then
     say "The demo robots need ROS 2 Jazzy or later, so they are not added on Humble."
@@ -1630,29 +1795,31 @@ demo_join() {
     say "The demo robots were not added; run this script again to add them."
     return 0
   fi
-  state="$(demo_container_state)"
+  state="$(container_state "$PAIR_DEMO_CONTAINER")"
   if [[ -n "$state" ]]; then
     read -r running cimage net <<< "$state"
-    if [[ "$running" == true && "$cimage" == "$image" && "$net" == host &&
-      "$(demo_container_env RMW_IMPLEMENTATION)" == "$rmw" &&
-      "$(demo_container_env ROS_DOMAIN_ID)" == "$PAIR_DOMAIN" ]]; then
-      say "The demo robots are already running on this PC's graph (container $PAIR_DEMO_CONTAINER)."
+    id="$(container_id "$PAIR_ROUTER_CONTAINER")"
+    [[ "$network" == host || -z "$id" || "$net" != "container:$id" ]] || net="$network"
+    if [[ "$running" == true && "$cimage" == "$image" && "$net" == "$network" &&
+      "$(container_env "$PAIR_DEMO_CONTAINER" RMW_IMPLEMENTATION)" == "$rmw" &&
+      "$(container_env "$PAIR_DEMO_CONTAINER" ROS_DOMAIN_ID)" == "$PAIR_DOMAIN" ]]; then
+      say "The demo robots are already running on $PAIR_GRAPH (container $PAIR_DEMO_CONTAINER)."
       PAIR_DEMO_ADDED=1
       PAIR_DEMO_IN_USE=1
       return 0
     elif [[ "$running" == true ]]; then
-      say "A $PAIR_DEMO_CONTAINER container is running, but not on this PC's graph with $image."
+      say "A $PAIR_DEMO_CONTAINER container is running, but not on $PAIR_GRAPH with $image."
       say "Stop it ($PAIR_DEMO_STOP) and run this script again to add the demo robots."
       say "The demo robots were not added."
       return 0
     fi
-    demo_remove
+    container_remove "$PAIR_DEMO_CONTAINER"
   fi
-  if ! demo_pull "$image"; then
+  if ! image_pull "$image" "5-7 GB"; then
     say "Could not download the demo image $image. The demo robots were not added."
     return 0
   fi
-  args=(-d --name "$PAIR_DEMO_CONTAINER" --network host -e "RMW_IMPLEMENTATION=$rmw" -e "ROS_DOMAIN_ID=$PAIR_DOMAIN")
+  args=(--network "$network" -e "RMW_IMPLEMENTATION=$rmw" -e "ROS_DOMAIN_ID=$PAIR_DOMAIN")
   if [[ "$PAIR_RMW" == zenoh ]]; then
     args+=(-e 'ZENOH_CONFIG_OVERRIDE=mode="client";connect/endpoints=["tcp/127.0.0.1:7447"]')
   elif [[ "$PAIR_RMW" == fastdds ]]; then
@@ -1672,9 +1839,9 @@ demo_join() {
     done
   fi
   args+=("$image" join)
-  say "Starting the demo robots on this PC's ROS 2 graph (container $PAIR_DEMO_CONTAINER)..."
-  if ! demo_run "${args[@]}"; then
-    say "The demo container did not start: $PAIR_DEMO_RUN_ERROR"
+  say "Starting the demo robots on $PAIR_GRAPH (container $PAIR_DEMO_CONTAINER)..."
+  if ! container_run "$PAIR_DEMO_CONTAINER" "${args[@]}"; then
+    say "The demo container did not start: $PAIR_RUN_ERROR"
     say "The demo robots were not added."
     return 0
   fi
@@ -1691,22 +1858,26 @@ source_ros() {
   set -eu -o pipefail
 }
 
-# demo_takes_container_path: --demo picks its path. 0 for the demo path (a Mac,
-# or Linux without ROS 2); 1 to pair natively, after sourcing the ROS 2 in
-# /opt/ros when this shell has none (asking which when there are several).
-demo_takes_container_path() {
-  local root setup setups=() names=() idx
+# takes_container_path CONTAINER DEMO: 0 for the container path (a Mac, Linux
+# without ROS 2, or Linux with --container); 1 to pair natively. With --demo
+# (DEMO 1), a Linux PC whose shell has no ROS 2 sourced sources the one in
+# /opt/ros first (asking which when there are several); without it,
+# check_ros_sourced says how to source it.
+takes_container_path() {
+  local container="$1" demo="$2" root setup setups=() names=() idx
   is_macos && return 0
-  # Other systems are refused as without --demo.
+  # Other systems are refused by check_platform.
   [[ "${PAIR_UNAME:-$(uname -s)}" == Linux ]] || return 1
   check_not_wsl
   check_not_container
+  ((!container)) || return 0
   [[ -z "${ROS_DISTRO:-}" ]] || return 1
   root="$(env_root)"
   while IFS= read -r setup; do
     [[ -z "$setup" ]] || setups+=("$setup")
   done < <(find "$root/opt/ros" -mindepth 2 -maxdepth 2 -name setup.bash 2> /dev/null | sort)
   ((${#setups[@]})) || return 0
+  ((demo)) || return 1
   idx=${#setups[@]}
   if ((idx > 1)); then
     for setup in "${setups[@]}"; do
@@ -1729,10 +1900,15 @@ Usage: pair.sh [options]
 
 Pairs an iPhone running Conduit with this ROS 2 PC: shows a QR code, waits for
 Conduit to check in, prepares this PC and checks that messages arrive.
+On a Mac, or a Linux PC without ROS 2, it pairs with a Zenoh router that it
+starts in Docker (container conduit-router), for your ROS 2 containers to use.
 
 Options:
   --lan                 Pair over the local network (skip Tailscale).
   --tailscale           Pair over Tailscale (Zenoh only).
+  --container           Use the Zenoh router in Docker even if this PC has ROS 2.
+  --distro D            The router container's ROS 2: lyrical (default), jazzy
+                        or rolling (uses lyrical).
   --checkin-port N      TCP port for the iPhone's check-in (default 7449).
   --link-style S        https (default) or custom (conduit://pair links).
   --no-qr               Print the link only, without the QR code.
@@ -1788,7 +1964,7 @@ apply_host_peers() {
 }
 
 main() {
-  local link_style=https no_qr=0 checkin_port="$PAIR_DEFAULT_CHECKIN_PORT" demo=0
+  local link_style=https no_qr=0 checkin_port="$PAIR_DEFAULT_CHECKIN_PORT" demo=0 container=0 distro=""
   local transport=dds port="" token link
   PAIR_FORCE_VIA=""
   while (($#)); do
@@ -1810,6 +1986,14 @@ main() {
         shift
         ;;
       --no-qr) no_qr=1 ;;
+      --container) container=1 ;;
+      --distro)
+        case "${2:-}" in
+          humble | jazzy | kilted | lyrical | rolling) distro="$2" ;;
+          *) die 1 "--distro must be lyrical, jazzy or rolling." ;;
+        esac
+        shift
+        ;;
       # Hidden until Conduit 3.0, so it is not in usage.
       --demo) demo=1 ;;
       -h | --help)
@@ -1826,9 +2010,11 @@ main() {
   trap 'exit 130' INT
   trap pair_exit EXIT
 
-  if ((demo)) && demo_takes_container_path; then
-    demo_path "$link_style" "$no_qr" "$checkin_port"
+  if takes_container_path "$container" "$demo"; then
+    container_path "$link_style" "$no_qr" "$checkin_port" "${distro:-$PAIR_DEFAULT_ROUTER_DISTRO}" "$demo"
   fi
+  [[ -z "$distro" ]] ||
+    die 1 "--distro picks the router container's ROS 2, but this PC pairs with its own ROS 2. Add --container to use the router container."
   check_environment
   check_terminal
   pick_address
@@ -1859,7 +2045,7 @@ main() {
   esac
   # The flag is the answer to "also add the demo robots?", asked before the QR.
   if ((demo)); then
-    demo_join
+    demo_join host
   fi
 
   token="$(new_token)"

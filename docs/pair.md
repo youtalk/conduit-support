@@ -35,6 +35,10 @@ A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Condu
 
 ## Requirements
 
+Either a PC with ROS 2 installed, or a Mac or Linux PC with Docker (see [Without ROS 2 on the PC](#without-ros-2-on-the-pc)).
+
+With ROS 2 on the PC:
+
 - A native PC (not WSL, not inside a container) running Ubuntu, RHEL or Fedora, with ROS 2 sourced in the shell you run the script from:
 
     | System | ROS 2 |
@@ -66,7 +70,7 @@ The script is a single file. To read it before running it:
 curl -fsSL https://conduit.direct/pair.sh | less
 ```
 
-It installs nothing and never uses `sudo`. It asks before it changes anything outside its own run (for example before adding the iPhone to `~/.bashrc`), and it leaves no process running when it exits.
+It installs nothing and never uses `sudo`. It asks before it changes anything outside its own run (for example before adding the iPhone to `~/.bashrc`, or before starting the router container), and the only things it leaves running are the ones it asked about: a Zenoh router it started for you, or the router container.
 
 ## What it asks
 
@@ -74,6 +78,35 @@ It installs nothing and never uses `sudo`. It asks before it changes anything ou
 - Whether to add the iPhone as a discovery peer on this PC (DDS), and whether to add the matching line to `~/.bashrc`. The default answer to both is no.
 
 For Zenoh, if the router is not running, the script offers to start it in the background. The router keeps running after the script ends; the script prints its log file and the `kill` command that stops it. Answer no to start it yourself (`ros2 run rmw_zenoh_cpp rmw_zenohd`); the script then waits for it.
+
+## Without ROS 2 on the PC
+
+On a Mac, or a Linux PC without ROS 2, the script pairs the iPhone with a Zenoh router that runs in Docker, in a container called `conduit-router`. Your own ROS 2 nodes, in Docker too, connect to the same router. On a Linux PC whose own ROS 2 is not the one your nodes use, add `--container` to get the same.
+
+What you need:
+
+- On a Mac, [Docker Desktop](https://www.docker.com/products/docker-desktop/). On Linux, Docker Engine, with your user in the `docker` group.
+- About 1 GB of disk for the router image, downloaded the first time.
+- The iPhone on the same Wi-Fi as the computer, or on the same Tailscale tailnet.
+
+The script asks before it starts the router, then shows the QR code and waits for Conduit, as on a PC with ROS 2. It always uses Zenoh, ROS 2 Lyrical and domain 0. Pass `--distro jazzy` for a Jazzy router (Humble and Kilted are not offered). DDS does not work this way: Docker Desktop runs containers in a VM whose network carries no DDS discovery.
+
+When Conduit is connected, the script prints how to use the iPhone's topics:
+
+```bash
+# From your own ROS 2 container: share the router container's network.
+docker run --rm -it --network container:conduit-router \
+  -e RMW_IMPLEMENTATION=rmw_zenoh_cpp ros:lyrical bash
+
+# Or from anywhere that reaches this computer: connect to its router port.
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+export ZENOH_CONFIG_OVERRIDE='connect/endpoints=["tcp/<this computer's address>:7447"]'
+
+# Check right now, in the router container:
+docker exec -it conduit-router with-ros ros2 topic echo /conduit/imu
+```
+
+The router keeps running after the script ends, and starts again with Docker, so Conduit reconnects without a new QR code. Run the script again to pair another iPhone with the same router. Stop it with `docker stop conduit-router`.
 
 ## Tailscale
 
