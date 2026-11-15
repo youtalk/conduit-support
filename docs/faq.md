@@ -200,7 +200,7 @@ What happens when you leave the app:
 - **Background Publishing on:** Conduit keeps publishing in the background as long as the **GPS** or **Microphone** sensor is on; iOS keeps the app running for them and shows that Conduit is using your location or microphone. Camera and LiDAR stop (iOS does not allow them in the background). On iPhone, a Live Activity on the Lock Screen and in the Dynamic Island shows the running session.
 - With neither GPS nor Microphone on, the other sensors keep publishing only until iOS suspends the app, which it can do at any time.
 
-A phone call or Siri pauses the Microphone; it resumes when the call ends. On the free plan, background time counts toward the weekly free time ([Conduit Plus](plus.md)).
+A phone call or Siri pauses the Microphone, and it resumes when the call ends. If the Microphone was the only sensor keeping Conduit running in the background, iOS suspends Conduit during the call; the Microphone then resumes when you return to Conduit. Keep GPS on too to keep publishing through a call. On the free plan, background time counts toward the weekly free time ([Conduit Plus](plus.md)).
 
 ### Is Conduit free? What is Conduit Plus?
 
