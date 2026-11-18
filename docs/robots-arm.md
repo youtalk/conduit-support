@@ -330,11 +330,13 @@ state, or the Joint states topic does not carry every joint of the state
 
 Servo stops at a singularity ("Halted: singularity" on the Servo chip) and near the joint limits
 ("Halted: joint bound"). An arm's `ready` or `home` state can be singular, and then HOLD does
-not move the arm after a pick of it. On the six-joint desk arm below (the Maker Arm), both are:
-the Jacobian condition number at the gripper is 35.2 at `ready` and 42.2 at `home`, above Servo's
-`hard_stop_singularity_threshold` of 30. Give the arm group states away from singularities and
-joint limits, and list them first, so they are the first entries of the menu. On that arm, two
-such states, `work` and `stand`, sit before `ready` and `home`:
+not move the arm after a pick of it. On the six-joint desk arm below (the Maker Arm), `home` is:
+the Jacobian condition number at the gripper is 41.0 there, above Servo's
+`hard_stop_singularity_threshold` of 30. At `ready` it is 23.8, so Servo moves from there, but the
+wrist limit (J4 stops at -65.2 degrees) lets the tool point only 28.5 degrees off straight down.
+Start teleop from `work` or `stand`, not `home`. Give the arm group states away from
+singularities and joint limits, and list them first, so they are the first entries of the menu. On
+that arm, two such states, `work` and `stand`, sit before `ready` and `home`:
 
 ```xml
 <group_state name="work" group="arm">
@@ -349,14 +351,14 @@ such states, `work` and `stand`, sit before `ready` and `home`:
     <joint name="link_002_joint" value="0"/>
     <joint name="link_003_joint" value="-1.6"/>
     <joint name="link_004_joint" value="1.6"/>
-    <joint name="link_005_joint" value="-1.25"/>
+    <joint name="link_005_joint" value="-0.78"/>
     <joint name="link_006_joint" value="0"/>
     <joint name="link_007_joint" value="0"/>
 </group_state>
 ```
 
 That arm's menu lists `work`, `stand`, `ready` and `home`, in that order. The condition number is
-25.4 at `work` and 21.7 at `stand`: between Servo's `lower_singularity_threshold` (17) and the
+25.4 at `work` and 22.4 at `stand`: between Servo's `lower_singularity_threshold` (17) and the
 hard stop, so Servo moves along every axis and slows down near them. To check a state, pick it,
 wait for the checkmark, hold HOLD and move the device along each axis: the Servo chip should say
 `TWIST` or "Slowing: …", not "Halted: …". The values are the desk arm's, measured in simulation;
