@@ -63,7 +63,7 @@ The examples use the Camera sensor's default compressed output.
 
 For a color image and a depth image of the same frame (LiDAR mode; needs an iPhone 12 Pro or newer, or an iPad Pro from 2020 or newer):
 
-1. Enable the **Camera** sensor with the **Wide** camera, and the **LiDAR** sensor. The Wide camera and LiDAR are premium features (one-time In-App Purchases).
+1. Enable the **Camera** sensor with the **Wide** camera, and the **LiDAR** sensor.
 2. Open the LiDAR sensor's settings and set **Output** to **Depth** or **Both**. The default, **Point Cloud**, publishes no depth image.
 3. Subscribe to both topics, for example `/conduit/camera/wide/image_raw/compressed` and `/conduit/camera/wide/depth/image_raw`.
 4. Take one message from each and match them by equal `header.stamp`.

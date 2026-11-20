@@ -13,7 +13,7 @@ body:
     attributes:
       label: App Version
       description: Which version of Conduit are you using? See Settings → About & Help.
-      placeholder: "2.6.0"
+      placeholder: "3.0.0"
     validations:
       required: true
 

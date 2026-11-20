@@ -5,11 +5,6 @@ description: Conduit 3's weekly free time and Conduit Plus: what counts as use, 
 
 # Conduit Plus
 
-!!! info "Coming in Conduit 3"
-    Conduit Plus is part of Conduit 3, which is not on the App Store yet. The Conduit on the App
-    Store today (2.x) sells some features as one-time purchases instead. This page describes
-    Conduit Plus as it will ship in Conduit 3.
-
 Every feature of Conduit is free for **5 hours of use every week**, including features added
 later. Conduit Plus removes the limit. No feature is for Conduit Plus only: the weekly time is the
 only difference.
@@ -64,8 +59,9 @@ cancel it before you buy Lifetime.
 
 ## Founder
 
-If you bought any of the one-time features of earlier versions of Conduit (Back Cameras, LiDAR,
-Game Controller, Background Mode or Recording Export), you have Conduit Plus at no charge, for good:
+If you bought any of the one-time features of Conduit 2 (Back Cameras, LiDAR, Game Controller,
+Background Mode or Recording Export) before December 21, 2026, you have Conduit Plus at no charge,
+for good, including features added to Conduit Plus later:
 **Settings** → **Conduit Plus** shows the plan as "Conduit Plus · Founder". Conduit finds the
 purchase on the App Store by itself. On a new device, tap **Restore Purchases** if it does not.
 

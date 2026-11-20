@@ -192,32 +192,23 @@ See [Platform notes](platform-notes.md) for details per platform, and [Sensors a
 
 ### How do I enable background mode?
 
-Turn on Settings → Publishing → **Background Publishing**. It needs the Background Mode In-App Purchase; until you buy it, the toggle shows a lock.
+Turn on Settings → Publishing → **Background Publishing**.
 
 What happens when you leave the app:
 
 - **Background Publishing off:** Conduit stops publishing.
-- **Background Publishing on:** Camera and LiDAR stop (iOS does not allow them in the background). The other sensors keep publishing until iOS suspends the app, which it can do at any time.
+- **Background Publishing on:** Conduit keeps publishing in the background as long as the **GPS** or **Microphone** sensor is on; iOS keeps the app running for them and shows that Conduit is using your location or microphone. Camera and LiDAR stop (iOS does not allow them in the background). On iPhone, a Live Activity on the Lock Screen and in the Dynamic Island shows the running session.
+- With neither GPS nor Microphone on, the other sensors keep publishing only until iOS suspends the app, which it can do at any time.
 
-Keep Conduit in the foreground when you need data for a long time, for example a long GPS track. See [Known issues](known-issues.md).
+A phone call or Siri pauses the Microphone. After Siri, the Microphone resumes on its own within a few seconds, even in the background. iOS may suspend Conduit while a call goes on; the Microphone then resumes when you return to Conduit. On the free plan, background time counts toward the weekly free time ([Conduit Plus](plus.md)).
 
-### What are the premium features?
+### Is Conduit free? What is Conduit Plus?
 
-**Free:**
+Every feature of Conduit is free for **5 hours of use every week**: every sensor and camera, LiDAR, the game controller, background publishing, recording and sharing recordings, and Robots. **Conduit Plus** (monthly, yearly or a one-time Lifetime purchase) removes the weekly limit; no feature is for Conduit Plus only. Time counts only while a subscriber receives a topic, a recording runs, or a robot's drive view is open with the robot connected.
 
-- IMU, GPS, Magnetometer, Barometer, Illuminance, Proximity, Battery, Thermal, **Microphone**
-- Front camera
-- **MCAP recording** to the device
+If you bought any of the one-time features of Conduit 2 (Back Cameras, LiDAR, Game Controller, Background Mode or Recording Export), you have Conduit Plus at no charge, for good (**Founder**).
 
-**One-time In-App Purchases:**
-
-- **Back Cameras** — Wide, Ultra Wide and Telephoto cameras in one purchase (the front camera stays free)
-- **LiDAR** — point cloud and depth (iPhone Pro / iPad Pro)
-- **Game Controller** — MFi / Bluetooth controller input as `sensor_msgs/Joy`
-- **Background Mode** — keep publishing supported sensors while the app is in the background
-- **Recording Export** — export and share recorded `.mcap` files to other apps and devices
-
-Settings → **Premium Features** shows what you have unlocked and has **Restore Purchases**.
+Settings → **Conduit Plus** shows your plan and the time left this week, and has **Restore Purchases**. See [Conduit Plus](plus.md) for the details.
 
 ### How do I verify data is being published?
 
@@ -282,7 +273,6 @@ Yes. Each camera has its own row:
 
 **Notes:**
 
-- The wide, ultra-wide and telephoto cameras need the Back Cameras purchase. The front camera is free.
 - LiDAR uses ARKit, which gives only the wide camera. While LiDAR is on, only the wide camera streams; turning on another camera turns LiDAR off. LiDAR can also publish `/conduit/camera/wide/depth/image_raw`, aligned with the wide camera.
 
 ### How do I change the publishing rate?
@@ -409,13 +399,13 @@ Keep the app in the foreground when using the Microphone sensor.
 
 ### How does MCAP recording work?
 
-Choose **Record** or **Both** next to the play button, then tap play. Conduit writes every topic it produces to an `.mcap` file on the device, as the same XCDR v1 bytes it sends to ROS 2. The schemas are embedded in the file, so any MCAP reader (Foxglove, Lichtblick, `ros2 bag play`, the `mcap` CLI) opens it without external `.msg` files.
+Touch and hold the Start button and choose **Record to File** or **Publish & Record**. Conduit writes every topic it produces to an `.mcap` file on the device, as the same XCDR v1 bytes it sends to ROS 2. The schemas are embedded in the file, so any MCAP reader (Foxglove, Lichtblick, `ros2 bag play`, the `mcap` CLI) opens it without external `.msg` files.
 
-- **Publish:** live to ROS 2 only.
-- **Record:** to a file only. Needs no network and no ROS 2 system.
-- **Both:** live to ROS 2 and to a file.
+- **Publish to Router** (a tap on Start): live to ROS 2 only.
+- **Record to File:** to a file only. Needs no network and no ROS 2 system.
+- **Publish & Record:** live to ROS 2 and to a file.
 
-Recording is free. Recordings stay on the device; Conduit never uploads them. Open them from the folder button next to Settings in the toolbar, where you can delete them. To export a recording through the share sheet (Files, AirDrop, mail, …), you need the Recording Export purchase. Without it, recordings are kept in the app's private storage and the share button shows a lock.
+Recordings stay on the device; Conduit never uploads them. Open them from the folder button next to Settings in the toolbar, where you can share them through the share sheet (Files, AirDrop, mail, …) or delete them. They are also in Conduit's folder in the Files app. Recording counts toward the weekly free time on the free plan ([Conduit Plus](plus.md)).
 
 ### Can I record while publishing live to ROS 2?
 
@@ -436,7 +426,7 @@ ros2 bag play recording.mcap --storage mcap
 
 ### Do I need a purchase to record?
 
-No. Recording to the device is free, and the Record and Both modes are always available. Only exporting a recording out of the app needs the one-time Recording Export purchase (see [premium features](#what-are-the-premium-features)).
+No. Recording and sharing recordings are part of every plan. On the free plan, recording counts toward the 5 hours of use a week (see [Is Conduit free?](#is-conduit-free-what-is-conduit-plus)).
 
 ---
 
@@ -457,7 +447,7 @@ Delete and reinstall the app. This clears:
 - Sensor configurations
 - Recordings stored on the device
 
-Purchases are tied to your Apple ID. After reinstalling, tap Settings → Premium Features → **Restore Purchases**.
+Purchases are tied to your Apple Account. After reinstalling, tap Settings → Conduit Plus → **Restore Purchases**.
 
 To see the setup tour again without resetting anything, tap Settings → About & Help → **Replay Onboarding**.
 
