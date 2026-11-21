@@ -38,6 +38,27 @@ Servo arm that follows the iPhone.
 </figure>
 </div>
 
+## Screenshots
+
+<div class="conduit-grid conduit-grid--shots">
+<figure>
+<img src="../assets/img/robots-list.png" alt="The Robots list with a mobile robot and an arm" loading="lazy">
+<figcaption><strong>Robots</strong>Your robots, each with its kind and how many of its topics are live.</figcaption>
+</figure>
+<figure>
+<img src="../assets/img/robots-editor.png" alt="A mobile robot profile filled in from the robot" loading="lazy">
+<figcaption><strong>Profile</strong>Start fills the topics in from the robot.</figcaption>
+</figure>
+<figure>
+<img src="../assets/img/robots-drive.png" alt="The drive view with the map, a navigation goal and the joystick" loading="lazy">
+<figcaption><strong>Drive</strong>Map, LaserScan and a Nav2 goal, with the camera in the corner window.</figcaption>
+</figure>
+<figure>
+<img src="../assets/img/robots-arm.png" alt="The arm view over the head camera, just before a grasp" loading="lazy">
+<figcaption><strong>Arm</strong>Head camera, wrist camera, gripper and HOLD.</figcaption>
+</figure>
+</div>
+
 No robot? [Try Robots with the demo](robots-demo.md): one command starts a simulated mobile robot and a simulated arm.
 
 ## What you need

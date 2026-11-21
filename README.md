@@ -190,14 +190,14 @@ IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal, Battery, Mic
 <sub>Run one line on your ROS 2 PC and scan the QR code it shows</sub>
 </td>
 <td align="center" width="25%">
-<img src="images/start.png" width="180" alt="Motion sensors before Start"><br>
-<b>Pick sensors</b><br>
-<sub>Turn sensors on, choose Publish, Record or Both, and tap Start</sub>
+<img src="images/start.png" width="180" alt="Touch and hold Start to choose a mode"><br>
+<b>Start</b><br>
+<sub>Tap Start to publish, or touch and hold it to record or do both</sub>
 </td>
 <td align="center" width="25%">
-<img src="images/motion.png" width="180" alt="Motion sensors while recording"><br>
+<img src="images/motion.png" width="180" alt="Motion sensors while publishing and recording"><br>
 <b>Motion</b><br>
-<sub>IMU, GPS, Magnetic Field and Proximity with live rates</sub>
+<sub>IMU, GPS, Magnetic Field, Proximity and Device Pose with live rates</sub>
 </td>
 <td align="center" width="25%">
 <img src="images/perception.png" width="180" alt="Perception sensors"><br>
