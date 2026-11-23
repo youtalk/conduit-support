@@ -67,10 +67,10 @@ ros_setup() {
 
 docker_calls() { cat "$DOCKER_STUB/calls" 2> /dev/null || true; }
 
-@test "--demo is not in the help" {
+@test "--demo is in the help" {
   run main --help
   [ "$status" -eq 0 ]
-  lacks "--demo"
+  has "--demo"
 }
 
 @test "macOS uses the default route's address" {
