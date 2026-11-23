@@ -33,6 +33,10 @@ A script on your ROS 2 PC checks the setup, shows a QR code, and waits for Condu
     QR pairing arrives in Conduit 2.6.0. Settings → About & Help shows your version. With an
     older version, set up the connection by hand: see [Zenoh or DDS](transports.md).
 
+## Watch it first {: #pair-video }
+
+<div class="conduit-video conduit-video--short"><iframe src="https://www.youtube.com/embed/S23PFpgd2is" title="Pair your iPhone with a QR code" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+
 ## Requirements
 
 Either a PC with ROS 2 installed, or a Mac or Linux PC with Docker (see [Without ROS 2 on the PC](#without-ros-2-on-the-pc)).
@@ -114,6 +118,8 @@ The router keeps running after the script ends, and starts again with Docker, so
 ## Tailscale
 
 To pair over the internet or across subnets, put the iPhone and the PC on one tailnet and run the script with `--tailscale`. Tailscale works with Zenoh only, so set `RMW_IMPLEMENTATION=rmw_zenoh_cpp` first.
+
+<div class="conduit-video conduit-video--short"><iframe src="https://www.youtube.com/embed/cSFEgzGbak8" title="Pair your iPhone over Tailscale" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
 
 ## Troubleshooting
 
