@@ -190,9 +190,7 @@ Common issues and solutions for Conduit.
 
 2. **Camera permission required**: LiDAR uses ARKit which requires camera access
 
-3. **Purchase required**: LiDAR is a one-time In-App Purchase
-
-4. **Another camera is on**: ARKit gives only the wide camera, so turning on the front, ultra-wide or telephoto camera turns LiDAR off
+3. **Another camera is on**: ARKit gives only the wide camera, so turning on the front, ultra-wide or telephoto camera turns LiDAR off
 
 ### "Microphone Permission Denied"
 

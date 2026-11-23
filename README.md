@@ -118,7 +118,7 @@ Run `ros2 daemon stop` again whenever you change `RMW_IMPLEMENTATION`, `ROS_DOMA
 </tr>
 </table>
 
-### Coming in Conduit 3: Robots
+### Robots
 
 Conduit 3 subscribes as well as publishes: watch a robot's camera, map and diagnostics, and drive it from the phone. See [Robots](docs/robots.md).
 
@@ -172,11 +172,11 @@ See [Zenoh or DDS](docs/transports.md).
 
 ### MCAP recording
 
-Record every topic to an **MCAP** file and open it in [Foxglove](https://foxglove.dev/) or replay it with `ros2 bag play`. Recording is free and works without a network: pick **Record** instead of **Publish** next to the Start button. The message schemas are written into the file, so it opens without your `.msg` files. See [Recording (MCAP)](docs/recording.md).
+Record every topic to an **MCAP** file and open it in [Foxglove](https://foxglove.dev/) or replay it with `ros2 bag play`. Recording works without a network: touch and hold the Start button and choose **Record to File**. The message schemas are written into the file, so it opens without your `.msg` files. See [Recording (MCAP)](docs/recording.md).
 
-### In-app purchases
+### Conduit Plus
 
-IMU, Magnetometer, GPS, Proximity, Barometer, Illuminance, Thermal, Battery, Microphone, the front camera and MCAP recording are free. One-time purchases unlock the **Back Cameras** (Wide, Ultra Wide and Telephoto), **LiDAR**, **Game Controller**, **Background Mode** and **Recording Export** (sharing recordings off the device).
+Every feature is free for 5 hours of use every week. **Conduit Plus** (monthly, yearly or Lifetime) removes the limit, and anyone who bought a one-time feature of Conduit 2 has it at no charge (Founder). See [Conduit Plus](docs/plus.md).
 
 ---
 
@@ -299,7 +299,8 @@ All of Conduit's ROS 2 work (Zenoh and DDS transports, the CDR codec, the Humble
 - [Recording (MCAP)](docs/recording.md): record, open and share MCAP files
 - [On-demand capture](docs/on-demand-capture.md): publish only when subscribed
 - [Game controller teleop](docs/teleop.md): drive a robot with `teleop_twist_joy`
-- [Robots](docs/robots.md): coming in Conduit 3
+- [Robots](docs/robots.md): watch and drive a ROS 2 robot
+- [Conduit Plus](docs/plus.md): weekly free time, plans and Founder
 - [FAQ](docs/faq.md), [Troubleshooting](docs/troubleshooting.md), [Known issues](docs/known-issues.md)
 - [Privacy policy](docs/privacy.md)
 

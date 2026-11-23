@@ -5,11 +5,6 @@ description: One command gives you a simulated mobile robot and a simulated robo
 
 # Try Robots with the demo
 
-!!! info "Coming in Conduit 3"
-    Robots is part of Conduit 3, which is not on the App Store yet. The Conduit on the App Store
-    today (2.x) publishes sensors but has no robot button. This page describes Robots as it will
-    ship in Conduit 3.
-
 You do not need a robot to try [Robots](robots.md). The same command that
 [pairs your phone with a QR code](pair.md) can also start two simulated robots on your computer:
 
