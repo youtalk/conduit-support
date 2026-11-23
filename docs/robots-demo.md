@@ -15,6 +15,10 @@ You do not need a robot to try [Robots](robots.md). The same command that
   pose (ready, extended, transport) from the pose menu, open and close the gripper with the arc,
   watch the wrist and head cameras, and pick up the cubes on the table.
 
+## Watch it first {: #demo-video }
+
+<div class="conduit-video conduit-video--short"><iframe src="https://www.youtube.com/embed/8vF1sXY3a68" title="Try Conduit Robots with the demo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+
 ## What you need
 
 - A Mac, or a Linux PC. On a Mac install [Docker Desktop](https://www.docker.com/products/docker-desktop/);

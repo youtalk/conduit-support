@@ -692,6 +692,11 @@ body,
   overflow: hidden;
   background: #000;
 }
+.md-typeset .conduit-video--short {
+  aspect-ratio: 9 / 16;
+  max-width: 320px;
+  margin: 0 auto 1.5em;
+}
 .md-typeset .conduit-video iframe,
 .md-typeset .conduit-video img {
   position: absolute;

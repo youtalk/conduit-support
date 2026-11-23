@@ -14,7 +14,7 @@ set -euo pipefail
 readonly PAIR_INSTALL_URL="https://docs.ros.org/en/lyrical/Get-Started/Installation.html"
 readonly PAIR_DEFAULT_CHECKIN_PORT=7449
 readonly PAIR_SUPPORTED_DISTROS="humble jazzy kilted lyrical rolling"
-# --demo (hidden until Conduit 3.0): the version of the Robots demo images,
+# --demo: the version of the Robots demo images,
 # ghcr.io/youtalk/conduit-demo:<distro>-<version>. CONDUIT_DEMO_IMAGE, when set,
 # names the image for every distribution instead.
 readonly PAIR_DEMO_VERSION=0.1.0
@@ -1235,7 +1235,7 @@ causes() {
 # The iPhone and the user's own ROS 2 containers both connect to it. Zenoh only:
 # Docker Desktop's NAT'd VM carries no DDS discovery.
 #
-# --demo (hidden until Conduit 3.0) adds the Robots demo. On the container path
+# --demo adds the Robots demo. On the container path
 # the demo joins the router's graph (--network container:conduit-router). On a
 # Linux PC with ROS 2 the script pairs natively and the demo joins the PC's own
 # graph (host network), unless that graph already uses one of their names.
@@ -1912,6 +1912,8 @@ Options:
   --checkin-port N      TCP port for the iPhone's check-in (default 7449).
   --link-style S        https (default) or custom (conduit://pair links).
   --no-qr               Print the link only, without the QR code.
+  --demo                Also start the Robots demo in Docker: a simulated
+                        mobile robot and robot arm to drive from Conduit.
   -h, --help            Show this help.
 
 Exit status: 0 connected, 1 not supported or declined, 2 not connected,
@@ -1994,7 +1996,6 @@ main() {
         esac
         shift
         ;;
-      # Hidden until Conduit 3.0, so it is not in usage.
       --demo) demo=1 ;;
       -h | --help)
         usage
