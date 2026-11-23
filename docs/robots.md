@@ -24,16 +24,16 @@ robot's camera, map, odometry, battery and diagnostics, and where Conduit sends 
 
 ## Demo videos
 
-Sneak peeks of Conduit 3: a robot driven from the iPhone through its own camera, and a MoveIt
-Servo arm that follows the iPhone.
+Conduit 3 in real time: a Kachaka driven from the iPhone through its own camera and map, and a
+Maker Arm that follows the iPhone through MoveIt Servo.
 
 <div class="conduit-grid">
 <figure>
-<div class="conduit-video"><iframe src="https://www.youtube.com/embed/tERF16pEvUA" title="Conduit 3 sneak peek: drive a robot through its own camera from your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+<div class="conduit-video"><iframe src="https://www.youtube.com/embed/B694Cy0oDAM" title="Conduit 3: drive a robot through its own camera and map from your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
 <figcaption><strong>Drive a mobile robot</strong>Camera, map and joystick in the drive view. See <a href="../robots-mobile/">Mobile robots</a>.</figcaption>
 </figure>
 <figure>
-<div class="conduit-video"><iframe src="https://www.youtube.com/embed/5x5xeL3mKAI" title="Conduit 3 sneak peek: move a robot arm by moving your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+<div class="conduit-video"><iframe src="https://www.youtube.com/embed/uh4nqTR3q_o" title="Conduit 3: move a real robot arm by moving your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
 <figcaption><strong>Move a robot arm</strong>Hold HOLD and move the iPhone; MoveIt Servo follows. See <a href="../robots-arm/">Robot arms</a>.</figcaption>
 </figure>
 </div>
