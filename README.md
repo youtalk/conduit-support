@@ -125,15 +125,15 @@ Conduit 3 subscribes as well as publishes: watch a robot's camera, map and diagn
 <table>
 <tr>
 <td align="center" width="50%">
-<a href="https://www.youtube.com/watch?v=tERF16pEvUA">
-<img src="https://img.youtube.com/vi/tERF16pEvUA/0.jpg" width="400" alt="Drive a mobile robot"><br>
+<a href="https://www.youtube.com/watch?v=B694Cy0oDAM">
+<img src="https://img.youtube.com/vi/B694Cy0oDAM/0.jpg" width="400" alt="Drive a mobile robot"><br>
 <b>Drive a mobile robot</b>
 </a><br>
 <sub>Drive a robot through its own camera from your iPhone</sub>
 </td>
 <td align="center" width="50%">
-<a href="https://www.youtube.com/watch?v=5x5xeL3mKAI">
-<img src="https://img.youtube.com/vi/5x5xeL3mKAI/0.jpg" width="400" alt="Move a robot arm"><br>
+<a href="https://www.youtube.com/watch?v=uh4nqTR3q_o">
+<img src="https://img.youtube.com/vi/uh4nqTR3q_o/0.jpg" width="400" alt="Move a robot arm"><br>
 <b>Move a robot arm</b>
 </a><br>
 <sub>Move a MoveIt Servo arm by moving your iPhone</sub>
