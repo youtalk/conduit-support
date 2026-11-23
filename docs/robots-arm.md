@@ -11,6 +11,8 @@ Conduit turns ARKit's pose of the device into `geometry_msgs/TwistStamped` for M
 sends the arm to a named pose through MoveIt. On a Mac the arm view is
 [view-only](#ipad-and-mac).
 
+<div class="conduit-video"><iframe src="https://www.youtube.com/embed/uh4nqTR3q_o" title="Conduit 3: move a real robot arm by moving your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+
 ## Host setup
 
 Arms need MoveIt Servo from Jazzy or later: the arm profile reads `moveit_msgs/ServoStatus` and

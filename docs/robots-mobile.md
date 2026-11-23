@@ -10,6 +10,8 @@ reliable with KEEP_LAST 1, on the profile's **Joy output** topic (default `/joy`
 that of the ROS 2 `joy` package's `game_controller_node`, so `teleop_twist_joy` reads it as it
 reads a gamepad.
 
+<div class="conduit-video"><iframe src="https://www.youtube.com/embed/B694Cy0oDAM" title="Conduit 3: drive a robot through its own camera and map from your iPhone" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+
 ## The drive view
 
 ### iPhone
