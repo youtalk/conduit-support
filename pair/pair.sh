@@ -114,13 +114,230 @@ install_command() {
   fi
 }
 
-check_not_wsl() {
-  local root
+# --- WSL ----------------------------------------------------------------------
+#
+# check_wsl sets PAIR_WSL:
+#   ""        not WSL
+#   wsl1      WSL 1: shares Windows' network stack, so it pairs like a native PC
+#   mirrored  WSL 2 with networkingMode=mirrored: this PC's LAN addresses are
+#             Windows' own; the Hyper-V firewall must let Conduit's ports in
+#   nat       WSL 2 with NAT networking (the default): the iPhone reaches only
+#             Windows, which must forward Conduit's TCP ports to WSL. DDS
+#             discovery (UDP multicast) cannot pass, so only Zenoh works.
+# PAIR_WSL_NETWORKING (nat|mirrored|wsl1) overrides the detection for tests.
+
+readonly PAIR_WSL_VM_CREATOR="{40E0AC32-46A5-438A-A0B2-2B479E8F2E90}"
+
+check_wsl() {
+  local root mode
+  [[ -z "${PAIR_WSL_CHECKED:-}" ]] || return 0
+  PAIR_WSL_CHECKED=1
+  PAIR_WSL=""
   root="$(env_root)"
-  if [[ -n "${WSL_DISTRO_NAME:-}" ]] ||
-    { [[ -r "$root/proc/version" ]] && grep -qi microsoft "$root/proc/version"; }; then
-    die 1 "WSL is not supported yet. Run this on a native Ubuntu, RHEL or Fedora PC."
+  if [[ -z "${WSL_DISTRO_NAME:-}" ]] &&
+    ! { [[ -r "$root/proc/version" ]] && grep -qi microsoft "$root/proc/version"; }; then
+    return 0
   fi
+  mode="${PAIR_WSL_NETWORKING:-}"
+  if [[ -z "$mode" ]]; then
+    if [[ -r "$root/proc/version" ]] && ! grep -Eqi 'WSL2|microsoft-standard' "$root/proc/version"; then
+      mode=wsl1
+    else
+      # wslinfo arrived with WSL 2.0, as did mirrored networking: without it, NAT.
+      mode="$(wslinfo --networking-mode 2> /dev/null | tr -d '\r' || true)"
+    fi
+  fi
+  case "$mode" in
+    wsl1 | mirrored) PAIR_WSL="$mode" ;;
+    *) PAIR_WSL=nat ;;
+  esac
+}
+
+# The fix for NAT networking when DDS needs to cross it.
+wsl_mirrored_howto() {
+  say "  Switch WSL to mirrored networking (Windows 11 22H2 or later): in %UserProfile%\\.wslconfig on Windows, set"
+  say "    [wsl2]"
+  say "    networkingMode=mirrored"
+  say "  then run 'wsl --shutdown' in Windows, open WSL again and run this script again."
+}
+
+# DDS over WSL 2 NAT networking never reaches the iPhone: stop with the fixes.
+check_wsl_transport() {
+  [[ "${PAIR_WSL:-}" == nat && "$PAIR_RMW" != zenoh ]] || return 0
+  warn "WSL 2 runs with NAT networking here, which DDS discovery cannot cross to reach the iPhone. Either:"
+  wsl_mirrored_howto >&2
+  warn "  or use Zenoh, which this script can forward through Windows:"
+  warn "    export RMW_IMPLEMENTATION=rmw_zenoh_cpp"
+  die 1 "and then run this script again."
+}
+
+# win_powershell: the path of Windows PowerShell, or nothing (status 1).
+win_powershell() {
+  local exe
+  if [[ -n "${PAIR_POWERSHELL:-}" ]]; then
+    printf '%s\n' "$PAIR_POWERSHELL"
+    return 0
+  fi
+  if exe="$(command -v powershell.exe 2> /dev/null)"; then
+    printf '%s\n' "$exe"
+    return 0
+  fi
+  exe=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+  [[ -x "$exe" ]] || return 1
+  printf '%s\n' "$exe"
+}
+
+# ps_encode SCRIPT: SCRIPT as PowerShell's -EncodedCommand (UTF-16LE, base64),
+# which needs no quoting on either side.
+ps_encode() {
+  printf '%s' "$1" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n'
+}
+
+# win_ps SCRIPT [SECONDS]: run SCRIPT in Windows PowerShell; its output, UTF-8
+# without carriage returns. Status 1 when PowerShell cannot be run.
+win_ps() {
+  local exe script
+  exe="$(win_powershell)" || return 1
+  script="[Console]::OutputEncoding=[Text.Encoding]::UTF8; \$ProgressPreference='SilentlyContinue'; $1"
+  # From a Windows directory: PowerShell warns about a UNC working directory.
+  (cd /mnt/c 2> /dev/null || true
+    bounded "${2:-60}" "$exe" -NoProfile -NonInteractive -EncodedCommand "$(ps_encode "$script")" \
+      < /dev/null 2> /dev/null) | tr -d '\r'
+}
+
+# wsl_windows_addresses: "kind alias ip" lines for Windows' own adapters that
+# are up: kind is lan (has a default gateway, lowest metric first) or ts
+# (Tailscale). Spaces in the alias become underscores.
+wsl_windows_addresses() {
+  local kind alias ip
+  # shellcheck disable=SC2016 # the $ belong to PowerShell
+  while IFS=$'\t' read -r kind alias ip; do
+    [[ -n "$ip" && "$ip" != 169.254.* ]] || continue
+    printf '%s %s %s\n' "$kind" "${alias// /_}" "$ip"
+  done < <(win_ps '
+Get-NetIPConfiguration | Where-Object { $_.NetAdapter.Status -eq "Up" -and $_.IPv4Address } |
+  Sort-Object { if ($_.IPv4DefaultGateway) { [int]($_.IPv4DefaultGateway | Select-Object -First 1).RouteMetric + [int]$_.NetIPv4Interface.InterfaceMetric } else { [int]::MaxValue } } |
+  ForEach-Object {
+    $kind = if ($_.InterfaceAlias -like "Tailscale*") { "ts" } elseif ($_.IPv4DefaultGateway) { "lan" } else { "" }
+    if ($kind) { foreach ($a in $_.IPv4Address) { "{0}`t{1}`t{2}" -f $kind, $_.InterfaceAlias, $a.IPAddress } }
+  }' 30 || true)
+}
+
+# is_cgnat IP: 0 for 100.64.0.0/10, the range Tailscale gives out.
+is_cgnat() {
+  local a b rest
+  IFS=. read -r a b rest <<< "$1"
+  [[ "$a" == 100 && "$b" =~ ^[0-9]+$ ]] && ((b >= 64 && b <= 127))
+}
+
+# wsl_ip: this WSL 2 VM's own address (where Windows forwards to).
+wsl_ip() {
+  local src="" dev=""
+  read -r src dev < <(ip route get 1.1.1.1 2> /dev/null | parse_route_get || true) || true
+  printf '%s\n' "$src"
+}
+
+# wsl_open_ports PROTO:PORT[-LAST]...: on WSL 2, let the iPhone reach these
+# ports. NAT: forward each TCP port from Windows to this VM and allow it in
+# Windows' firewall. Mirrored: allow each in the Hyper-V firewall, unless it
+# lets everything in already. Checks what is missing, shows the PowerShell that
+# fixes it and offers to run it as administrator (Windows asks first). When it
+# stays missing, PAIR_WSL_FIX keeps the PowerShell for causes.
+wsl_open_ports() {
+  local spec proto ports name state="" fix="" undo="" header="" missing=() line vmip=""
+  PAIR_WSL_FIX=""
+  case "${PAIR_WSL:-}" in
+    nat | mirrored) ;;
+    *) return 0 ;;
+  esac
+  if ! win_powershell > /dev/null; then
+    warn "Windows PowerShell cannot be run from WSL here (is Windows interop off?), so Windows was not checked."
+    if [[ "$PAIR_WSL" == nat ]]; then
+      warn "Windows must forward TCP ports ${*//TCP:/} to this WSL ($(wsl_ip)) and allow them in its firewall."
+    else
+      warn "The Hyper-V firewall must allow ports $* in to WSL."
+    fi
+    return 0
+  fi
+  if [[ "$PAIR_WSL" == nat ]]; then
+    vmip="$(wsl_ip)"
+    state="$(win_ps "
+netsh interface portproxy show v4tov4 | ForEach-Object { \"PP \$_\" }
+foreach (\$n in @($(printf '"%s",' "$@" | sed 's/,$//'))) {
+  \$p = \$n.Split(':')[1]
+  if (-not (Get-NetFirewallRule -Name \"Conduit-WSL-TCP-\$p\" -ErrorAction SilentlyContinue)) { \"FW \$n\" }
+}" || true)"
+    for spec in "$@"; do
+      proto="${spec%%:*}"
+      ports="${spec#*:}"
+      [[ "$proto" == TCP ]] || continue
+      # Forwarded already: a "0.0.0.0 PORT <this VM> PORT" line (any language).
+      if ! awk -v p="$ports" -v ip="$vmip" '$1 == "PP" && ($2 == "0.0.0.0" || $2 == "*") && $3 == p && $4 == ip && $5 == p { f = 1 } END { exit !f }' <<< "$state" ||
+        grep -qxF "FW $spec" <<< "$state"; then
+        missing+=("$ports")
+        name="Conduit-WSL-TCP-$ports"
+        fix+="netsh interface portproxy delete v4tov4 listenport=$ports listenaddress=0.0.0.0 | Out-Null"$'\n'
+        fix+="netsh interface portproxy add v4tov4 listenport=$ports listenaddress=0.0.0.0 connectport=$ports connectaddress=$vmip"$'\n'
+        fix+="Remove-NetFirewallRule -Name $name -ErrorAction SilentlyContinue"$'\n'
+        fix+="New-NetFirewallRule -Name $name -DisplayName 'Conduit (WSL) TCP $ports' -Direction Inbound -Action Allow -Protocol TCP -LocalPort $ports -Profile Private,Domain | Out-Null"$'\n'
+        undo+="netsh interface portproxy delete v4tov4 listenport=$ports listenaddress=0.0.0.0"$'\n'
+      fi
+    done
+    undo+="Remove-NetFirewallRule -Name 'Conduit-WSL-*'"$'\n'
+    header="WSL 2 runs with NAT networking, so the iPhone reaches Windows, not WSL."$'\n'
+    header+="Windows must forward TCP port(s) ${missing[*]:-} to WSL ($vmip) and allow them in its firewall."
+  else
+    state="$(win_ps "
+\$s = Get-NetFirewallHyperVVMSetting -PolicyStore ActiveStore -Name '$PAIR_WSL_VM_CREATOR' -ErrorAction SilentlyContinue
+if (\$s -and \"\$(\$s.DefaultInboundAction)\" -eq 'Allow') { 'ALLOW' }
+foreach (\$n in @($(printf '"%s",' "$@" | sed 's/,$//'))) {
+  \$r = \$n.Replace(':', '-')
+  if (-not (Get-NetFirewallHyperVRule -Name \"Conduit-WSL-\$r\" -ErrorAction SilentlyContinue)) { \"FW \$n\" }
+}" || true)"
+    ! grep -qx ALLOW <<< "$state" || return 0
+    for spec in "$@"; do
+      grep -qxF "FW $spec" <<< "$state" || continue
+      proto="${spec%%:*}"
+      ports="${spec#*:}"
+      missing+=("$ports/$(tr '[:upper:]' '[:lower:]' <<< "$proto")")
+      name="Conduit-WSL-$proto-$ports"
+      fix+="Remove-NetFirewallHyperVRule -Name $name -ErrorAction SilentlyContinue"$'\n'
+      fix+="New-NetFirewallHyperVRule -Name $name -DisplayName 'Conduit (WSL) $proto $ports' -Direction Inbound -VMCreatorId '$PAIR_WSL_VM_CREATOR' -Protocol $proto -LocalPorts $ports -Profiles Private,Domain -Action Allow | Out-Null"$'\n'
+    done
+    undo="Remove-NetFirewallHyperVRule -Name 'Conduit-WSL-*'"$'\n'
+    header="WSL 2 runs with mirrored networking: the Hyper-V firewall must let port(s) ${missing[*]:-} in to WSL."
+  fi
+  ((${#missing[@]})) || return 0
+  if [[ -n "${PAIR_WSL_RECHECK:-}" ]]; then
+    PAIR_WSL_FIX="$fix"
+    return 0
+  fi
+  say "$header"
+  say "In an administrator PowerShell on Windows, that is:"
+  while IFS= read -r line; do
+    [[ -z "$line" ]] || say "  $line"
+  done <<< "$fix"
+  say "This opens the port(s) on Private and Domain networks only: on a network Windows treats as Public"
+  say "(which may include Tailscale), the iPhone cannot connect."
+  say "The settings stay after this script ends. To remove them later, in an administrator PowerShell:"
+  while IFS= read -r line; do
+    [[ -z "$line" ]] || say "  $line"
+  done <<< "$undo"
+  if ask_yes_no "Run it now? (Windows asks for administrator permission)" y; then
+    say "Approve the prompt on Windows..."
+    win_ps "Start-Process powershell.exe -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile','-EncodedCommand','$(ps_encode "\$ErrorActionPreference='Continue'"$'\n'"$fix")'" 300 > /dev/null || true
+    # Check again: the prompt may have been declined.
+    PAIR_WSL_RECHECK=1
+    wsl_open_ports "$@" > /dev/null 2>&1 || true
+    PAIR_WSL_RECHECK=""
+    if [[ -z "$PAIR_WSL_FIX" ]]; then
+      say "Windows is set up for Conduit."
+      return 0
+    fi
+    say "Windows was not set up (was the prompt declined?)."
+  fi
+  say "Run the lines above in an administrator PowerShell; the iPhone cannot connect until then."
+  PAIR_WSL_FIX="$fix"
 }
 
 check_not_container() {
@@ -224,12 +441,13 @@ check_discovery_range() {
 # Sets PAIR_DISTRO, PAIR_RMW and PAIR_DOMAIN, or stops with exit code 1.
 check_environment() {
   check_platform
-  check_not_wsl
+  check_wsl
   check_not_container
   check_ros_sourced
   check_distro
   check_ros2_cli
   check_rmw
+  check_wsl_transport
   check_domain
   check_discovery_range
 }
@@ -277,14 +495,26 @@ macos_lan_candidates() {
   [[ -z "$addr" ]] || say "$dev $addr"
 }
 
-# Echoes "iface ip" lines, the default-route address first.
+# Echoes "iface ip" lines, the default-route address first. On WSL 2 with NAT
+# networking, Windows' own LAN addresses (from PAIR_WIN_ADDRS, set by
+# pick_address), which forward to WSL.
 lan_candidates() {
-  local src="" dev="" iface ip
+  local src="" dev="" iface ip kind
   if is_macos; then
     macos_lan_candidates
     return 0
   fi
+  if [[ "${PAIR_WSL:-}" == nat ]]; then
+    while read -r kind iface ip; do
+      [[ "$kind" != lan ]] || say "$iface $ip"
+    done <<< "${PAIR_WIN_ADDRS:-}"
+    return 0
+  fi
   read -r src dev < <(ip route get 1.1.1.1 2> /dev/null | parse_route_get || true) || true
+  # Mirrored WSL: Windows' Tailscale adapter shows up under an ethN name.
+  if [[ "${PAIR_WSL:-}" == mirrored ]] && is_cgnat "$src"; then
+    src=""
+  fi
   if [[ -n "$src" ]] && ! is_ignored_iface "$dev"; then
     say "$dev $src"
   fi
@@ -293,18 +523,33 @@ lan_candidates() {
     if is_ignored_iface "$iface" || [[ "$ip" == "$src" ]]; then
       continue
     fi
+    if [[ "${PAIR_WSL:-}" == mirrored ]] && is_cgnat "$ip"; then
+      continue
+    fi
     say "$iface $ip"
   done < <(ip -4 -o addr show scope global 2> /dev/null | parse_addr_show || true)
 }
 
 # Echoes the Tailscale IPv4 address, or nothing.
 tailscale_address() {
-  local addr=""
+  local addr="" iface ip
   if command -v tailscale > /dev/null 2>&1; then
     addr="$(tailscale ip -4 2> /dev/null | head -n1 || true)"
   fi
   if [[ -z "$addr" ]]; then
     addr="$(ip -4 -o addr show scope global 2> /dev/null | parse_addr_show | awk '$1 == "tailscale0" {print $2; exit}' || true)"
+  fi
+  # WSL: Tailscale usually runs on Windows. NAT: its address forwards to WSL
+  # like the LAN's; mirrored: it shows up here under an ethN name.
+  if [[ -z "$addr" && "${PAIR_WSL:-}" == nat ]]; then
+    addr="$(awk '$1 == "ts" {print $3; exit}' <<< "${PAIR_WIN_ADDRS:-}")"
+  elif [[ -z "$addr" && "${PAIR_WSL:-}" == mirrored ]]; then
+    while read -r iface ip; do
+      if is_cgnat "$ip"; then
+        addr="$ip"
+        break
+      fi
+    done < <(ip -4 -o addr show scope global 2> /dev/null | parse_addr_show || true)
   fi
   if [[ -n "$addr" ]]; then
     say "$addr"
@@ -315,6 +560,9 @@ tailscale_address() {
 # tailscale or empty (set by main from --lan / --tailscale).
 pick_address() {
   local lan ts n idx options=() addrs=() vias=() line
+  if [[ "${PAIR_WSL:-}" == nat ]]; then
+    PAIR_WIN_ADDRS="$(wsl_windows_addresses)"
+  fi
   lan="$(lan_candidates)"
   ts="$(tailscale_address)"
 
@@ -338,6 +586,12 @@ pick_address() {
   fi
 
   n=${#addrs[@]}
+  if ((n == 0)) && [[ "${PAIR_WSL:-}" == nat ]]; then
+    warn "Windows' network addresses could not be read from WSL (Windows PowerShell must run from WSL)."
+    warn "Connect Windows to the same Wi-Fi as the iPhone, or:"
+    wsl_mirrored_howto >&2
+    exit 1
+  fi
   if ((n == 0)); then
     die 1 "No usable network address was found. Connect this PC to the same Wi-Fi as the iPhone, or start Tailscale."
   fi
@@ -1161,6 +1415,25 @@ firewalld_running() {
   command -v firewall-cmd > /dev/null 2>&1 && [[ "$(firewall-cmd --state 2> /dev/null)" == running ]]
 }
 
+# wsl_causes: on WSL 2, what Windows still needs (see wsl_open_ports).
+wsl_causes() {
+  local line
+  case "${PAIR_WSL:-}" in
+    nat | mirrored) ;;
+    *) return 0 ;;
+  esac
+  if [[ -n "${PAIR_WSL_FIX:-}" ]]; then
+    say "- Windows does not let Conduit's ports in to WSL yet. In an administrator PowerShell, run:"
+    while IFS= read -r line; do
+      [[ -z "$line" ]] || say "    $line"
+    done <<< "$PAIR_WSL_FIX"
+  fi
+  if [[ "$PAIR_WSL" == nat ]]; then
+    say "- WSL's address changes when WSL restarts; run this script again to forward to the new one."
+  fi
+  say "- Windows must treat this network as Private, not Public (Settings > Network & internet > Wi-Fi or Ethernet)."
+}
+
 # causes STAGE (no_checkin|no_node|no_data): what to check, firewall first.
 causes() {
   local stage="$1" dds_port=$((7400 + 250 * PAIR_DOMAIN))
@@ -1185,6 +1458,7 @@ causes() {
       say "    sudo ufw allow $dds_port:$((dds_port + 249))/udp"
     fi
   fi
+  wsl_causes
   if firewalld_running; then
     say "- The firewall (firewalld) is on. Allow Conduit's ports until the next reboot (add --permanent to keep them):"
     if [[ "$stage" == no_checkin ]]; then
@@ -1349,6 +1623,11 @@ check_docker() {
   fi
 }
 
+# docker_desktop_engine: 0 when the Docker daemon is Docker Desktop's.
+docker_desktop_engine() {
+  [[ "$(bounded 20 docker info --format '{{.OperatingSystem}}' 2> /dev/null || true)" == *"Docker Desktop"* ]]
+}
+
 # docker_problem: what is wrong with Docker (PAIR_DOCKER) and what to do.
 docker_problem() {
   case "$PAIR_DOCKER" in
@@ -1510,6 +1789,7 @@ container_causes() {
       if is_macos; then
         say "- If the macOS firewall is on, let Docker accept incoming connections: System Settings > Network > Firewall > Options."
       fi
+      wsl_causes
       say "- Scan the QR again if Conduit did not open from it."
       ;;
     no_node)
@@ -1642,8 +1922,14 @@ router_start() {
     fi
     exit 1
   fi
+  # WSL 2 with Docker Engine in WSL: Windows must let the published ports in
+  # (Docker Desktop publishes them on Windows itself).
+  if [[ -n "${PAIR_WSL:-}" ]] && ! docker_desktop_engine; then
+    wsl_open_ports "TCP:$checkin" "TCP:$router"
+  fi
   # The iPhone reaches the router at this PC's address, so this PC must too.
-  if ! bounded 3 tcp_open "$PAIR_HOST" "$router"; then
+  # (Not through WSL 2's NAT: wsl_open_ports checked the forwarding.)
+  if [[ "${PAIR_WSL:-}" != nat ]] && ! bounded 3 tcp_open "$PAIR_HOST" "$router"; then
     say "This PC could not connect to the router at $PAIR_HOST:$router, so the iPhone cannot either:"
     say "- Docker may publish the router's ports on 127.0.0.1 only, as Colima and some OrbStack setups do. Docker Desktop publishes them on every address."
     say "- A firewall may block the port."
@@ -1868,7 +2154,7 @@ takes_container_path() {
   is_macos && return 0
   # Other systems are refused by check_platform.
   [[ "${PAIR_UNAME:-$(uname -s)}" == Linux ]] || return 1
-  check_not_wsl
+  check_wsl
   check_not_container
   ((!container)) || return 0
   [[ -z "${ROS_DISTRO:-}" ]] || return 1
@@ -1902,6 +2188,8 @@ Pairs an iPhone running Conduit with this ROS 2 PC: shows a QR code, waits for
 Conduit to check in, prepares this PC and checks that messages arrive.
 On a Mac, or a Linux PC without ROS 2, it pairs with a Zenoh router that it
 starts in Docker (container conduit-router), for your ROS 2 containers to use.
+On WSL 2 it also sets up Windows, with your permission: port forwarding (NAT
+networking, Zenoh only) or Hyper-V firewall rules (mirrored networking).
 
 Options:
   --lan                 Pair over the local network (skip Tailscale).
@@ -2051,11 +2339,21 @@ main() {
 
   token="$(new_token)"
   start_checkin "$token" "$checkin_port"
+  if [[ "$transport" == zenoh ]]; then
+    wsl_open_ports "TCP:$PAIR_CHECKIN_PORT" "TCP:$port"
+  else
+    wsl_open_ports "TCP:$PAIR_CHECKIN_PORT" "UDP:$((7400 + 250 * PAIR_DOMAIN))-$((7400 + 250 * PAIR_DOMAIN + 249))"
+  fi
   link="$(build_link "$link_style" "$transport" "$PAIR_DISTRO" "$PAIR_DOMAIN" "$PAIR_HOST" "$port" \
     "$PAIR_HOST:$PAIR_CHECKIN_PORT" "$token" "$(hostname)")"
   show_pairing "$link" "$no_qr"
   wait_checkin || die 2 "The check-in listener stopped before the iPhone checked in."
-  say "$PAIR_DEVICE checked in from $PAIR_PHONE_IP."
+  if [[ "${PAIR_WSL:-}" == nat ]]; then
+    # Through Windows' port forwarding, the check-in comes from Windows itself.
+    say "$PAIR_DEVICE checked in."
+  else
+    say "$PAIR_DEVICE checked in from $PAIR_PHONE_IP."
+  fi
 
   if [[ "$transport" == dds ]]; then
     apply_host_peers

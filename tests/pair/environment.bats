@@ -50,17 +50,17 @@ setup() {
   done
 }
 
-@test "WSL is detected from /proc/version" {
+@test "WSL 2 with NAT stops DDS with the fixes" {
   echo 'Linux version 5.15 (microsoft-standard-WSL2)' > "$CONDUIT_PAIR_ROOT/proc/version"
-  run check_environment
+  PAIR_WSL_NETWORKING=nat run check_environment
   [ "$status" -eq 1 ]
-  [[ "$output" == *"WSL is not supported yet"* ]]
+  [[ "$output" == *"NAT networking"* ]]
+  [[ "$output" == *"networkingMode=mirrored"* ]]
 }
 
 @test "WSL is detected from WSL_DISTRO_NAME" {
-  WSL_DISTRO_NAME=Ubuntu run check_environment
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"WSL is not supported yet"* ]]
+  WSL_DISTRO_NAME=Ubuntu check_environment
+  [ "$PAIR_WSL" = wsl1 ]
 }
 
 @test "container is detected" {
