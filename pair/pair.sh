@@ -210,6 +210,7 @@ win_ps() {
 # (Tailscale). Spaces in the alias become underscores.
 wsl_windows_addresses() {
   local kind alias ip
+  # shellcheck disable=SC2016 # the $ belong to PowerShell
   while IFS=$'\t' read -r kind alias ip; do
     [[ -n "$ip" && "$ip" != 169.254.* ]] || continue
     printf '%s %s %s\n' "$kind" "${alias// /_}" "$ip"
@@ -243,7 +244,7 @@ wsl_ip() {
 # fixes it and offers to run it as administrator (Windows asks first). When it
 # stays missing, PAIR_WSL_FIX keeps the PowerShell for causes.
 wsl_open_ports() {
-  local spec proto ports name state="" fix="" header="" missing=() line vmip=""
+  local spec proto ports name state="" fix="" undo="" header="" missing=() line vmip=""
   PAIR_WSL_FIX=""
   case "${PAIR_WSL:-}" in
     nat | mirrored) ;;
@@ -278,9 +279,11 @@ foreach (\$n in @($(printf '"%s",' "$@" | sed 's/,$//'))) {
         fix+="netsh interface portproxy delete v4tov4 listenport=$ports listenaddress=0.0.0.0 | Out-Null"$'\n'
         fix+="netsh interface portproxy add v4tov4 listenport=$ports listenaddress=0.0.0.0 connectport=$ports connectaddress=$vmip"$'\n'
         fix+="Remove-NetFirewallRule -Name $name -ErrorAction SilentlyContinue"$'\n'
-        fix+="New-NetFirewallRule -Name $name -DisplayName 'Conduit (WSL) TCP $ports' -Direction Inbound -Action Allow -Protocol TCP -LocalPort $ports | Out-Null"$'\n'
+        fix+="New-NetFirewallRule -Name $name -DisplayName 'Conduit (WSL) TCP $ports' -Direction Inbound -Action Allow -Protocol TCP -LocalPort $ports -Profile Private,Domain | Out-Null"$'\n'
+        undo+="netsh interface portproxy delete v4tov4 listenport=$ports listenaddress=0.0.0.0"$'\n'
       fi
     done
+    undo+="Remove-NetFirewallRule -Name 'Conduit-WSL-*'"$'\n'
     header="WSL 2 runs with NAT networking, so the iPhone reaches Windows, not WSL."$'\n'
     header+="Windows must forward TCP port(s) ${missing[*]:-} to WSL ($vmip) and allow them in its firewall."
   else
@@ -299,8 +302,9 @@ foreach (\$n in @($(printf '"%s",' "$@" | sed 's/,$//'))) {
       missing+=("$ports/$(tr '[:upper:]' '[:lower:]' <<< "$proto")")
       name="Conduit-WSL-$proto-$ports"
       fix+="Remove-NetFirewallHyperVRule -Name $name -ErrorAction SilentlyContinue"$'\n'
-      fix+="New-NetFirewallHyperVRule -Name $name -DisplayName 'Conduit (WSL) $proto $ports' -Direction Inbound -VMCreatorId '$PAIR_WSL_VM_CREATOR' -Protocol $proto -LocalPorts $ports -Action Allow | Out-Null"$'\n'
+      fix+="New-NetFirewallHyperVRule -Name $name -DisplayName 'Conduit (WSL) $proto $ports' -Direction Inbound -VMCreatorId '$PAIR_WSL_VM_CREATOR' -Protocol $proto -LocalPorts $ports -Profiles Private,Domain -Action Allow | Out-Null"$'\n'
     done
+    undo="Remove-NetFirewallHyperVRule -Name 'Conduit-WSL-*'"$'\n'
     header="WSL 2 runs with mirrored networking: the Hyper-V firewall must let port(s) ${missing[*]:-} in to WSL."
   fi
   ((${#missing[@]})) || return 0
@@ -313,6 +317,12 @@ foreach (\$n in @($(printf '"%s",' "$@" | sed 's/,$//'))) {
   while IFS= read -r line; do
     [[ -z "$line" ]] || say "  $line"
   done <<< "$fix"
+  say "This opens the port(s) on Private and Domain networks only: on a network Windows treats as Public"
+  say "(which may include Tailscale), the iPhone cannot connect."
+  say "The settings stay after this script ends. To remove them later, in an administrator PowerShell:"
+  while IFS= read -r line; do
+    [[ -z "$line" ]] || say "  $line"
+  done <<< "$undo"
   if ask_yes_no "Run it now? (Windows asks for administrator permission)" y; then
     say "Approve the prompt on Windows..."
     win_ps "Start-Process powershell.exe -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile','-EncodedCommand','$(ps_encode "\$ErrorActionPreference='Continue'"$'\n'"$fix")'" 300 > /dev/null || true
@@ -1421,6 +1431,7 @@ wsl_causes() {
   if [[ "$PAIR_WSL" == nat ]]; then
     say "- WSL's address changes when WSL restarts; run this script again to forward to the new one."
   fi
+  say "- Windows must treat this network as Private, not Public (Settings > Network & internet > Wi-Fi or Ethernet)."
 }
 
 # causes STAGE (no_checkin|no_node|no_data): what to check, firewall first.
